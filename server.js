@@ -227,7 +227,7 @@ const NEWS_CACHE_TTL = 2 * 60 * 1000;
 const RSS_FEEDS = [
     "https://news.google.com/rss/search?q=forex+OR+crypto+OR+stock+market+OR+binary+options&hl=ru&gl=RU&ceid=RU:ru",
     "https://www.investing.com/rss/news.rss",
-    "https://rss.app/feeds/v1.1/5qQ2vN2vN2vN2vN2vN2vN2vN2.rss"
+    "https://i.postimg.cc/ryWPSfVL/89a66af6cb2045bab65e10448563532b.gif"
 ];
 
 async function refreshNewsCache(force = false) {
