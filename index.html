@@ -512,17 +512,27 @@
         }
         .pdf-frame-box { 
             width: 100%; 
-            height: calc(100vh - 95px); 
+            height: calc(100dvh - 140px);   /* dvh = динамическая высота viewport, лучше на мобильных */
             border: none; 
             border-radius: 0; 
             background: #fff; 
             display: block;
+            overflow: auto;
+            -webkit-overflow-scrolling: touch; /* плавный скролл на iPhone */
+            touch-action: pan-y pinch-zoom;    /* разрешаем вертикальный скролл + зум */
         }
 
-        /* Полноэкранный просмотр книг — immersive режим */
+        /* Полноэкранный просмотр книг — immersive режим (оптимизировано под Android/iOS WebView) */
         #book-viewer-screen {
             padding: 0 !important;
             background: #0a0f1f !important;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 9999;
+            overflow: hidden;
         }
         #book-viewer-screen .viewer-header {
             position: sticky;
@@ -1245,7 +1255,9 @@
                 <button class="zoom-btn" onclick="zoomBook(0)" style="font-size:12px; padding:8px 10px;">100%</button>
                 <button class="zoom-btn" onclick="zoomBook(0.15)">+</button>
                 
-                <button class="open-browser-btn" onclick="openBookInBrowser()">Открыть в браузере</button>
+                <button class="open-browser-btn" onclick="openBookInBrowser()" style="font-size:13px; padding:10px 18px; font-weight:900;">
+                    📱 Открыть в браузере (рекомендую на телефоне)
+                </button>
             </div>
             
             <!-- Iframe — здесь открывается книга -->
@@ -4066,12 +4078,20 @@
                 document.getElementById('viewer-title').innerText = title;
                 const fileUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/')) + '/' + fileName;
                 
-                // Прямой просмотр PDF (лучше работает локально и в Telegram WebApp)
-                // Если не открывается — браузер предложит скачать или откроет в новом табе
-                document.getElementById('book-frame').src = fileUrl;
+                const frame = document.getElementById('book-frame');
+                frame.style.transform = 'none';   // сбрасываем предыдущий зум
+                frame.src = fileUrl;
                 
-                // Альтернатива (если хочешь Google Viewer для удалённого хостинга):
-                // document.getElementById('book-frame').src = "https://docs.google.com/gview?url=" + encodeURIComponent(fileUrl) + "&embedded=true";
+                // Показываем подсказку на телефоне
+                setTimeout(() => {
+                    if (window.Telegram && window.Telegram.WebApp && /Android|iPhone|iPad/i.test(navigator.userAgent)) {
+                        const hint = document.createElement('div');
+                        hint.style.cssText = 'position:absolute; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.7); color:#fff; font-size:12px; padding:8px 16px; border-radius:999px; white-space:nowrap; z-index:1000;';
+                        hint.innerHTML = 'На телефоне лучше нажать «Открыть в браузере»';
+                        document.getElementById('book-viewer-screen').appendChild(hint);
+                        setTimeout(() => hint.remove(), 4500);
+                    }
+                }, 1200);
                 
                 switchScreen('book-viewer-screen');
             }
@@ -4092,11 +4112,19 @@
 
                 if (delta === 0) {
                     currentZoom = 1;
-                } else {
-                    currentZoom = Math.max(0.6, Math.min(2.5, currentZoom + delta));
+                    frame.style.transform = 'none';
+                    frame.style.transformOrigin = 'top left';
+                    return;
                 }
+                
+                currentZoom = Math.max(0.7, Math.min(2.2, currentZoom + delta));
                 frame.style.transform = `scale(${currentZoom})`;
                 frame.style.transformOrigin = 'top left';
+                
+                // На мобильных после зума иногда нужно чуть подвинуть, чтобы скролл работал
+                if (/Android|iPhone|iPad/i.test(navigator.userAgent)) {
+                    frame.style.marginBottom = (currentZoom > 1 ? '40px' : '0');
+                }
             }
 
             function openBookInBrowser() {
