@@ -1,0 +1,470 @@
+/* ============================================
+   VIP COMMUNITY PRO AI — OPTIMIZED DARK THEME
+   Высокопроизводительная тёмная неоновая тема
+   ============================================ */
+
+:root {
+    /* === ЦВЕТОВАЯ СИСТЕМА (oklch — лучше для тёмных тем) === */
+    --bg-deep: oklch(0.065 0.015 260);
+    --bg-secondary: oklch(0.095 0.018 260);
+
+    /* Glassmorphism */
+    --glass-bg: oklch(0.115 0.022 260 / 0.78);
+    --glass-border: oklch(0.65 0.12 280 / 0.18);
+    --glass-blur: 18px;                    /* Оптимизировано с 26px */
+
+    /* Неоновые акценты */
+    --neon-cyan: oklch(0.78 0.22 195);
+    --neon-purple: oklch(0.74 0.25 295);
+    --neon-pink: oklch(0.72 0.28 330);
+    --neon-green: oklch(0.82 0.26 145);
+    --neon-red: oklch(0.68 0.32 25);
+
+    /* Текст */
+    --text-primary: oklch(0.96 0.008 260);
+    --text-secondary: oklch(0.72 0.015 260);
+    --text-muted: oklch(0.58 0.012 260);
+
+    /* Тени и эффекты */
+    --shadow-dark: oklch(0 0 0 / 0.45);
+    --shadow-neon-cyan: oklch(0.78 0.22 195 / 0.35);
+    --shadow-neon-purple: oklch(0.74 0.25 295 / 0.3);
+}
+
+/* === БАЗОВЫЕ СТИЛИ === */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: var(--bg-deep);
+    color: var(--text-primary);
+    min-height: 100vh;
+    user-select: none;
+    overflow-x: hidden;
+}
+
+/* === ОПТИМИЗИРОВАННЫЙ КОСМИЧЕСКИЙ ФОН === */
+.cosmic-bg {
+    position: fixed;
+    inset: 0;
+    background: 
+        linear-gradient(180deg, #05050f 0%, #0a0a1a 38%, #05050f 100%);
+    z-index: -2;
+    pointer-events: none;
+}
+
+/* === ЛЕТАЮЩИЕ ЭЛЕМЕНТЫ (оптимизировано) === */
+.flying-elements {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.flying-rocket,
+.flying-whale,
+.flying-chart,
+.flying-coin {
+    position: absolute;
+    font-size: 19px;
+    opacity: 0.16;
+    filter: drop-shadow(0 0 8px var(--neon-cyan));
+    animation: fly-across linear infinite;
+    will-change: transform;
+    transform: translateZ(0);
+}
+
+.flying-whale {
+    font-size: 25px;
+    opacity: 0.11;
+    filter: drop-shadow(0 0 12px var(--neon-purple));
+}
+
+.flying-chart {
+    font-size: 17px;
+    opacity: 0.13;
+    filter: drop-shadow(0 0 6px var(--neon-green));
+}
+
+.flying-coin {
+    font-size: 16px;
+    opacity: 0.14;
+    filter: drop-shadow(0 0 7px #ffd700);
+}
+
+@keyframes fly-across {
+    0% { transform: translateX(-140px) rotate(-13deg); }
+    100% { transform: translateX(calc(100vw + 140px)) rotate(13deg); }
+}
+
+/* === СТЕКЛА (GLASSMORPHISM) — ОПТИМИЗИРОВАНО === */
+.glass-box {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    border-radius: 26px;
+    padding: 18px;
+    margin-bottom: 14px;
+    
+    /* Производительность */
+    contain: content;
+    box-shadow: 
+        0 10px 28px var(--shadow-dark),
+        inset 0 0 0 1px oklch(1 0 0 / 0.03);
+    
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.glass-box:hover {
+    box-shadow: 
+        0 14px 32px var(--shadow-dark),
+        inset 0 0 0 1px oklch(1 0 0 / 0.05);
+}
+
+/* === КАРТОЧКИ МЕНЮ (3D НЕОН) — ТЁМНЫЕ === */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-top: 6px;
+}
+
+.card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 2px solid #00c8d9;
+    border-radius: 9999px;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 15px 10px;
+    cursor: pointer;
+    
+    /* Оптимизированные тени */
+    box-shadow: 
+        0 0 14px oklch(0.78 0.22 195 / 0.22),
+        0 12px 30px var(--shadow-dark),
+        inset 0 0 0 1px oklch(1 0 0 / 0.04);
+    
+    transition: transform 0.35s cubic-bezier(0.23, 1, 0.32, 1), 
+                box-shadow 0.3s ease,
+                border-color 0.25s ease;
+    
+    contain: content;
+    will-change: transform;
+}
+
+.card:hover {
+    transform: scale(1.03);
+    border-color: var(--neon-purple);
+    box-shadow: 
+        0 0 18px oklch(0.78 0.22 195 / 0.28),
+        0 16px 34px var(--shadow-dark);
+}
+
+.card:active {
+    transform: scale(0.92);
+    border-color: var(--neon-green);
+}
+
+/* Иконки — ТЁМНЫЕ (как просил пользователь) */
+.icon-circle {
+    width: 62px;
+    height: 62px;
+    border-radius: 50%;
+    background: #02060f;                    /* Очень тёмный */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 11px;
+    font-size: 28px;
+    border: 2px solid #00c8d9;
+    color: #d0f0ff;
+    
+    box-shadow: 
+        inset 0 0 12px rgba(0,0,0,0.9),
+        0 0 10px oklch(0.78 0.22 195 / 0.15);
+    
+    transition: all 0.25s ease;
+}
+
+.card:hover .icon-circle {
+    border-color: #00a8b8;
+    box-shadow: 
+        inset 0 0 12px rgba(0,0,0,0.9),
+        0 0 14px oklch(0.78 0.22 195 / 0.22);
+    transform: scale(1.04);
+}
+
+.card-title {
+    font-size: 10.5px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.1px;
+    color: var(--text-primary);
+    text-align: center;
+    line-height: 1.15;
+}
+
+/* === ПРОФИЛЬ И ДРУГИЕ КОМПОНЕНТЫ === */
+.profile-hero {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 17px;
+    border: 1px solid oklch(0.78 0.22 195 / 0.25);
+}
+
+.avatar {
+    width: 74px;
+    height: 74px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid var(--neon-cyan);
+    box-shadow: 0 0 24px oklch(0.78 0.22 195 / 0.45);
+}
+
+.avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* === НОВОСТИ === */
+.news-item-box {
+    background: oklch(0.09 0.015 260 / 0.55);
+    border: 1px solid oklch(1 0 0 / 0.06);
+    border-radius: 20px;
+    overflow: hidden;
+    margin-bottom: 12px;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.news-item-box:hover {
+    transform: translateY(-2px);
+}
+
+.news-item-box img {
+    width: 100%;
+    height: 128px;
+    object-fit: cover;
+}
+
+/* === ЗАМЕТКИ (красивые) === */
+.note-card {
+    background: oklch(0.105 0.018 260 / 0.75);
+    border: 1px solid oklch(0.65 0.12 280 / 0.2);
+    border-radius: 18px;
+    padding: 14px 15px;
+    margin-bottom: 9px;
+    border-left: 4px solid var(--neon-purple);
+    transition: all 0.2s ease;
+}
+
+.note-card:hover {
+    border-color: var(--neon-purple);
+    transform: translateX(3px);
+}
+
+.note-date {
+    font-size: 9px;
+    color: var(--neon-cyan);
+    font-weight: 800;
+    background: oklch(0.78 0.22 195 / 0.08);
+    padding: 1px 7px;
+    border-radius: 8px;
+}
+
+/* === КАЛЬКУЛЯТОР === */
+.calc-section {
+    background: oklch(0.08 0.012 260 / 0.45);
+    border-radius: 22px;
+    padding: 16px;
+    margin-bottom: 12px;
+    border: 1px solid oklch(0.82 0.26 145 / 0.12);
+}
+
+.result-big {
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--text-primary);
+    text-shadow: 0 0 16px oklch(0.82 0.26 145 / 0.4);
+    text-align: center;
+}
+
+/* === РАДАР (оптимизировано) === */
+.radar-container {
+    position: relative;
+    width: 190px;
+    height: 190px;
+    margin-bottom: 20px;
+}
+
+.radar-sweep {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border: 2px solid oklch(0.78 0.22 195 / 0.15);
+    border-radius: 50%;
+    animation: radarRotate 1.8s linear infinite;
+    box-shadow: 0 0 40px oklch(0.78 0.22 195 / 0.18);
+    will-change: transform;
+}
+
+.radar-scan-line {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 94%;
+    height: 2.5px;
+    background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
+    transform: translate(-50%, -50%) rotate(0deg);
+    animation: scanRotate 2.2s linear infinite;
+    box-shadow: 0 0 12px var(--neon-cyan);
+    will-change: transform;
+}
+
+.radar-core {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    box-shadow: 0 0 30px var(--neon-cyan), 0 0 60px var(--neon-purple);
+    animation: pulse 1s ease-in-out infinite alternate;
+}
+
+/* === КНОПКИ === */
+.back-btn {
+    width: 100%;
+    padding: 15px;
+    border-radius: 50px;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.1px;
+    background: oklch(1 0 0 / 0.06);
+    color: var(--text-primary);
+    border: 1px solid oklch(1 0 0 / 0.14);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    contain: content;
+}
+
+.back-btn:active {
+    background: oklch(1 0 0 / 0.12);
+    transform: scale(0.985);
+    border-color: var(--neon-green);
+}
+
+/* === ПАТТЕРНЫ (canvas) === */
+.pattern-canvas {
+    width: 116px;
+    height: 70px;
+    background: #02060f;
+    border-radius: 8px;
+    border: 1px solid oklch(0.65 0.12 280 / 0.22);
+    margin-bottom: 7px;
+}
+
+/* === СТРАТЕГИИ M1 === */
+.strategy-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 22px;
+    padding: 15px 16px;
+    margin-bottom: 10px;
+    transition: all 0.25s ease;
+    contain: content;
+}
+
+.strategy-card:active {
+    border-color: var(--neon-green);
+    transform: scale(0.985);
+}
+
+/* === КАЛЕНДАРЬ 3D === */
+.cal-day {
+    padding: 9px 0;
+    color: var(--text-primary);
+    border-radius: 13px;
+    background: oklch(1 0 0 / 0.055);
+    cursor: pointer;
+    transition: all 0.22s ease;
+    transform-style: preserve-3d;
+}
+
+.cal-day:hover {
+    background: oklch(0.78 0.22 195 / 0.15);
+    transform: perspective(500px) rotateX(7deg) rotateY(5deg) scale(1.03);
+}
+
+/* === ВСПОМОГАТЕЛЬНЫЕ КЛАССЫ === */
+.admin-badge {
+    display: inline-block;
+    background: linear-gradient(90deg, var(--neon-purple), #a855f7);
+    color: #000;
+    font-size: 9px;
+    font-weight: 900;
+    padding: 2px 9px;
+    border-radius: 16px;
+    box-shadow: 0 0 10px oklch(0.74 0.25 295 / 0.5);
+}
+
+/* === МЕДИА-ЗАПРОСЫ ДЛЯ ПРОИЗВОДИТЕЛЬНОСТИ === */
+@media (prefers-reduced-motion: reduce) {
+    .glass-box,
+    .card,
+    .flying-rocket,
+    .radar-sweep,
+    .radar-scan-line {
+        animation: none !important;
+        transition: none !important;
+    }
+    
+    .glass-box {
+        backdrop-filter: none;
+        background: oklch(0.11 0.02 260);
+    }
+}
+
+/* === ТЁМНАЯ ТЕМА ДЛЯ ВСЕХ ЭКРАНОВ === */
+.screen {
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+}
+
+/* Лёгкие градиенты оверлеев (фон видно лучше) */
+#menu-screen { 
+    background-image: linear-gradient(rgba(5,5,15,0.55), rgba(5,5,15,0.68)), 
+    url('https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=1080&q=80'); 
+}
+
+#profile-screen,
+#admin-panel-screen { 
+    background-image: linear-gradient(rgba(5,5,15,0.58), rgba(5,5,15,0.72)), 
+    url('https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?auto=format&fit=crop&w=1080&q=80'); 
+}
+
+#news-screen,
+#calendar-screen,
+#notes-screen,
+#patterns-screen,
+#sessions-screen { 
+    background-image: linear-gradient(rgba(5,5,15,0.58), rgba(5,5,15,0.72)), 
+    url('https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=1080&q=80'); 
+}

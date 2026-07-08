@@ -1,0 +1,12 @@
+{
+  "appName": "VIP ALIFA",
+  "version": "1.0.0",
+  "theme": "dark",
+  "startBalance": 10,
+  "dailyBonus": 10,
+  "books": [
+    {"file": "Kuklovod.pdf", "title": "Торговый алгоритм Кукловод"},
+    {"file": "Psihologiya_trejdinga.pdf", "title": "Психология трейдинга"},
+    {"file": "Yaponskie_svechi.pdf", "title": "Японские свечи"}
+  ]
+}

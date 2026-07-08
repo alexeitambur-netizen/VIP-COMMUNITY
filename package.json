@@ -1,0 +1,21 @@
+{
+  "name": "alifa-team-server",
+  "version": "1.0.0",
+  "description": "Backend server for VIP ALIFA TEAM Telegram Bot",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.2.1",
+    "mongoose": "^8.4.0",
+    "rss-parser": "^3.13.0",
+    "ws": "^8.18.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "author": "TEAM",
+  "license": "ISC"
+}
