@@ -21,8 +21,8 @@ const USERS_FILE = path.join(__dirname, 'allowed_users.json');
 // Твой токен от BotFather (замени на настоящий)
 const BOT_TOKEN = "8988084203:AAGMNH763cv170X0lRGczjTwUY6Ir-TWlFI"; 
 
-// Идентификатор видео-гифки прямо из твоего JSON объекта
-const WELCOME_VIDEO_ID = "BAACAgQAAxkBAAEr8O9qTst6_Uqh6-AhwkFrtmtslmrzDgACjh0AAmJxeFL-7Tr80UuT2TwE";
+// Ссылка на приветственную GIF-анимацию (внешняя, postimg.cc)
+const WELCOME_GIF_URL = "https://i.postimg.cc/ryWPSfVL/89a66af6cb2045bab65e10448563532b.gif";
 
 const bot = new Telegraf(BOT_TOKEN);
 
@@ -39,8 +39,8 @@ bot.start(async (ctx) => {
         `Нажимай на кнопку ниже, регистрируйся и пиши администратору для подтверждения!`;
 
     try {
-        // Отправляем приветственное видео/гифку по file_id (так загрузится моментально)
-        await ctx.replyWithVideo(WELCOME_VIDEO_ID);
+        // Отправляем приветственную GIF-анимацию по URL (внешняя ссылка)
+        await ctx.replyWithAnimation(WELCOME_GIF_URL);
         
         // Отправляем текст с красивыми кнопками-ссылками
         await ctx.replyWithMarkdown(welcomeText, Markup.inlineKeyboard([
@@ -226,8 +226,7 @@ const NEWS_CACHE_TTL = 2 * 60 * 1000;
 
 const RSS_FEEDS = [
     "https://news.google.com/rss/search?q=forex+OR+crypto+OR+stock+market+OR+binary+options&hl=ru&gl=RU&ceid=RU:ru",
-    "https://www.investing.com/rss/news.rss",
-    "https://i.postimg.cc/ryWPSfVL/89a66af6cb2045bab65e10448563532b.gif"
+    "https://www.investing.com/rss/news.rss"
 ];
 
 async function refreshNewsCache(force = false) {
