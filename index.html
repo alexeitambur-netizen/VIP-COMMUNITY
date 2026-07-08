@@ -4086,6 +4086,15 @@
                 const frame = document.getElementById('book-frame');
                 const viewerScreen = document.getElementById('book-viewer-screen');
                 
+                // Определяем "тяжёлые" книги (большие/сканированные)
+                const heavyBooks = [
+                    "Нисон_С_Японские_свечи_графический_анализ_финансовых_рынков_2016.pdf",
+                    "Психология трейдинга.pdf",
+                    "Технический_анализ_фьючерсных_рынков.pdf",
+                    "Торговый хаос.pdf"
+                ];
+                const isHeavy = heavyBooks.includes(fileName);
+                
                 // Красивый загрузчик
                 frame.style.display = 'none';
                 let loader = document.getElementById('book-loader');
@@ -4098,14 +4107,13 @@
                         <div style="width:160px; height:4px; background:rgba(255,255,255,0.1); border-radius:999px; margin:0 auto; overflow:hidden;">
                             <div style="width:45%; height:100%; background:#00ffaa; animation: loading 1.1s infinite linear;"></div>
                         </div>
-                        <div style="margin-top:16px; font-size:12px; opacity:0.65;">Это может занять 3–8 секунд</div>
+                        <div style="margin-top:16px; font-size:12px; opacity:0.65;">Это может занять 3–10 секунд</div>
                     `;
                     viewerScreen.appendChild(loader);
                 } else {
                     loader.style.display = 'block';
                 }
                 
-                // Используем Google Docs Viewer — самый стабильный вариант на телефонах
                 const googleViewerUrl = "https://docs.google.com/gview?url=" + encodeURIComponent(fileUrl) + "&embedded=true";
                 
                 frame.onload = () => {
@@ -4115,18 +4123,94 @@
                 
                 frame.onerror = () => {
                     if (loader) loader.style.display = 'none';
-                    frame.style.display = 'block';
-                    const msg = document.createElement('div');
-                    msg.style.cssText = 'position:absolute; bottom:30px; left:50%; transform:translateX(-50%); background:#3a2a2a; color:#ff9999; padding:10px 18px; border-radius:12px; font-size:13px;';
-                    msg.innerText = 'Не удалось загрузить. Попробуй «Открыть в браузере»';
-                    viewerScreen.appendChild(msg);
-                    setTimeout(() => msg.remove(), 4000);
+                    showHeavyBookFallback(viewerScreen, fileUrl, title, isHeavy);
                 };
+                
+                // Для тяжёлых книг даём чуть больше времени и сразу показываем fallback, если не загрузилось за 12 сек
+                if (isHeavy) {
+                    setTimeout(() => {
+                        if (loader && loader.style.display !== 'none') {
+                            if (loader) loader.style.display = 'none';
+                            showHeavyBookFallback(viewerScreen, fileUrl, title, true);
+                        }
+                    }, 12000);
+                }
                 
                 frame.style.transform = 'none';
                 frame.src = googleViewerUrl;
                 
                 switchScreen('book-viewer-screen');
+            }
+            
+            // Красивая замена для тяжёлых книг
+            function showHeavyBookFallback(viewerScreen, fileUrl, title, isHeavy) {
+                const frame = document.getElementById('book-frame');
+                if (frame) frame.style.display = 'none';
+                
+                let fallback = document.getElementById('heavy-book-fallback');
+                if (fallback) fallback.remove();
+                
+                fallback = document.createElement('div');
+                fallback.id = 'heavy-book-fallback';
+                fallback.style.cssText = 'position:absolute; top:0; left:0; right:0; bottom:0; background:#0a0f1f; display:flex; align-items:center; justify-content:center; padding:20px; z-index:20;';
+                
+                fallback.innerHTML = `
+                    <div style="max-width: 320px; text-align:center;">
+                        <div style="font-size:48px; margin-bottom:16px;">📚</div>
+                        <h3 style="color:#fff; margin-bottom:12px; font-size:20px;">${title}</h3>
+                        
+                        <div style="background:rgba(255,255,255,0.05); border-radius:16px; padding:16px; margin-bottom:20px; text-align:left;">
+                            <p style="color:#a4b1cd; font-size:14px; line-height:1.5; margin:0;">
+                                ${isHeavy ? 
+                                    'Эта книга очень объёмная (часто сканированная). Google Viewer иногда не справляется на телефоне.' : 
+                                    'Книга не загрузилась автоматически.'}
+                            </p>
+                        </div>
+                        
+                        <button onclick="openBookInBrowserFromFallback('${fileUrl}')" 
+                                style="background:#00ffaa; color:#000; border:none; padding:16px 32px; border-radius:999px; font-size:15px; font-weight:900; width:100%; margin-bottom:12px;">
+                            📱 Открыть в браузере (лучший вариант)
+                        </button>
+                        
+                        <button onclick="retryGoogleViewer('${fileUrl}', this)" 
+                                style="background:rgba(255,255,255,0.08); color:#fff; border:1px solid rgba(255,255,255,0.2); padding:14px 24px; border-radius:999px; font-size:14px; width:100%;">
+                            Попробовать ещё раз в приложении
+                        </button>
+                        
+                        <div style="margin-top:20px; font-size:12px; color:#666;">
+                            На телефоне книги лучше всего читать в нативном просмотрщике
+                        </div>
+                    </div>
+                `;
+                
+                viewerScreen.appendChild(fallback);
+            }
+            
+            function openBookInBrowserFromFallback(fileUrl) {
+                if (window.Telegram && window.Telegram.WebApp) {
+                    window.Telegram.WebApp.openLink(fileUrl);
+                } else {
+                    window.open(fileUrl, '_blank');
+                }
+            }
+            
+            function retryGoogleViewer(fileUrl, btn) {
+                const fallback = document.getElementById('heavy-book-fallback');
+                if (fallback) fallback.remove();
+                
+                const frame = document.getElementById('book-frame');
+                const loader = document.getElementById('book-loader');
+                
+                if (loader) loader.style.display = 'block';
+                if (frame) {
+                    frame.style.display = 'none';
+                    frame.src = "https://docs.google.com/gview?url=" + encodeURIComponent(fileUrl) + "&embedded=true";
+                    
+                    frame.onload = () => {
+                        if (loader) loader.style.display = 'none';
+                        frame.style.display = 'block';
+                    };
+                }
             }
 
             // Полноэкранное закрытие книги с очисткой iframe
