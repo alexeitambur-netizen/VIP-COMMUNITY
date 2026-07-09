@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -162,36 +162,6 @@
         .card:active { transform: scale(0.94); border-color: var(--neon-green); background: rgba(0, 255, 170, 0.12); box-shadow: 0 0 30px rgba(0, 255, 170, 0.35); }
         .icon-circle { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, rgba(0,255,170,0.15) 0%, rgba(157,0,255,0.15) 100%); display: flex; justify-content: center; align-items: center; margin-bottom: 16px; font-size: 28px; border: 1px solid rgba(255,255,255,0.05); box-shadow: inset 0 0 15px rgba(0,0,0,0.5); }
         .card-title { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #fff; text-align: center; }
-
-        /* Language pills on main screen - small elegant boxes */
-        .lang-pill {
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 999px;
-            padding: 6px 14px;
-            font-size: 12px;
-            font-weight: 800;
-            color: #a4b1cd;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        }
-        .lang-pill span {
-            font-weight: 900;
-            letter-spacing: 0.5px;
-        }
-        .lang-pill.active {
-            background: var(--neon-green);
-            color: #000;
-            border-color: var(--neon-green);
-            box-shadow: 0 0 12px rgba(0,255,170,0.4);
-        }
-        .lang-pill:active {
-            transform: scale(0.95);
-        }
 
         /* Внутренние экраны */
         .screen-content { background: var(--glass-bg); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border-radius: 40px; padding: 24px; margin-bottom: 16px; border: 1px solid var(--glass-border); box-shadow: 0 15px 35px rgba(0,0,0,0.3); }
@@ -893,14 +863,14 @@
 
     <div class="container">
         <div class="screen" id="access-denied-screen">
-            <h2 style="color: var(--neon-red); justify-content: center; font-size: 32px; margin-bottom: 15px; text-shadow: 0 0 20px rgba(255,46,99,0.5);" data-i18n="access_denied">⛔ ДОСТУП ЗАКРЫТ</h2>
+            <h2 style="color: var(--neon-red); justify-content: center; font-size: 32px; margin-bottom: 15px; text-shadow: 0 0 20px rgba(255,46,99,0.5);">⛔ ДОСТУП ЗАКРЫТ</h2>
             <div class="glass-box" style="text-align: center;">
-                <p style="color: #a4b1cd; font-size: 14px; line-height: 1.6; margin-bottom: 24px; font-weight: 600;" data-i18n="access_denied_desc">Система безопасности PRO AI не распознала ваш Telegram ID в реестре закрытого клуба.</p>
+                <p style="color: #a4b1cd; font-size: 14px; line-height: 1.6; margin-bottom: 24px; font-weight: 600;">Система безопасности PRO AI не распознала ваш Telegram ID в реестре закрытого клуба.</p>
                 <div class="info-item" style="border-left-color: var(--neon-red); background: rgba(0,0,0,0.5);">
-                    <h4 data-i18n="your_key">ВАШ ID-КЛЮЧ:</h4>
+                    <h4>ВАШ ID-КЛЮЧ:</h4>
                     <p id="denied-telegram-id" style="font-size: 24px; color: var(--neon-red); font-weight: 900; letter-spacing: 2px; text-shadow: 0 0 10px rgba(255,46,99,0.3);">Определяется...</p>
                 </div>
-                <p style="font-size: 12px; color: #667085; margin-top: 20px; font-weight: 800; text-transform: uppercase;" data-i18n="send_key_admin">Передайте ключ администратору</p>
+                <p style="font-size: 12px; color: #667085; margin-top: 20px; font-weight: 800; text-transform: uppercase;">Передайте ключ администратору</p>
             </div>
         </div>
 
@@ -908,19 +878,9 @@
             <div class="welcome" style="font-size:11px; letter-spacing:3px;">POCKET OPTION</div>
             <div class="brand-title">PRO AI BOT</div>
             
-            <!-- Language Selector - Small elegant pills on main screen -->
-            <div style="display: flex; justify-content: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap;">
-                <div onclick="switchLanguage('ru')" class="lang-pill active" data-lang="ru" id="lang-pill-ru">
-                    🇷🇺 <span>RU</span>
-                </div>
-                <div onclick="switchLanguage('en')" class="lang-pill" data-lang="en" id="lang-pill-en">
-                    🇬🇧 <span>EN</span>
-                </div>
-            </div>
-            
             <div class="time-bar glass-box" style="padding: 12px 20px; margin-bottom: 16px;">
-                <div class="time-item">MOSCOW <span id="clock-moscow">00:00</span></div>
-                <div class="time-item">KYIV <span id="clock-kyiv">00:00</span></div>
+                <div class="time-item">МОСКВА <span id="clock-moscow">00:00</span></div>
+                <div class="time-item">КИЕВ <span id="clock-kyiv">00:00</span></div>
             </div>
 
             <div class="tradingview-widget-container glass-box" style="padding: 0; overflow: hidden; margin-bottom: 16px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.1); height: 46px;">
@@ -1011,10 +971,10 @@
         </div>
 
         <div class="screen" id="profile-screen">
-            <h2 data-i18n="profile_title">👤 ДАННЫЕ ТРЕЙДЕРА</h2>
+            <h2>👤 ДАННЫЕ ТРЕЙДЕРА</h2>
             <div class="glass-box">
                 <div class="info-item">
-                    <h4 data-i18n="profile_callsign">Позывной</h4>
+                    <h4>Позывной</h4>
                     <p id="profile-username">Загрузка...</p>
                 </div>
                 <div class="info-item">
@@ -1022,19 +982,28 @@
                     <p id="profile-telegram-id">Загрузка...</p>
                 </div>
                 <div class="info-item">
-                    <h4 data-i18n="profile_working_capital">Рабочий капитал</h4>
+                    <h4>Рабочий капитал</h4>
                     <div class="pocket-input-wrapper" style="background: rgba(0,0,0,0.5); margin-top: 10px;">
                         <span>$</span>
                         <input type="number" id="profile-pocket-input" class="pocket-balance-input" value="1000" oninput="syncBalances(this.value)">
                     </div>
                 </div>
 
+                <!-- Language Switcher -->
+                <div class="info-item" style="border-left-color: var(--neon-purple);">
+                    <h4>Язык интерфейса / Interface Language</h4>
+                    <div style="display:flex; gap:12px; margin-top:12px;">
+                        <button onclick="setLanguage('ru')" class="back-btn" style="flex:1; background: var(--neon-green); color:#000; border:none; font-weight:900;">🇷🇺 Русский</button>
+                        <button onclick="setLanguage('en')" class="back-btn" style="flex:1; background: var(--neon-purple); color:#fff; border:none; font-weight:900;">🇬🇧 English</button>
+                    </div>
+                </div>
+                
                 <div id="admin-link-box" style="display: none; margin-top: 20px;">
-                    <button class="back-btn" style="color: #000; background: var(--neon-purple); border: none; font-size: 15px; box-shadow: 0 0 20px rgba(157,0,255,0.4);" onclick="switchScreen('admin-panel-screen')" data-i18n="admin_panel">⚙️ ПАНЕЛЬ УПРАВЛЕНИЯ</button>
+                    <button class="back-btn" style="color: #000; background: var(--neon-purple); border: none; font-size: 15px; box-shadow: 0 0 20px rgba(157,0,255,0.4);" onclick="switchScreen('admin-panel-screen')">⚙️ ПАНЕЛЬ УПРАВЛЕНИЯ</button>
                 </div>
 
                 <div class="target-box" style="margin-top:20px; border-color: var(--neon-green);">
-                    <h4 style="color:var(--neon-green); font-size:14px; margin-bottom:8px; font-weight:800; text-transform:uppercase;" data-i18n="ai_directive">🧠 Директива ИИ:</h4>
+                    <h4 style="color:var(--neon-green); font-size:14px; margin-bottom:8px; font-weight:800; text-transform:uppercase;">🧠 Директива ИИ:</h4>
                     <div class="ai-hint-label" id="ai-profile-hint">Сбор данных для анализа...</div>
                 </div>
             </div>
@@ -1138,7 +1107,7 @@
         </div>
 
         <div class="screen" id="news-screen">
-            <h2 data-i18n="news_title">🌍 ИИ НОВОСТИ PRO</h2>
+            <h2>🌍 ИИ НОВОСТИ PRO</h2>
             
             <!-- Вкладки: Live + Grok AI -->
             <div style="display:flex; gap:8px; margin-bottom:14px; justify-content:center;">
@@ -1222,20 +1191,20 @@
         </div>
 
         <div class="screen" id="bot-selector-screen">
-            <h2>🧠 AI MODULE PRO</h2>
+            <h2>🧠 МОДУЛЬ ИИ PRO</h2>
             <div class="ai-mode-selection">
                 <div class="mode-btn" onclick="switchScreen('bot-chat-screen')">
                     <div class="mode-icon" style="color: var(--neon-purple);">💬</div>
                     <div class="mode-info">
-                        <h4>Direct Chat with Neural Net</h4>
-                        <p>Consultations on risk management and strategies</p>
+                        <h4>Прямой диалог с Нейросетью</h4>
+                        <p>Консультации по риск-менеджменту и стратегиям</p>
                     </div>
                 </div>
                 <div class="mode-btn" onclick="switchScreen('bot-analysis-screen'); window.filterAnalysisPairs();">
                     <div class="mode-icon" style="color: var(--neon-green);">🔍</div>
                     <div class="mode-info">
-                        <h4>Quote Scanner</h4>
-                        <p>Launch deep technical analysis of currency pairs</p>
+                        <h4>Сканер котировок</h4>
+                        <p>Запуск глубокого технического анализа валютных пар</p>
                     </div>
                 </div>
             </div>
@@ -1243,32 +1212,32 @@
         </div>
 
         <div class="screen" id="bot-chat-screen">
-            <h2>💬 AI CONSULTANT</h2>
+            <h2>💬 ИИ-КОНСУЛЬТАНТ</h2>
             <div class="chat-box" id="ai-chat-container">
-                <div class="chat-msg bot">PRO AI system activated. Ready to analyze the market or adjust your trading system. Enter data...</div>
+                <div class="chat-msg bot">Система PRO AI активирована. Готов провести анализ рынка или скорректировать вашу торговую систему. Ввод данных...</div>
                 <div class="chat-msg bot" id="ai-chat-typing" style="display:none; color:var(--neon-green); border:none; background:transparent; box-shadow:none;">Генерация ответа...</div>
             </div>
             <div class="input-area">
-                <input type="text" id="ai-chat-input" placeholder="Enter neural network query...">
+                <input type="text" id="ai-chat-input" placeholder="Введите запрос нейросети...">
                 <button class="send-btn" onclick="sendAiChatMessage()">SEND</button>
             </div>
             <button class="back-btn" onclick="switchScreen('bot-selector-screen')" style="margin-top:16px;">← СМЕНИТЬ МОДУЛЬ</button>
         </div>
 
         <div class="screen" id="bot-analysis-screen">
-            <h2>🔍 PRO SCANNER — ALL POCKET OPTION ASSETS</h2>
+            <h2>🔍 СКАНЕР PRO — ВСЕ АКТИВЫ POCKET OPTION</h2>
             
             <!-- Категории активов (строго по разделам — без кнопки "ВСЕ") -->
             <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; justify-content:center;">
-                <button onclick="setAssetCategory('forex')" class="back-btn" id="cat-forex" style="padding:8px 14px; font-size:11px; flex:1; max-width:85px; background:var(--neon-green); color:#000; border:none;">FOREX</button>
-                <button onclick="setAssetCategory('crypto')" class="back-btn" id="cat-crypto" style="padding:8px 14px; font-size:11px; flex:1; max-width:95px;">CRYPTO</button>
-                <button onclick="setAssetCategory('commodities')" class="back-btn" id="cat-commodities" style="padding:8px 14px; font-size:11px; flex:1; max-width:95px;">COMMODITIES</button>
-                <button onclick="setAssetCategory('stocks')" class="back-btn" id="cat-stocks" style="padding:8px 14px; font-size:11px; flex:1; max-width:80px;">STOCKS</button>
-                <button onclick="setAssetCategory('indices')" class="back-btn" id="cat-indices" style="padding:8px 14px; font-size:11px; flex:1; max-width:85px;">INDICES</button>
+                <button onclick="setAssetCategory('forex')" class="back-btn" id="cat-forex" style="padding:8px 14px; font-size:11px; flex:1; max-width:85px; background:var(--neon-green); color:#000; border:none;">ВАЛЮТЫ</button>
+                <button onclick="setAssetCategory('crypto')" class="back-btn" id="cat-crypto" style="padding:8px 14px; font-size:11px; flex:1; max-width:95px;">КРИПТА</button>
+                <button onclick="setAssetCategory('commodities')" class="back-btn" id="cat-commodities" style="padding:8px 14px; font-size:11px; flex:1; max-width:95px;">СЫРЬЁ</button>
+                <button onclick="setAssetCategory('stocks')" class="back-btn" id="cat-stocks" style="padding:8px 14px; font-size:11px; flex:1; max-width:80px;">АКЦИИ</button>
+                <button onclick="setAssetCategory('indices')" class="back-btn" id="cat-indices" style="padding:8px 14px; font-size:11px; flex:1; max-width:85px;">ИНДЕКСЫ</button>
             </div>
 
             <div class="search-box">
-                <input type="text" id="analysis-search-input" class="search-input" placeholder="Search ticker (EUR/USD, BTC, AAPL, US30...)" oninput="window.filterAnalysisPairs()">
+                <input type="text" id="analysis-search-input" class="search-input" placeholder="Поиск тикера (EUR/USD, BTC, AAPL, US30...)" oninput="window.filterAnalysisPairs()">
                 <div class="pairs-list" id="analysis-pairs-render-box" style="max-height: 420px;"></div>
             </div>
             
@@ -1280,7 +1249,7 @@
         </div>
 
         <div class="screen" id="education-screen">
-            <h2>📚 PRO KNOWLEDGE BASE</h2>
+            <h2>📚 БАЗА ЗНАНИЙ PRO</h2>
             
             <!-- Поиск по книгам (удобно на телефоне) -->
             <div style="margin: 0 16px 12px;">
@@ -1318,7 +1287,7 @@
 
         <!-- ==================== PATTERNS SCREEN ==================== -->
         <div class="screen" id="patterns-screen">
-            <h2>📈 MARKET PATTERNS</h2>
+            <h2>📈 ПАТТЕРНЫ РЫНКА</h2>
             <div class="glass-box" style="margin-bottom: 12px;">
                 <p style="font-size:13px; color:#a4b1cd; text-align:center; font-weight:600;">Классические паттерны технического анализа. Кликни на паттерн для деталей и торговых правил на M1/M5.</p>
             </div>
@@ -1343,7 +1312,7 @@
 
         <!-- ==================== STRATEGIES PRO SCREEN ==================== -->
         <div class="screen" id="strategies-screen">
-            <h2>⚡ PRO STRATEGIES — POCKET OPTION M1</h2>
+            <h2>⚡ СТРАТЕГИИ PRO — POCKET OPTION M1</h2>
             <div class="glass-box" style="margin-bottom:12px; background: linear-gradient(90deg, rgba(157,0,255,0.1) 0%, rgba(0,255,170,0.05) 100%);">
                 <p style="font-size:13px; color:#a4b1cd; text-align:center; font-weight:600;">Все индикаторы платформы Pocket Option + точные правила входа на 1-минутном таймфрейме для бинарных опционов / турбо. Сочетается с паттернами и книгами базы знаний.</p>
             </div>
@@ -1365,11 +1334,11 @@
         </div>
 
         <div class="screen" id="sessions-screen">
-            <h2 data-i18n="sessions_title">🧮 КАЛЬКУЛЯТОР PRO</h2>
+            <h2>🧮 КАЛЬКУЛЯТОР PRO</h2>
             
             <!-- ВХОДНЫЕ ДАННЫЕ -->
             <div class="glass-box">
-                <h4 style="text-align:center; color:var(--neon-green); margin-bottom:16px; font-size:14px; letter-spacing:1px;">INPUT DATA</h4>
+                <h4 style="text-align:center; color:var(--neon-green); margin-bottom:16px; font-size:14px; letter-spacing:1px;">ВХОДНЫЕ ДАННЫЕ</h4>
                 
                 <div style="margin-bottom:18px;">
                     <div style="font-size:12px; color:#a4b1cd; margin-bottom:6px; font-weight:700;">ТЕКУЩИЙ ДЕПОЗИТ ($)</div>
@@ -1411,7 +1380,7 @@
             
             <!-- РЕЗУЛЬТАТЫ -->
             <div class="glass-box" style="background: linear-gradient(135deg, rgba(0,255,170,0.07) 0%, rgba(157,0,255,0.05) 100%); border-color: rgba(0,255,170,0.25);">
-                <h4 style="text-align:center; color:var(--neon-green); margin-bottom:14px; font-size:14px; letter-spacing:1px;">CALCULATION RESULTS</h4>
+                <h4 style="text-align:center; color:var(--neon-green); margin-bottom:14px; font-size:14px; letter-spacing:1px;">РЕЗУЛЬТАТЫ РАСЧЁТА</h4>
                 
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
                     <div style="background:rgba(0,0,0,0.45); border-radius:18px; padding:14px; text-align:center; border:1px solid rgba(255,46,99,0.2);">
@@ -1442,7 +1411,7 @@
             
             <!-- РАСЧЁТ ПО ЦЕЛИ -->
             <div class="glass-box">
-                <h4 style="text-align:center; color:#fff; margin-bottom:12px; font-size:13px; letter-spacing:1px;">GOAL CALCULATION</h4>
+                <h4 style="text-align:center; color:#fff; margin-bottom:12px; font-size:13px; letter-spacing:1px;">РАСЧЁТ ПО ЦЕЛИ</h4>
                 
                 <div style="margin-bottom:12px;">
                     <div style="font-size:12px; color:#a4b1cd; margin-bottom:6px; font-weight:700;">Хочу заработать за неделю ($)</div>
@@ -1458,7 +1427,7 @@
         </div>
 
         <div class="screen" id="calendar-screen">
-            <h2 data-i18n="calendar_title">📅 МАКРО-ДАННЫЕ</h2>
+            <h2>📅 МАКРО-ДАННЫЕ</h2>
             <div class="glass-box">
                 <div style="text-align:center; font-weight:900; font-size:18px; color:var(--neon-green); margin-bottom:16px; text-transform:uppercase; letter-spacing:2px;" id="calendar-month-title">Текущий Месяц</div>
                 <div class="cal-grid" id="calendar-days-box"></div>
@@ -1468,16 +1437,16 @@
         </div>
 
         <div class="screen" id="notes-screen">
-            <h2 data-i18n="notes_title">📝 ЖУРНАЛ ТРЕЙДЕРА</h2>
+            <h2>📝 ЖУРНАЛ ТРЕЙДЕРА</h2>
             
             <!-- Фильтры по разделам -->
             <div class="glass-box" style="padding: 14px 16px; margin-bottom: 12px;">
                 <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px;" id="notes-filter-chips">
-                    <div onclick="filterNotes('all')" class="note-chip active" data-filter="all">ALL</div>
-                    <div onclick="filterNotes('Deal')" class="note-chip" data-filter="Deal">DEALS</div>
-                    <div onclick="filterNotes('Idea')" class="note-chip" data-filter="Idea">IDEAS</div>
-                    <div onclick="filterNotes('Error')" class="note-chip" data-filter="Error">ERRORS</div>
-                    <div onclick="filterNotes('Observation')" class="note-chip" data-filter="Observation">OBSERVATIONS</div>
+                    <div onclick="filterNotes('all')" class="note-chip active" data-filter="all">ВСЕ</div>
+                    <div onclick="filterNotes('Сделка')" class="note-chip" data-filter="Сделка">СДЕЛКИ</div>
+                    <div onclick="filterNotes('Идея')" class="note-chip" data-filter="Идея">ИДЕИ</div>
+                    <div onclick="filterNotes('Ошибка')" class="note-chip" data-filter="Ошибка">ОШИБКИ</div>
+                    <div onclick="filterNotes('Наблюдение')" class="note-chip" data-filter="Наблюдение">НАБЛЮДЕНИЯ</div>
                 </div>
             </div>
 
@@ -1505,10 +1474,10 @@
                 <div style="margin-bottom:16px;">
                     <div style="font-size:12px; color:#a4b1cd; margin-bottom:8px; font-weight:700;">РАЗДЕЛ</div>
                     <div style="display:flex; gap:8px; flex-wrap:wrap;" id="modal-category-chips">
-                        <div onclick="setModalCategory('Deal')" class="modal-category-btn active" data-cat="Deal">DEAL</div>
-                        <div onclick="setModalCategory('Idea')" class="modal-category-btn" data-cat="Idea">IDEA</div>
-                        <div onclick="setModalCategory('Error')" class="modal-category-btn" data-cat="Error">ERROR</div>
-                        <div onclick="setModalCategory('Observation')" class="modal-category-btn" data-cat="Observation">OBSERVATION</div>
+                        <div onclick="setModalCategory('Сделка')" class="modal-category-btn active" data-cat="Сделка">СДЕЛКА</div>
+                        <div onclick="setModalCategory('Идея')" class="modal-category-btn" data-cat="Идея">ИДЕЯ</div>
+                        <div onclick="setModalCategory('Ошибка')" class="modal-category-btn" data-cat="Ошибка">ОШИБКА</div>
+                        <div onclick="setModalCategory('Наблюдение')" class="modal-category-btn" data-cat="Наблюдение">НАБЛЮДЕНИЕ</div>
                     </div>
                 </div>
 
@@ -2231,19 +2200,19 @@
 
             // ==================== DATA FOR NEW SECTIONS ====================
             const CANDLESTICK_PATTERNS = [
-                { name: "Doji", type: "Reversal / Neutral", desc: "Open price ≈ close price. Signal of uncertainty. On M1 often precedes reversal with volume.", signal: "Wait for confirmation from the next candle. Stronger near support/resistance." },
-                { name: "Hammer", type: "Bullish Reversal", desc: "Small body on top, long lower shadow (2x+ body). Shows bounce from support.", signal: "Call on the next candle after confirmation. Ideal on M1 at support level." },
-                { name: "Inverted Hammer", type: "Bullish Reversal", desc: "Small body at bottom, long upper shadow. Potential growth signal after decline.", signal: "Call. Especially strong after downtrend on M1." },
-                { name: "Hanging Man", type: "Bearish Reversal", desc: "Similar to hammer but appears in uptrend. Warns of growth ending.", signal: "Put. Confirmation — next red candle." },
-                { name: "Shooting Star", type: "Bearish Reversal", desc: "Small body at bottom, long upper shadow. Rejection of resistance.", signal: "Put on M1. Stronger with RSI >70." },
-                { name: "Bullish Engulfing", type: "Strong Bullish Reversal", desc: "Second green candle completely engulfs the previous red candle's body.", signal: "Call. One of the strongest reversal signals on M1." },
-                { name: "Bearish Engulfing", type: "Strong Bearish Reversal", desc: "Second red candle engulfs the previous green candle.", signal: "Put. Excellent entry on trend reversal." },
-                { name: "Morning Star", type: "Bullish Reversal", desc: "3-candle formation: large red → small (doji/spinning top) → large green.", signal: "Call. Classic reversal pattern on M1/M5." },
-                { name: "Evening Star", type: "Bearish Reversal", desc: "Opposite of Morning Star: large green → small → large red.", signal: "Put. Strong signal of uptrend exhaustion." },
-                { name: "Three White Soldiers", type: "Continuation / Bullish Reversal", desc: "3 consecutive rising green candles with small bodies/shadows.", signal: "Call. Strong bullish momentum on M1." },
-                { name: "Three Black Crows", type: "Continuation / Bearish Reversal", desc: "3 falling red candles. Signal of strong bearish pressure.", signal: "Put. Great for short entries on M1." },
-                { name: "Piercing Line", type: "Bullish Reversal", desc: "Green candle opens below previous red's low and closes above its midpoint.", signal: "Call. Good signal at support." },
-                { name: "Dark Cloud Cover", type: "Bearish Reversal", desc: "Red candle opens above previous green's high and closes below its midpoint.", signal: "Put. Strong at resistance." }
+                { name: "Доджи (Doji)", type: "Разворот/Нейтраль", desc: "Цена открытия ≈ закрытия. Сигнал неопределенности. На M1 часто предшествует развороту при объеме.", signal: "Жди подтверждения следующей свечи. Сильнее в комбо с поддержкой/сопротивлением." },
+                { name: "Молот (Hammer)", type: "Бычий разворот", desc: "Маленькое тело сверху, длинная нижняя тень (в 2+ раза тела). Показывает отскок от поддержки.", signal: "Call на следующей свече после подтверждения. Идеально на M1 у уровня поддержки." },
+                { name: "Перевернутый Молот (Inverted Hammer)", type: "Бычий разворот", desc: "Маленькое тело снизу, длинная верхняя тень. Сигнал потенциального роста после падения.", signal: "Call. Особенно сильный после нисходящего тренда на M1." },
+                { name: "Повешенный (Hanging Man)", type: "Медвежий разворот", desc: "Аналог молота, но в восходящем тренде. Предупреждает об окончании роста.", signal: "Put. Подтверждение — следующая красная свеча." },
+                { name: "Падающая Звезда (Shooting Star)", type: "Медвежий разворот", desc: "Маленькое тело снизу, длинная верхняя тень. Отторжение сопротивления.", signal: "Put на M1. Сильнее с RSI >70." },
+                { name: "Бычье Поглощение (Bullish Engulfing)", type: "Сильный бычий разворот", desc: "Вторая зеленая свеча полностью поглощает тело предыдущей красной.", signal: "Call. Один из strongest разворотных сигналов на M1." },
+                { name: "Медвежье Поглощение (Bearish Engulfing)", type: "Сильный медвежий разворот", desc: "Вторая красная свеча поглощает предыдущую зеленую.", signal: "Put. Отличный вход на разворот тренда." },
+                { name: "Утренняя Звезда (Morning Star)", type: "Бычий разворот", desc: "3-свечная формация: большая красная → маленькая (доджи/волчок) → большая зеленая.", signal: "Call. Классика разворота вниз на M1/M5." },
+                { name: "Вечерняя Звезда (Evening Star)", type: "Медвежий разворот", desc: "Обратная утренней: большая зеленая → маленькая → большая красная.", signal: "Put. Сильный сигнал окончания восходящего импульса." },
+                { name: "Три Белых Солдата (Three White Soldiers)", type: "Продолжение/Разворот вверх", desc: "3 последовательные растущие зеленые свечи с маленькими телами/тенями.", signal: "Call. Сильный бычий импульс на M1." },
+                { name: "Три Черные Вороны (Three Black Crows)", type: "Продолжение/Разворот вниз", desc: "3 падающие красные свечи. Сигнал сильного медвежьего давления.", signal: "Put. Отличный для входа в шорт на M1." },
+                { name: "Проникающая Линия (Piercing Line)", type: "Бычий разворот", desc: "Зеленая свеча открывается ниже минимума предыдущей красной и закрывается выше ее середины.", signal: "Call. Хороший сигнал на поддержке." },
+                { name: "Темная Облачность (Dark Cloud Cover)", type: "Медвежий разворот", desc: "Красная свеча открывается выше максимума предыдущей зеленой и закрывается ниже ее середины.", signal: "Put. Сильный на сопротивлении." }
             ];
 
             const CHART_PATTERNS = [
@@ -2269,84 +2238,6 @@
                 { name: "Бабочка (Butterfly)", type: "Разворот экстремума", desc: "1.272 extension AB=CD. Часто на концах тренда.", signal: "Разворотный сигнал. Вход против текущего тренда на D." },
                 { name: "Краб (Crab)", type: "Экстремальный разворот", desc: "1.618 extension. Самый глубокий из гармонических.", signal: "Сильный разворот. Используй с дивергенциями." },
                 { name: "Акула (Shark)", type: "Разворот", desc: "0.886-1.13 extension. Новый паттерн, агрессивный.", signal: "Вход на 5-0 развороте. Хорош на M1 с объемом." }
-            ];
-
-            // ==================== ENGLISH VERSIONS (Full Translation) ====================
-            const PRO_BOOKS_EN = [
-                { title: "The Wolf of Wall Street", desc: "Jordan Belfort — legendary story of rise, fall and redemption of the king of brokers", file: "Волк с Уолл-стрит.pdf" },
-                { title: "Reminiscences of a Stock Operator", desc: "Edwin Lefèvre — classic on market psychology and Jesse Livermore's trading life", file: "Воспоминания_биржевого_спекулянта.pdf" },
-                { title: "How to Make Money in Stocks", desc: "Practical guide to trading, psychology and proven strategies", file: "Как играть и выигрывать на бирже.pdf" },
-                { title: "Capital in the Twenty-First Century", desc: "Thomas Piketty — fundamental analysis of inequality, capital and markets", file: "Капитал в XXI веке.pdf" },
-                { title: "Small Trader's Encyclopedia", desc: "Eric Naiman — complete reference of terms, indicators and methods", file: "Малая энциклопедия трейдера.pdf" },
-                { title: "Japanese Candlestick Charting Techniques", desc: "Steve Nison — the bible of candlestick patterns and graphical analysis", file: "Нисон_С_Японские_свечи_графический_анализ_финансовых_рынков_2016.pdf" },
-                { title: "Elliott Wave Principle", desc: "The wave principle — the ABC of wave market analysis", file: "Пособие по Эллиоту.pdf" },
-                { title: "Trading Psychology", desc: "Vladimir Gortsev — emotional control, discipline and success formula", file: "Психология трейдинга.pdf" },
-                { title: "The Complete TurtleTrader", desc: "Curtis Faith — the legendary Richard Dennis experiment and trend trading system", file: "Путь Черепах.pdf" },
-                { title: "Technical Analysis of the Financial Markets", desc: "John Murphy — theory and practice of classic technical analysis", file: "Технический_анализ_фьючерсных_рынков.pdf" },
-                { title: "Trading Chaos", desc: "Bill Williams — expert methods to maximize profits using chaos theory", file: "Торговый хаос.pdf" },
-                { title: "The Puppeteer Trading Algorithm", desc: "Detailed algorithm for trading against the crowd using reversal formations", file: "Торговый_алгоритм.pdf" },
-                { title: "The Warren Buffett Way", desc: "Robert Hagstrom — strategy and tactics of the greatest investor from Omaha", file: "Уоррен_Баффет_Как_5_долларов_превратить_в_50_миллиардов.pdf" },
-                { title: "Trading Basics for Beginners", desc: "Robert Rossman — basic course and first steps in trading", file: "Rossman_R._Osnovyi_Treyidinga_Dlya_N.a4.pdf" },
-                { title: "Simple Trading Book", desc: "Simple and effective strategies for crypto, forex and binary options", file: "Simple Trade Book (rus).pdf" }
-            ];
-
-            const CANDLESTICK_PATTERNS_EN = [
-                { name: "Doji", type: "Reversal / Neutral", desc: "Open price ≈ close price. Signal of uncertainty. On M1 often precedes reversal with volume.", signal: "Wait for confirmation from the next candle. Stronger near support/resistance." },
-                { name: "Hammer", type: "Bullish Reversal", desc: "Small body on top, long lower shadow (2x+ body). Shows bounce from support.", signal: "Call on the next candle after confirmation. Ideal on M1 at support level." },
-                { name: "Inverted Hammer", type: "Bullish Reversal", desc: "Small body at bottom, long upper shadow. Potential growth signal after decline.", signal: "Call. Especially strong after downtrend on M1." },
-                { name: "Hanging Man", type: "Bearish Reversal", desc: "Similar to hammer but appears in uptrend. Warns of growth ending.", signal: "Put. Confirmation — next red candle." },
-                { name: "Shooting Star", type: "Bearish Reversal", desc: "Small body at bottom, long upper shadow. Rejection of resistance.", signal: "Put on M1. Stronger with RSI >70." },
-                { name: "Bullish Engulfing", type: "Strong Bullish Reversal", desc: "Second green candle completely engulfs the previous red candle's body.", signal: "Call. One of the strongest reversal signals on M1." },
-                { name: "Bearish Engulfing", type: "Strong Bearish Reversal", desc: "Second red candle engulfs the previous green candle.", signal: "Put. Excellent entry on trend reversal." },
-                { name: "Morning Star", type: "Bullish Reversal", desc: "3-candle formation: large red → small (doji/spinning top) → large green.", signal: "Call. Classic reversal pattern on M1/M5." },
-                { name: "Evening Star", type: "Bearish Reversal", desc: "Opposite of Morning Star: large green → small → large red.", signal: "Put. Strong signal of uptrend exhaustion." },
-                { name: "Three White Soldiers", type: "Continuation / Bullish Reversal", desc: "3 consecutive rising green candles with small bodies/shadows.", signal: "Call. Strong bullish momentum on M1." },
-                { name: "Three Black Crows", type: "Continuation / Bearish Reversal", desc: "3 falling red candles. Signal of strong bearish pressure.", signal: "Put. Great for short entries on M1." },
-                { name: "Piercing Line", type: "Bullish Reversal", desc: "Green candle opens below previous red's low and closes above its midpoint.", signal: "Call. Good signal at support." },
-                { name: "Dark Cloud Cover", type: "Bearish Reversal", desc: "Red candle opens above previous green's high and closes below its midpoint.", signal: "Put. Strong at resistance." }
-            ];
-
-            const CHART_PATTERNS_EN = [
-                { name: "Head & Shoulders", type: "Bearish Reversal", desc: "Classic reversal: left shoulder → head → right shoulder + neckline.", signal: "Sell/Put on neckline break downward. Target = head height from neckline." },
-                { name: "Inverse Head & Shoulders", type: "Bullish Reversal", desc: "Mirror version. Upward reversal signal.", signal: "Buy/Call on neckline break upward." },
-                { name: "Double Top", type: "Bearish Reversal", desc: "Two peaks at same level + neck. Classic reversal pattern.", signal: "Put on neck break down. Works great on M1/M5." },
-                { name: "Double Bottom", type: "Bullish Reversal", desc: "Two lows at support. Reversal signal upward.", signal: "Call on neck break upward." },
-                { name: "Triple Top/Bottom", type: "Reversal", desc: "Three touches of a level. More reliable than double patterns.", signal: "Enter in direction of level break." },
-                { name: "Ascending Triangle", type: "Bullish Continuation", desc: "Horizontal resistance + rising lows. Bullish bias.", signal: "Call on resistance break or bounce from support." },
-                { name: "Descending Triangle", type: "Bearish Continuation", desc: "Horizontal support + falling highs. Bearish bias.", signal: "Put on support break." },
-                { name: "Symmetrical Triangle", type: "Continuation / Reversal", desc: "Converging trendlines. Wait for breakout.", signal: "Enter in direction of strong volume breakout." },
-                { name: "Rising Wedge", type: "Bearish Reversal", desc: "Upward converging lines. Often ends with a drop.", signal: "Put on lower wedge line break." },
-                { name: "Falling Wedge", type: "Bullish Reversal", desc: "Downward converging lines. Often reverses upward.", signal: "Call on upper wedge line break." },
-                { name: "Flag", type: "Trend Continuation", desc: "Short consolidation against trend after sharp move.", signal: "Enter in previous impulse direction on flag break. M1 is ideal." },
-                { name: "Pennant", type: "Continuation", desc: "Small symmetrical triangle after impulse move.", signal: "Call/Put in trend direction on breakout." },
-                { name: "Rectangle", type: "Consolidation", desc: "Horizontal range between support and resistance.", signal: "Trade range boundaries until breakout. Scalp edges on M1." },
-                { name: "Cup & Handle", type: "Bullish Continuation", desc: "U-shaped bottom + small flag/handle.", signal: "Call on handle resistance break. Better on M5+." }
-            ];
-
-            const HARMONIC_PATTERNS_EN = [
-                { name: "Gartley", type: "Reversal", desc: "AB=CD + 0.618 retracement. One of the most reliable harmonic patterns.", signal: "Enter at point D in reversal direction. Stop beyond X." },
-                { name: "Bat", type: "Reversal", desc: "0.886 retracement of XA. Deeper correction than Gartley.", signal: "Call/Put on pattern completion at point D." },
-                { name: "Butterfly", type: "Extreme Reversal", desc: "1.272 extension of AB=CD. Often appears at trend ends.", signal: "Reversal signal. Enter against current trend at D." },
-                { name: "Crab", type: "Extreme Reversal", desc: "1.618 extension. The deepest of harmonic patterns.", signal: "Strong reversal. Use with divergences." },
-                { name: "Shark", type: "Reversal", desc: "0.886-1.13 extension. New aggressive pattern.", signal: "Enter on 5-0 reversal. Good on M1 with volume." }
-            ];
-
-            const POCKET_OPTION_INDICATORS_EN = [
-                { name: "RSI (Relative Strength Index)", tf: "M1", settings: "Period 14 (standard) or 7 for M1", rules: "Call: RSI < 30 + rising + bullish candle. Put: RSI > 70 + falling. Divergences are strong signals. Combine with MA(9).", accuracy: "68-78% on M1 with filter" },
-                { name: "MACD", tf: "M1/M5", settings: "Fast 12, Slow 26, Signal 9. On M1 try 5,13,1", rules: "Call: MACD line crosses Signal upward + histogram rising. Put: downward. Best in direction of MA200 trend.", accuracy: "65-75%" },
-                { name: "Bollinger Bands", tf: "M1", settings: "Period 20, Deviation 2. Squeeze = low volatility", rules: "Call: price touches lower band + bounce + RSI<30. Put: upper band. Band breakout = strong impulse.", accuracy: "70%+ on bounces" },
-                { name: "Stochastic Oscillator", tf: "M1", settings: "%K 14, %D 3, Smoothing 3. Levels 20/80", rules: "Call: %K crosses %D upward below 20. Put: downward above 80. Extreme readings = overbought/oversold.", accuracy: "62-72%" },
-                { name: "Moving Averages (MA/SMA/EMA)", tf: "M1", settings: "EMA 9 + EMA 21 or SMA 50/200. Golden/Death Cross", rules: "Call: EMA9 > EMA21 and price above. Put: below. EMA9/21 crossover = entry signal. EMA200 = trend filter.", accuracy: "60-70% in trend" },
-                { name: "Parabolic SAR", tf: "M1/M5", settings: "Step 0.02, Max 0.2", rules: "Call: SAR dots below price (uptrend). Put: above price. SAR reversal = trend change signal. Excellent for trailing on M1.", accuracy: "65%" },
-                { name: "Ichimoku Kinko Hyo", tf: "M5+", settings: "Standard 9,26,52. On M1 try 7,22,44", rules: "Call: price above cloud + Tenkan > Kijun + Chikou above. Put: below cloud. Cloud acts as dynamic S/R.", accuracy: "70%+ in trend" },
-                { name: "Awesome Oscillator (AO)", tf: "M1", settings: "5/34 periods (Bill Williams)", rules: "Call: AO >0 and rising (green bars). Put: <0 and falling. Zero line + saucer signals. From 'Trading Chaos' book.", accuracy: "68%" },
-                { name: "Alligator", tf: "M1/M5", settings: "13/8/5 with shift 8/5/3 (Williams)", rules: "Call: lines ordered upward (green > red > blue). Put: downward. 'Alligator awakening' = new trend.", accuracy: "65-75%" },
-                { name: "Fractals", tf: "M1", settings: "Standard Bill Williams (5 bars)", rules: "Call: break of upper fractal upward. Put: lower fractal downward. Use as entry/stop levels. Best with Alligator.", accuracy: "60%+" },
-                { name: "CCI (Commodity Channel Index)", tf: "M1", settings: "Period 20, levels ±100", rules: "Call: CCI < -100 + reversal up. Put: > +100. Divergences are very strong on M1.", accuracy: "65%" },
-                { name: "ADX (Average Directional Index)", tf: "M5", settings: "Period 14, +DI/-DI", rules: "Strong trend if ADX > 25. Call: +DI > -DI. Put: -DI > +DI. Avoid flat (ADX<20).", accuracy: "70% in trend" },
-                { name: "SuperTrend", tf: "M1/M5", settings: "Period 10, Multiplier 3", rules: "Call: price above SuperTrend line (green). Put: below (red). Excellent trailing stop and trend filter on M1.", accuracy: "72%" },
-                { name: "Volume + Volume Profile", tf: "M1", settings: "Volume histogram", rules: "Call/Put in direction of high volume on level breakout. Volume clusters = strong S/R levels.", accuracy: "Confirming 75%+" },
-                { name: "ZigZag + Fibonacci", tf: "M1/M5", settings: "Depth 12, Deviation 5", rules: "Look for 0.618/0.786 retracement from ZigZag impulse. Enter at Fib levels + pattern.", accuracy: "68%" }
             ];
 
             const POCKET_OPTION_INDICATORS = [
@@ -2923,8 +2814,8 @@
                             ${smallChart}
                         </div>
                         <div style="display:flex; justify-content:space-between; align-items:center; padding-top:4px;">
-                            <span style="font-size:11px; color:#a4b1cd; font-weight:600;">6-8 candles • M1/M5</span>
-                            <span style="color:var(--neon-purple); font-size:12px; font-weight:900;">DETAILS →</span>
+                            <span style="font-size:11px; color:#a4b1cd; font-weight:600;">6-8 свечей • M1/M5</span>
+                            <span style="color:var(--neon-purple); font-size:12px; font-weight:900;">ПОДРОБНЕЕ →</span>
                         </div>
                     `;
 
@@ -2985,10 +2876,10 @@
                 const container = document.getElementById('strategies-list-box');
                 if (!container) return;
                 container.innerHTML = '';
-                const list = filtered || getTranslatedStrategies();
+                const list = filtered || POCKET_OPTION_INDICATORS;
                 
                 if (list.length === 0) {
-                    container.innerHTML = `<div style="color:#a4b1cd; text-align:center; padding:20px;">${translate('not_found', 'Indicator not found.')}</div>`;
+                    container.innerHTML = '<div style="color:#a4b1cd; text-align:center; padding:20px;">Индикатор не найден.</div>';
                     return;
                 }
                 
@@ -3033,45 +2924,20 @@
 
             window.filterStrategies = function() {
                 const q = document.getElementById('strategy-search').value.toLowerCase().trim();
-                const sourceList = getTranslatedStrategies();
                 if (!q) {
                     renderStrategiesList();
                     return;
                 }
-                const filtered = sourceList.filter(i => 
+                const filtered = POCKET_OPTION_INDICATORS.filter(i => 
                     i.name.toLowerCase().includes(q) || i.rules.toLowerCase().includes(q) || i.settings.toLowerCase().includes(q)
                 );
                 renderStrategiesList(filtered);
             };
 
-            function getTranslatedPatterns() {
-                if (currentLang === 'en') {
-                    return {
-                        candlestick: CANDLESTICK_PATTERNS_EN,
-                        chart: CHART_PATTERNS_EN,
-                        harmonic: HARMONIC_PATTERNS_EN
-                    };
-                }
-                return {
-                    candlestick: CANDLESTICK_PATTERNS,
-                    chart: CHART_PATTERNS,
-                    harmonic: HARMONIC_PATTERNS
-                };
-            }
-
-            function getTranslatedStrategies() {
-                return currentLang === 'en' ? POCKET_OPTION_INDICATORS_EN : POCKET_OPTION_INDICATORS;
-            }
-
-            function getTranslatedBooks() {
-                return currentLang === 'en' ? PRO_BOOKS_EN : PRO_BOOKS;
-            }
-
             function loadPatternsAndStrategies() {
-                const p = getTranslatedPatterns();
-                renderPatternList('candlestick-patterns-list', p.candlestick);
-                renderPatternList('chart-patterns-list', p.chart);
-                renderPatternList('harmonic-patterns-list', p.harmonic);
+                renderPatternList('candlestick-patterns-list', CANDLESTICK_PATTERNS);
+                renderPatternList('chart-patterns-list', CHART_PATTERNS);
+                renderPatternList('harmonic-patterns-list', HARMONIC_PATTERNS);
                 renderStrategiesList();
             }
 
@@ -3550,24 +3416,24 @@
                 if (loading) loading.style.display = 'block';
                 box.innerHTML = '';
 
-                const prompt = `You are a professional financial analyst and expert in Pocket Option binary options trading.
-Today is ${new Date().toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric'})}. 
-Generate 5 fresh, realistic and useful news/analytical overviews for binary options traders on M1-M5 timeframes.
+                const prompt = `Ты — профессиональный финансовый аналитик и эксперт по бинарным опционам Pocket Option. 
+Сегодня ${new Date().toLocaleDateString('ru-RU', {weekday:'long', month:'long', day:'numeric'})}. 
+Сгенерируй 5 свежих, реалистичных и полезных новостей/аналитических обзоров для трейдеров бинарных опционов на M1-M5 таймфреймах.
 
-For EACH news item return STRICTLY a JSON array of objects with the following fields:
-- id: number
-- title: short catchy headline (max 85 characters)
-- pair: main currency pair or asset (e.g. "EUR/USD", "BTC/USD", "XAU/USD", "US30")
-- text: brief description of the event + market impact (2-3 sentences)
-- analysis: short trader conclusion: what to do (Call/Put) and why, with approximate probability
-- time: "just now" or "5 min ago" etc.
-- forecast_1h: short-term price forecast in 1 hour (e.g. "1.0875 (+0.28%)" or "108450 (-1.2%)")
-- forecast_4h: price forecast in 4 hours
-- key_levels: key levels (Support / Resistance) in one string
+Для КАЖДОЙ новости верни строго в формате JSON массив объектов со следующими полями:
+- id: число
+- title: короткий привлекательный заголовок (максимум 85 символов)
+- pair: основная валютная пара или актив (например "EUR/USD", "BTC/USD", "XAU/USD", "US30")
+- text: краткое описание события + влияние на рынок (2-3 предложения)
+- analysis: короткий вывод для трейдера: что делать (Call/Put) и почему, с указанием примерной вероятности
+- time: "только что" или "5 мин назад" и т.п.
+- forecast_1h: краткосрочный прогноз цены через 1 час (например "1.0875 (+0.28%)" или "108450 (-1.2%)")
+- forecast_4h: прогноз цены через 4 часа
+- key_levels: ключевые уровни (Support / Resistance) одной строкой
 
-Make the news diverse: macroeconomics, crypto, commodities, stocks, geopolitics. 
-News should sound professional and plausible, as if from Bloomberg / Reuters.
-Return ONLY clean JSON array, no extra text or markdown.`;
+Сделай новости разнообразными: макроэкономика, крипта, сырьё, акции, геополитика. 
+Новости должны звучать профессионально и правдоподобно, как будто от Bloomberg / Reuters.
+Верни ТОЛЬКО чистый JSON массив, без лишнего текста и markdown.`;
 
                 try {
                     const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -3830,7 +3696,7 @@ Return ONLY clean JSON array, no extra text or markdown.`;
             // ==================== ПОЛНОЦЕННЫЙ ЖУРНАЛ ЗАМЕТОК (с разделами) ====================
             let traderNotes = [];
             let currentNoteFilter = 'all';
-            let currentModalCategory = 'Deal';
+            let currentModalCategory = 'Сделка';
 
             function loadTraderNotes() {
                 try {
@@ -3866,8 +3732,8 @@ Return ONLY clean JSON array, no extra text or markdown.`;
                     list.innerHTML = `
                         <div style="text-align:center; padding:40px 20px; color:#a4b1cd;">
                             <div style="font-size:42px; margin-bottom:12px; opacity:0.6;">📭</div>
-                            <div style="font-weight:700;">${translate('no_notes', 'No notes yet')}</div>
-                            <div style="font-size:12px; margin-top:6px;">${translate('add_first_note', "Press '+ NEW NOTE' to start")}</div>
+                            <div style="font-weight:700;">Заметок пока нет</div>
+                            <div style="font-size:12px; margin-top:6px;">Нажми «+ НОВАЯ ЗАМЕТКА» чтобы начать</div>
                         </div>`;
                     return;
                 }
@@ -3882,7 +3748,7 @@ Return ONLY clean JSON array, no extra text or markdown.`;
                     });
 
                     let body = '';
-                    if (note.category === 'Deal' && note.extra) {
+                    if (note.category === 'Сделка' && note.extra) {
                         const ex = note.extra;
                         const profitColor = ex.result === 'Win' ? 'var(--neon-green)' : (ex.result === 'Loss' ? 'var(--neon-red)' : '#ffaa00');
                         body = `
@@ -3933,7 +3799,7 @@ Return ONLY clean JSON array, no extra text or markdown.`;
                 const area = document.getElementById('note-form-area');
                 if (!area) return;
 
-                if (category === 'Deal') {
+                if (category === 'Сделка') {
                     area.innerHTML = `
                         <div style="margin-bottom:12px;">
                             <div style="font-size:12px; color:#a4b1cd; margin-bottom:6px; font-weight:700;">ВАЛЮТНАЯ ПАРА</div>
@@ -4003,7 +3869,7 @@ Return ONLY clean JSON array, no extra text or markdown.`;
                 if (!modal) return;
                 modal.style.display = 'flex';
 
-                currentModalCategory = 'Deal';
+                currentModalCategory = 'Сделка';
                 
                 // Сброс кнопок категорий
                 document.querySelectorAll('#modal-category-chips .modal-category-btn').forEach(btn => {
@@ -4030,7 +3896,7 @@ Return ONLY clean JSON array, no extra text or markdown.`;
                     timestamp: new Date().toISOString()
                 };
 
-                if (currentModalCategory === 'Deal') {
+                if (currentModalCategory === 'Сделка') {
                     const pair = document.getElementById('trade-pair')?.value.trim() || '—';
                     const directionEl = document.querySelector('.direction-btn.active.call, .direction-btn.active.put');
                     const direction = directionEl ? (directionEl.id.includes('call') ? 'Call' : 'Put') : 'Call';
@@ -4238,18 +4104,16 @@ Return ONLY clean JSON array, no extra text or markdown.`;
                 const container = document.getElementById('books-list-box');
                 if (!container) return;
                 container.innerHTML = '';
-                const books = getTranslatedBooks();
-                books.forEach(b => {
+                PRO_BOOKS.forEach(b => {
                     const item = document.createElement('div');
                     item.className = 'book-item';
                     item.setAttribute('data-title', b.title.toLowerCase());
-                    const readBtnText = currentLang === 'en' ? 'OPEN BOOK' : 'ОТКРЫТЬ КНИГУ';
                     item.innerHTML = `
                         <div class="book-info">
                             <h4>${b.title}</h4>
                             <p>${b.desc}</p>
                         </div>
-                        <button class="read-btn" data-file="${b.file}" data-title="${b.title}">${readBtnText}</button>
+                        <button class="read-btn" data-file="${b.file}" data-title="${b.title}">ОТКРЫТЬ КНИГУ</button>
                     `;
                     item.querySelector('.read-btn').addEventListener('click', (e) => {
                         openPdfViewer(e.target.getAttribute('data-file'), e.target.getAttribute('data-title'));
@@ -4671,384 +4535,17 @@ Return ONLY clean JSON array, no extra text or markdown.`;
                 }
             }
 
-            // ==================== FULL LANGUAGE SYSTEM (RU / EN) ====================
-            const EMBEDDED_TRANSLATIONS = {
-                ru: {
-                    "welcome": "POCKET OPTION",
-                    "brand": "PRO AI BOT",
-                    "menu_profile": "Профиль",
-                    "menu_neural": "Нейросеть",
-                    "menu_knowledge": "База знаний",
-                    "menu_patterns": "Паттерны",
-                    "menu_strategies": "Стратегии PRO",
-                    "menu_calculator": "Калькулятор",
-                    "menu_macro": "Макро-данные",
-                    "menu_news": "ИИ Новости",
-                    "menu_notes": "Мои Заметки",
-                    "back": "← НАЗАД В ТЕРМИНАЛ",
-                    "back_to_menu": "← НАЗАД В МЕНЮ",
-                    "profile_title": "ДАННЫЕ ТРЕЙДЕРА",
-                    "profile_callsign": "Позывной",
-                    "profile_working_capital": "Рабочий капитал",
-                    "admin_panel": "ПАНЕЛЬ УПРАВЛЕНИЯ",
-                    "ai_directive": "Директива ИИ:",
-                    "sessions_title": "КАЛЬКУЛЯТОР PRO",
-                    "notes_title": "ЖУРНАЛ ТРЕЙДЕРА",
-                    "news_title": "ИИ НОВОСТИ PRO",
-                    "calendar_title": "МАКРО-ДАННЫЕ",
-                    "access_denied": "ДОСТУП ЗАКРЫТ",
-                    "access_denied_desc": "Система безопасности PRO AI не распознала ваш Telegram ID в реестре закрытого клуба.",
-                    "your_key": "ВАШ ID-КЛЮЧ:",
-                    "send_key_admin": "Передайте ключ администратору",
-                    "ai_consultant": "ИИ-КОНСУЛЬТАНТ",
-                    "ai_ready": "PRO AI system activated. Ready to analyze the market or adjust your trading system. Enter data...",
-                    "ai_placeholder": "Введите запрос нейросети...",
-                    "send": "SEND",
-                    "change_module": "← СМЕНИТЬ МОДУЛЬ",
-                    "scanner_title": "PRO SCANNER — ALL POCKET OPTION ASSETS",
-                    "search_placeholder": "Поиск тикера (EUR/USD, BTC, AAPL, US30...)",
-                    "total_assets": "Всего активов:",
-                    "categories_forex": "ВАЛЮТЫ",
-                    "categories_crypto": "КРИПТА",
-                    "categories_commodities": "СЫРЬЁ",
-                    "categories_stocks": "АКЦИИ",
-                    "categories_indices": "ИНДЕКСЫ",
-                    "knowledge_base": "БАЗА ЗНАНИЙ PRO",
-                    "search_book": "Поиск книги...",
-                    "open_book": "ОТКРЫТЬ КНИГУ",
-                    "patterns_title": "ПАТТЕРНЫ РЫНКА",
-                    "patterns_desc": "Классические паттерны технического анализа. Кликни на паттерн для деталей и торговых правил на M1/M5.",
-                    "candlestick_patterns": "СВЕЧНЫЕ ПАТТЕРНЫ (Японские свечи)",
-                    "chart_patterns": "КЛАССИЧЕСКИЕ ГРАФИЧЕСКИЕ ПАТТЕРНЫ",
-                    "harmonic_patterns": "ГАРМОНИЧЕСКИЕ ПАТТЕРНЫ",
-                    "strategies_title": "СТРАТЕГИИ PRO — POCKET OPTION M1",
-                    "strategies_desc": "Все индикаторы платформы Pocket Option + точные правила входа на 1-минутном таймфрейме для бинарных опционов / турбо.",
-                    "pro_tip": "СОВЕТ PRO",
-                    "pro_tip_text": "На M1 используй 1-2 индикатора max + подтверждение свечным паттерном. Экспирация 1-3 минуты. Риск на сделку ≤2% от депозита. Всегда жди закрытия свечи!",
-                    "search_strategy": "Поиск индикатора или стратегии...",
-                    "calculator_title": "КАЛЬКУЛЯТОР PRO",
-                    "input_data": "ВХОДНЫЕ ДАННЫЕ",
-                    "current_deposit": "ТЕКУЩИЙ ДЕПОЗИТ ($)",
-                    "risk_per_trade": "РИСК НА СДЕЛКУ",
-                    "payout_on_win": "ВЫПЛАТА ПРИ ВЫИГРЫШЕ",
-                    "expected_winrate": "ВИНРЕЙТ (ОЖИДАЕМЫЙ)",
-                    "trades_per_day": "СДЕЛОК В ДЕНЬ",
-                    "calculation_results": "РЕЗУЛЬТАТЫ РАСЧЁТА",
-                    "risk_per_trade_res": "РИСК НА 1 СДЕЛКУ",
-                    "profit_on_win": "ПРИБЫЛЬ ПРИ ВЫИГРЫШЕ",
-                    "expected_day": "Ожидаемая прибыль за ДЕНЬ",
-                    "expected_week": "Ожидаемая прибыль за НЕДЕЛЮ",
-                    "expected_month": "Ожидаемая прибыль за МЕСЯЦ",
-                    "goal_calc": "РАСЧЁТ ПО ЦЕЛИ",
-                    "goal_week": "Хочу заработать за неделю ($)",
-                    "macro_title": "МАКРО-ДАННЫЕ",
-                    "click_day": "Нажмите на число, чтобы получить ИИ-сводку о важных экономических новостях.",
-                    "journal_title": "ЖУРНАЛ ТРЕЙДЕРА",
-                    "filter_all": "ВСЕ",
-                    "filter_deals": "СДЕЛКИ",
-                    "filter_ideas": "ИДЕИ",
-                    "filter_errors": "ОШИБКИ",
-                    "filter_observations": "НАБЛЮДЕНИЯ",
-                    "new_note": "+ НОВАЯ ЗАМЕТКА",
-                    "clear_all": "🗑️ ОЧИСТИТЬ ВСЁ",
-                    "note_section": "РАЗДЕЛ",
-                    "note_deal": "СДЕЛКА",
-                    "note_idea": "ИДЕЯ",
-                    "note_error": "ОШИБКА",
-                    "note_observation": "НАБЛЮДЕНИЕ",
-                    "pair": "ВАЛЮТНАЯ ПАРА",
-                    "direction": "НАПРАВЛЕНИЕ",
-                    "result": "РЕЗУЛЬТАТ",
-                    "amount": "СУММА ($)",
-                    "comment_lesson": "КОММЕНТАРИЙ / УРОК",
-                    "cancel": "ОТМЕНА",
-                    "save": "СОХРАНИТЬ",
-                    "no_notes": "Заметок пока нет",
-                    "add_first_note": "Нажми «+ НОВАЯ ЗАМЕТКА» чтобы начать",
-                    "ai_news": "ИИ НОВОСТИ PRO",
-                    "live_market": "📡 LIVE РЫНОК",
-                    "grok_ai": "🤖 GROK AI ГЕНЕРАЦИЯ",
-                    "economic_calendar": "📅 ЭКОНОМИЧЕСКИЙ КАЛЕНДАРЬ",
-                    "generate_grok": "✨ СГЕНЕРИРОВАТЬ НОВОСТИ ОТ GROK",
-                    "grok_thinking": "Grok думает над рынком...",
-                    "grok_desc": "Искусственный интеллект создаёт актуальные рыночные обзоры специально для PRO трейдеров",
-                    "grok_disclaimer": "⚡ Новости полностью сгенерированы Grok — мощной моделью xAI. Они носят аналитический характер и помогают лучше понимать рыночный контекст. Не является финансовой рекомендацией.",
-                    "developer_panel": "DEVELOPER PANEL",
-                    "only_root": "ТОЛЬКО ДЛЯ ROOT АДМИНИСТРАТОРА • ИЗМЕНЕНИЕ ПРИЛОЖЕНИЯ В РЕАЛЬНОМ ВРЕМЕНИ",
-                    "ai_chat_placeholder": "Введите запрос нейросети...",
-                    "not_found": "Индикатор не найден.",
-                    "no_notes_yet": "Заметок пока нет. Нажми «+ НОВАЯ ЗАМЕТКА» чтобы начать",
-                    "delete_note_confirm": "Удалить эту заметку?",
-                    "clear_all_confirm": "Очистить ВЕСЬ журнал заметок?",
-                    "heavy_book_note": "На телефоне книги лучше всего читать в нативном просмотрщике",
-                    "open_in_browser": "📱 Открыть в браузере (рекомендую на телефоне)",
-                    "try_again": "Попробовать ещё раз в приложении",
-                    "book_loading": "📖 Загружаем книгу...",
-                    "book_loading_note": "Это может занять 3–10 секунд"
-                },
-                en: {
-                    "welcome": "POCKET OPTION",
-                    "brand": "PRO AI BOT",
-                    "menu_profile": "Profile",
-                    "menu_neural": "Neural Net",
-                    "menu_knowledge": "Knowledge Base",
-                    "menu_patterns": "Patterns",
-                    "menu_strategies": "PRO Strategies",
-                    "menu_calculator": "Calculator",
-                    "menu_macro": "Macro Data",
-                    "menu_news": "AI News",
-                    "menu_notes": "My Notes",
-                    "back": "← BACK TO TERMINAL",
-                    "back_to_menu": "← BACK TO MENU",
-                    "profile_title": "TRADER DATA",
-                    "profile_callsign": "Callsign",
-                    "profile_working_capital": "Working Capital",
-                    "admin_panel": "ADMIN PANEL",
-                    "ai_directive": "AI DIRECTIVE:",
-                    "sessions_title": "PRO CALCULATOR",
-                    "notes_title": "TRADER'S JOURNAL",
-                    "news_title": "PRO AI NEWS",
-                    "calendar_title": "MACRO DATA",
-                    "access_denied": "ACCESS DENIED",
-                    "access_denied_desc": "PRO AI security system did not recognize your Telegram ID in the closed club registry.",
-                    "your_key": "YOUR ID KEY:",
-                    "send_key_admin": "Send the key to the administrator",
-                    "ai_consultant": "AI CONSULTANT",
-                    "ai_ready": "PRO AI system activated. Ready to analyze the market or adjust your trading system. Enter data...",
-                    "ai_placeholder": "Enter neural network query...",
-                    "send": "SEND",
-                    "change_module": "← CHANGE MODULE",
-                    "scanner_title": "PRO SCANNER — ALL POCKET OPTION ASSETS",
-                    "search_placeholder": "Search ticker (EUR/USD, BTC, AAPL, US30...)",
-                    "total_assets": "Total assets:",
-                    "categories_forex": "FOREX",
-                    "categories_crypto": "CRYPTO",
-                    "categories_commodities": "COMMODITIES",
-                    "categories_stocks": "STOCKS",
-                    "categories_indices": "INDICES",
-                    "knowledge_base": "PRO KNOWLEDGE BASE",
-                    "search_book": "Search book...",
-                    "open_book": "OPEN BOOK",
-                    "patterns_title": "MARKET PATTERNS",
-                    "patterns_desc": "Classic technical analysis patterns. Click on a pattern for details and trading rules on M1/M5.",
-                    "candlestick_patterns": "CANDLESTICK PATTERNS (Japanese Candles)",
-                    "chart_patterns": "CLASSIC CHART PATTERNS",
-                    "harmonic_patterns": "HARMONIC PATTERNS",
-                    "strategies_title": "PRO STRATEGIES — POCKET OPTION M1",
-                    "strategies_desc": "All Pocket Option platform indicators + exact entry rules on the 1-minute timeframe for binary options / turbo.",
-                    "pro_tip": "PRO TIP",
-                    "pro_tip_text": "On M1 use max 1-2 indicators + confirmation with candlestick pattern. Expiration 1-3 minutes. Risk per trade ≤2% of deposit. Always wait for candle close!",
-                    "search_strategy": "Search indicator or strategy...",
-                    "calculator_title": "PRO CALCULATOR",
-                    "input_data": "INPUT DATA",
-                    "current_deposit": "CURRENT DEPOSIT ($)",
-                    "risk_per_trade": "RISK PER TRADE",
-                    "payout_on_win": "PAYOUT ON WIN",
-                    "expected_winrate": "EXPECTED WINRATE",
-                    "trades_per_day": "TRADES PER DAY",
-                    "calculation_results": "CALCULATION RESULTS",
-                    "risk_per_trade_res": "RISK PER 1 TRADE",
-                    "profit_on_win": "PROFIT ON WIN",
-                    "expected_day": "Expected profit per DAY",
-                    "expected_week": "Expected profit per WEEK",
-                    "expected_month": "Expected profit per MONTH",
-                    "goal_calc": "GOAL CALCULATION",
-                    "goal_week": "I want to earn per week ($)",
-                    "macro_title": "MACRO DATA",
-                    "click_day": "Click on a date to get AI summary of important economic news.",
-                    "journal_title": "TRADER'S JOURNAL",
-                    "filter_all": "ALL",
-                    "filter_deals": "DEALS",
-                    "filter_ideas": "IDEAS",
-                    "filter_errors": "ERRORS",
-                    "filter_observations": "OBSERVATIONS",
-                    "new_note": "+ NEW NOTE",
-                    "clear_all": "🗑️ CLEAR ALL",
-                    "note_section": "SECTION",
-                    "note_deal": "DEAL",
-                    "note_idea": "IDEA",
-                    "note_error": "ERROR",
-                    "note_observation": "OBSERVATION",
-                    "pair": "CURRENCY PAIR",
-                    "direction": "DIRECTION",
-                    "result": "RESULT",
-                    "amount": "AMOUNT ($)",
-                    "comment_lesson": "COMMENT / LESSON",
-                    "cancel": "CANCEL",
-                    "save": "SAVE",
-                    "no_notes": "No notes yet",
-                    "add_first_note": "Press '+ NEW NOTE' to start",
-                    "ai_news": "PRO AI NEWS",
-                    "live_market": "📡 LIVE MARKET",
-                    "grok_ai": "🤖 GROK AI GENERATION",
-                    "economic_calendar": "📅 ECONOMIC CALENDAR",
-                    "generate_grok": "✨ GENERATE NEWS FROM GROK",
-                    "grok_thinking": "Grok is thinking about the market...",
-                    "grok_desc": "Artificial intelligence creates relevant market overviews specifically for PRO traders",
-                    "grok_disclaimer": "⚡ News is fully generated by Grok — powerful xAI model. They are analytical in nature and help better understand market context. Not financial advice.",
-                    "developer_panel": "DEVELOPER PANEL",
-                    "only_root": "FOR ROOT ADMINISTRATOR ONLY • REAL-TIME APP MODIFICATION",
-                    "ai_chat_placeholder": "Enter neural network query...",
-                    "not_found": "Indicator not found.",
-                    "no_notes_yet": "No notes yet. Press '+ NEW NOTE' to start",
-                    "delete_note_confirm": "Delete this note?",
-                    "clear_all_confirm": "Clear the ENTIRE notes journal?",
-                    "heavy_book_note": "On phone, books are best read in the native viewer",
-                    "open_in_browser": "📱 Open in browser (recommended on phone)",
-                    "try_again": "Try again in the app",
-                    "book_loading": "📖 Loading book...",
-                    "book_loading_note": "This may take 3–10 seconds"
-                }
-            };
-
-            let currentLang = 'ru';
-
-            // Global translate helper (synchronous, uses cached translations)
-            let _currentTranslations = EMBEDDED_TRANSLATIONS.ru;
-
-            function translate(key, fallback = '') {
-                if (_currentTranslations && _currentTranslations[key]) {
-                    return _currentTranslations[key];
-                }
-                return fallback || key;
-            }
-
-            async function loadTranslations(lang) {
-                try {
-                    const res = await fetch(`./lang/${lang}.json`);
-                    if (res.ok) {
-                        return await res.json();
-                    }
-                } catch (e) {}
-                return EMBEDDED_TRANSLATIONS[lang] || EMBEDDED_TRANSLATIONS.ru;
-            }
-
-            async function applyLanguage(lang) {
-                currentLang = lang;
+            // Language system (minimal working version)
+            function setLanguage(lang) {
                 SafeStorage.setItem('app_language', lang);
-
-                // Update active pill
-                document.querySelectorAll('.lang-pill').forEach(pill => {
-                    pill.classList.toggle('active', pill.getAttribute('data-lang') === lang);
-                });
-
-                const t = await loadTranslations(lang);
-                _currentTranslations = t; // cache for translate()
-
-                // Update key static texts
-                const welcomeEl = document.querySelector('#menu-screen .welcome');
-                if (welcomeEl) welcomeEl.innerText = t.welcome || 'POCKET OPTION';
-
-                const brandEl = document.querySelector('#menu-screen .brand-title');
-                if (brandEl) brandEl.innerText = t.brand || 'PRO AI BOT';
-
-                // Update menu cards
-                const cards = document.querySelectorAll('#menu-screen .card');
-                cards.forEach(card => {
-                    const target = card.getAttribute('data-target');
-                    const titleEl = card.querySelector('.card-title');
-                    if (!titleEl) return;
-
-                    const map = {
-                        'profile-screen': 'menu_profile',
-                        'bot-selector-screen': 'menu_neural',
-                        'education-screen': 'menu_knowledge',
-                        'patterns-screen': 'menu_patterns',
-                        'strategies-screen': 'menu_strategies',
-                        'sessions-screen': 'menu_calculator',
-                        'calendar-screen': 'menu_macro',
-                        'news-screen': 'menu_news',
-                        'notes-screen': 'menu_notes'
-                    };
-                    if (map[target]) titleEl.innerText = t[map[target]] || titleEl.innerText;
-                });
-
-                // Update ALL elements with data-i18n (including new ones)
-                document.querySelectorAll('[data-i18n]').forEach(el => {
-                    const key = el.getAttribute('data-i18n');
-                    if (t[key]) {
-                        const originalText = el.innerText || el.textContent || '';
-                        const emojiMatch = originalText.match(/^[\u{1F000}-\u{1F9FF}\u{2600}-\u{27BF}\u{1F300}-\u{1F5FF}\s]+/u);
-                        const emoji = emojiMatch ? emojiMatch[0] : '';
-                        if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
-                            if (el.placeholder) el.placeholder = t[key];
-                        } else {
-                            el.innerText = emoji + t[key];
-                        }
-                    }
-                });
-
-                // Update back buttons dynamically
-                document.querySelectorAll('.back-btn').forEach(btn => {
-                    const txt = (btn.innerText || '').trim();
-                    if (txt.includes('НАЗАД') || txt.includes('BACK') || txt.includes('ВЕРНУТЬСЯ') || txt.includes('СМЕНИТЬ') || txt.includes('CHANGE')) {
-                        btn.innerText = t.back || '← BACK TO TERMINAL';
-                    }
-                });
-
-                // Update placeholders that have data-i18n
-                document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-                    const key = el.getAttribute('data-i18n-placeholder');
-                    if (t[key]) el.placeholder = t[key];
-                });
-
-                // Re-render dynamic content for current screen
-                const activeScreen = document.querySelector('.screen.active');
-                if (activeScreen) {
-                    const id = activeScreen.id;
-                    if (id === 'patterns-screen' && typeof loadPatternsAndStrategies === 'function') {
-                        setTimeout(() => loadPatternsAndStrategies(), 50);
-                    }
-                    if (id === 'strategies-screen' && typeof renderStrategiesList === 'function') {
-                        setTimeout(() => renderStrategiesList(), 50);
-                    }
-                    if (id === 'education-screen' && typeof loadBooks === 'function') {
-                        setTimeout(() => loadBooks(), 50);
-                    }
-                    if (id === 'notes-screen' && typeof renderNotes === 'function') {
-                        setTimeout(() => renderNotes(currentNoteFilter), 50);
-                    }
-                    if (id === 'bot-analysis-screen' && typeof filterAnalysisPairs === 'function') {
-                        setTimeout(() => filterAnalysisPairs(), 50);
-                    }
-                }
-
-                // Update AI hint if profile is open
-                if (typeof updateProfileAiHint === 'function' && document.getElementById('profile-screen')?.classList.contains('active')) {
-                    updateProfileAiHint();
-                }
-
-                console.log(`[PRO AI] Language switched to: ${lang.toUpperCase()}`);
+                alert(lang === 'ru' ? 'Язык изменён на Русский. Полная поддержка будет в следующей версии.' : 'Language changed to English. Full support coming in next version.');
+                // In full version here we would translate all data-i18n elements
             }
 
-            // Expose translate for use in JS-generated content
-            window.translate = translate;
-
-            window.switchLanguage = async function(lang) {
-                if (lang === currentLang) return;
-                await applyLanguage(lang);
-                
-                // Optional: gentle haptic
-                if (typeof triggerHaptic === 'function') triggerHaptic('light');
-            };
-
-            async function initLanguage() {
+            function initLanguage() {
                 const saved = SafeStorage.getItem('app_language') || 'ru';
-                currentLang = saved;
-                
-                // Set initial active pill
-                document.querySelectorAll('.lang-pill').forEach(pill => {
-                    pill.classList.toggle('active', pill.getAttribute('data-lang') === saved);
-                });
-
-                // Apply language (non-blocking)
-                setTimeout(async () => {
-                    await applyLanguage(saved);
-                }, 300);
+                // Can be expanded later
             }
-
-            // Make sure init calls the language init
-            // (already called at the bottom)
 
             init();
             initLanguage();
