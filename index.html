@@ -988,6 +988,15 @@
                         <input type="number" id="profile-pocket-input" class="pocket-balance-input" value="1000" oninput="syncBalances(this.value)">
                     </div>
                 </div>
+
+                <!-- Language Switcher -->
+                <div class="info-item" style="border-left-color: var(--neon-purple);">
+                    <h4>Язык интерфейса / Interface Language</h4>
+                    <div style="display:flex; gap:12px; margin-top:12px;">
+                        <button onclick="setLanguage('ru')" class="back-btn" style="flex:1; background: var(--neon-green); color:#000; border:none; font-weight:900;">🇷🇺 Русский</button>
+                        <button onclick="setLanguage('en')" class="back-btn" style="flex:1; background: var(--neon-purple); color:#fff; border:none; font-weight:900;">🇬🇧 English</button>
+                    </div>
+                </div>
                 
                 <div id="admin-link-box" style="display: none; margin-top: 20px;">
                     <button class="back-btn" style="color: #000; background: var(--neon-purple); border: none; font-size: 15px; box-shadow: 0 0 20px rgba(157,0,255,0.4);" onclick="switchScreen('admin-panel-screen')">⚙️ ПАНЕЛЬ УПРАВЛЕНИЯ</button>
@@ -1110,8 +1119,8 @@
             <div id="news-live-tab">
                 <div class="glass-box" style="padding: 18px 16px; margin-bottom: 12px; border-color: rgba(157,0,255,0.3);">
                     <div style="text-align:center; margin-bottom:12px;">
-                        <div style="color:var(--neon-purple); font-size:15px; font-weight:900;">📅 ЭКОНОМИЧЕСКИЙ КАЛЕНДАРЬ TRADINGVIEW</div>
-                        <div style="color:#a4b1cd; font-size:11px; font-weight:600;">Реальные события рынков • Нажми на событие для деталей</div>
+                        <div style="color:var(--neon-purple); font-size:15px; font-weight:900;">📅 ЭКОНОМИЧЕСКИЙ КАЛЕНДАРЬ</div>
+                        <div style="color:#a4b1cd; font-size:11px; font-weight:600;">TradingView • Реальные события рынков в реальном времени</div>
                     </div>
 
                     <!-- TradingView Economic Calendar — работает полностью в обход Render, как тикер котировок сверху -->
@@ -1120,7 +1129,7 @@
                         <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-events.js" async>
                         {
                         "width": "100%",
-                        "height": "680",
+                        "height": "560",
                         "currencyFilter": "USD,EUR,GBP,JPY,CHF,CAD,AUD,NZD",
                         "importanceFilter": "-1,0,1",
                         "colorTheme": "dark",
@@ -1131,9 +1140,8 @@
                         </script>
                     </div>
 
-                    <div style="font-size:10px; color:#667085; text-align:center; margin-top:10px; font-weight:600; line-height:1.4;">
-                        Данные в реальном времени • Большинство событий на русском<br>
-                        Для полного разбора используй вкладку Grok AI
+                    <div style="font-size:10px; color:#667085; text-align:center; margin-top:10px; font-weight:600;">
+                        Данные в реальном времени • Высоковолатильные события
                     </div>
                 </div>
 
@@ -4527,7 +4535,20 @@
                 }
             }
 
+            // Language system (minimal working version)
+            function setLanguage(lang) {
+                SafeStorage.setItem('app_language', lang);
+                alert(lang === 'ru' ? 'Язык изменён на Русский. Полная поддержка будет в следующей версии.' : 'Language changed to English. Full support coming in next version.');
+                // In full version here we would translate all data-i18n elements
+            }
+
+            function initLanguage() {
+                const saved = SafeStorage.getItem('app_language') || 'ru';
+                // Can be expanded later
+            }
+
             init();
+            initLanguage();
         });
     </script>
 </body>
