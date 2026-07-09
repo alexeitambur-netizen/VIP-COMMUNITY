@@ -1260,15 +1260,15 @@
             
             <!-- Категории активов (строго по разделам — без кнопки "ВСЕ") -->
             <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; justify-content:center;">
-                <button onclick="setAssetCategory('forex')" class="back-btn" id="cat-forex" style="padding:8px 14px; font-size:11px; flex:1; max-width:85px; background:var(--neon-green); color:#000; border:none;">ВАЛЮТЫ</button>
-                <button onclick="setAssetCategory('crypto')" class="back-btn" id="cat-crypto" style="padding:8px 14px; font-size:11px; flex:1; max-width:95px;">КРИПТА</button>
-                <button onclick="setAssetCategory('commodities')" class="back-btn" id="cat-commodities" style="padding:8px 14px; font-size:11px; flex:1; max-width:95px;">СЫРЬЁ</button>
-                <button onclick="setAssetCategory('stocks')" class="back-btn" id="cat-stocks" style="padding:8px 14px; font-size:11px; flex:1; max-width:80px;">АКЦИИ</button>
-                <button onclick="setAssetCategory('indices')" class="back-btn" id="cat-indices" style="padding:8px 14px; font-size:11px; flex:1; max-width:85px;">ИНДЕКСЫ</button>
+                <button onclick="setAssetCategory('forex')" class="back-btn" id="cat-forex" style="padding:8px 14px; font-size:11px; flex:1; max-width:85px; background:var(--neon-green); color:#000; border:none;">FOREX</button>
+                <button onclick="setAssetCategory('crypto')" class="back-btn" id="cat-crypto" style="padding:8px 14px; font-size:11px; flex:1; max-width:95px;">CRYPTO</button>
+                <button onclick="setAssetCategory('commodities')" class="back-btn" id="cat-commodities" style="padding:8px 14px; font-size:11px; flex:1; max-width:95px;">COMMODITIES</button>
+                <button onclick="setAssetCategory('stocks')" class="back-btn" id="cat-stocks" style="padding:8px 14px; font-size:11px; flex:1; max-width:80px;">STOCKS</button>
+                <button onclick="setAssetCategory('indices')" class="back-btn" id="cat-indices" style="padding:8px 14px; font-size:11px; flex:1; max-width:85px;">INDICES</button>
             </div>
 
             <div class="search-box">
-                <input type="text" id="analysis-search-input" class="search-input" placeholder="Поиск тикера (EUR/USD, BTC, AAPL, US30...)" oninput="window.filterAnalysisPairs()">
+                <input type="text" id="analysis-search-input" class="search-input" placeholder="Search ticker (EUR/USD, BTC, AAPL, US30...)" oninput="window.filterAnalysisPairs()">
                 <div class="pairs-list" id="analysis-pairs-render-box" style="max-height: 420px;"></div>
             </div>
             
@@ -2231,19 +2231,19 @@
 
             // ==================== DATA FOR NEW SECTIONS ====================
             const CANDLESTICK_PATTERNS = [
-                { name: "Доджи (Doji)", type: "Разворот/Нейтраль", desc: "Цена открытия ≈ закрытия. Сигнал неопределенности. На M1 часто предшествует развороту при объеме.", signal: "Жди подтверждения следующей свечи. Сильнее в комбо с поддержкой/сопротивлением." },
-                { name: "Молот (Hammer)", type: "Бычий разворот", desc: "Маленькое тело сверху, длинная нижняя тень (в 2+ раза тела). Показывает отскок от поддержки.", signal: "Call на следующей свече после подтверждения. Идеально на M1 у уровня поддержки." },
-                { name: "Перевернутый Молот (Inverted Hammer)", type: "Бычий разворот", desc: "Маленькое тело снизу, длинная верхняя тень. Сигнал потенциального роста после падения.", signal: "Call. Особенно сильный после нисходящего тренда на M1." },
-                { name: "Повешенный (Hanging Man)", type: "Медвежий разворот", desc: "Аналог молота, но в восходящем тренде. Предупреждает об окончании роста.", signal: "Put. Подтверждение — следующая красная свеча." },
-                { name: "Падающая Звезда (Shooting Star)", type: "Медвежий разворот", desc: "Маленькое тело снизу, длинная верхняя тень. Отторжение сопротивления.", signal: "Put на M1. Сильнее с RSI >70." },
-                { name: "Бычье Поглощение (Bullish Engulfing)", type: "Сильный бычий разворот", desc: "Вторая зеленая свеча полностью поглощает тело предыдущей красной.", signal: "Call. Один из strongest разворотных сигналов на M1." },
-                { name: "Медвежье Поглощение (Bearish Engulfing)", type: "Сильный медвежий разворот", desc: "Вторая красная свеча поглощает предыдущую зеленую.", signal: "Put. Отличный вход на разворот тренда." },
-                { name: "Утренняя Звезда (Morning Star)", type: "Бычий разворот", desc: "3-свечная формация: большая красная → маленькая (доджи/волчок) → большая зеленая.", signal: "Call. Классика разворота вниз на M1/M5." },
-                { name: "Вечерняя Звезда (Evening Star)", type: "Медвежий разворот", desc: "Обратная утренней: большая зеленая → маленькая → большая красная.", signal: "Put. Сильный сигнал окончания восходящего импульса." },
-                { name: "Три Белых Солдата (Three White Soldiers)", type: "Продолжение/Разворот вверх", desc: "3 последовательные растущие зеленые свечи с маленькими телами/тенями.", signal: "Call. Сильный бычий импульс на M1." },
-                { name: "Три Черные Вороны (Three Black Crows)", type: "Продолжение/Разворот вниз", desc: "3 падающие красные свечи. Сигнал сильного медвежьего давления.", signal: "Put. Отличный для входа в шорт на M1." },
-                { name: "Проникающая Линия (Piercing Line)", type: "Бычий разворот", desc: "Зеленая свеча открывается ниже минимума предыдущей красной и закрывается выше ее середины.", signal: "Call. Хороший сигнал на поддержке." },
-                { name: "Темная Облачность (Dark Cloud Cover)", type: "Медвежий разворот", desc: "Красная свеча открывается выше максимума предыдущей зеленой и закрывается ниже ее середины.", signal: "Put. Сильный на сопротивлении." }
+                { name: "Doji", type: "Reversal / Neutral", desc: "Open price ≈ close price. Signal of uncertainty. On M1 often precedes reversal with volume.", signal: "Wait for confirmation from the next candle. Stronger near support/resistance." },
+                { name: "Hammer", type: "Bullish Reversal", desc: "Small body on top, long lower shadow (2x+ body). Shows bounce from support.", signal: "Call on the next candle after confirmation. Ideal on M1 at support level." },
+                { name: "Inverted Hammer", type: "Bullish Reversal", desc: "Small body at bottom, long upper shadow. Potential growth signal after decline.", signal: "Call. Especially strong after downtrend on M1." },
+                { name: "Hanging Man", type: "Bearish Reversal", desc: "Similar to hammer but appears in uptrend. Warns of growth ending.", signal: "Put. Confirmation — next red candle." },
+                { name: "Shooting Star", type: "Bearish Reversal", desc: "Small body at bottom, long upper shadow. Rejection of resistance.", signal: "Put on M1. Stronger with RSI >70." },
+                { name: "Bullish Engulfing", type: "Strong Bullish Reversal", desc: "Second green candle completely engulfs the previous red candle's body.", signal: "Call. One of the strongest reversal signals on M1." },
+                { name: "Bearish Engulfing", type: "Strong Bearish Reversal", desc: "Second red candle engulfs the previous green candle.", signal: "Put. Excellent entry on trend reversal." },
+                { name: "Morning Star", type: "Bullish Reversal", desc: "3-candle formation: large red → small (doji/spinning top) → large green.", signal: "Call. Classic reversal pattern on M1/M5." },
+                { name: "Evening Star", type: "Bearish Reversal", desc: "Opposite of Morning Star: large green → small → large red.", signal: "Put. Strong signal of uptrend exhaustion." },
+                { name: "Three White Soldiers", type: "Continuation / Bullish Reversal", desc: "3 consecutive rising green candles with small bodies/shadows.", signal: "Call. Strong bullish momentum on M1." },
+                { name: "Three Black Crows", type: "Continuation / Bearish Reversal", desc: "3 falling red candles. Signal of strong bearish pressure.", signal: "Put. Great for short entries on M1." },
+                { name: "Piercing Line", type: "Bullish Reversal", desc: "Green candle opens below previous red's low and closes above its midpoint.", signal: "Call. Good signal at support." },
+                { name: "Dark Cloud Cover", type: "Bearish Reversal", desc: "Red candle opens above previous green's high and closes below its midpoint.", signal: "Put. Strong at resistance." }
             ];
 
             const CHART_PATTERNS = [
