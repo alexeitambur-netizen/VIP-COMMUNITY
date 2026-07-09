@@ -1742,28 +1742,55 @@
 
         async function syncAddUserToServer(userId) {
             try {
-                await fetch(`${SERVER_URL}/api/add-user`, {
+                // Используем защищённый эндпоинт с явной передачей adminId
+                const response = await fetch(`${SERVER_URL}/api/admin/add-user`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: String(userId) })
+                    body: JSON.stringify({ 
+                        userId: String(userId),
+                        adminId: MASTER_ADMIN 
+                    })
                 });
-                // После успешного добавления — обновляем кэш
+                
+                const result = await response.json();
+                
+                if (!response.ok || !result.success) {
+                    console.error("[PRO AI] Ошибка добавления пользователя на сервер:", result.error || result);
+                    alert("Ошибка сохранения в Supabase: " + (result.error || "Неизвестная ошибка"));
+                    return false;
+                }
+                
+                console.log("[PRO AI] Пользователь успешно добавлен в Supabase");
                 await fetchAllowedUsersFromServer();
+                return true;
             } catch (e) {
-                console.warn("[PRO AI] Ошибка отправки нового пользователя на сервер:", e);
+                console.error("[PRO AI] Критическая ошибка отправки пользователя на сервер:", e);
+                alert("Не удалось связаться с сервером. Проверь подключение.");
+                return false;
             }
         }
 
         async function syncRemoveUserFromServer(userId) {
             try {
-                await fetch(`${SERVER_URL}/api/remove-user`, {
+                const response = await fetch(`${SERVER_URL}/api/admin/remove-user`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: String(userId) })
+                    body: JSON.stringify({ 
+                        userId: String(userId),
+                        adminId: MASTER_ADMIN 
+                    })
                 });
+                
+                const result = await response.json();
+                if (!response.ok || !result.success) {
+                    console.error("[PRO AI] Ошибка удаления из Supabase:", result.error);
+                    alert("Ошибка удаления: " + (result.error || "Неизвестная ошибка"));
+                } else {
+                    console.log("[PRO AI] Пользователь удалён из Supabase");
+                }
                 await fetchAllowedUsersFromServer();
             } catch (e) {
-                console.warn("[PRO AI] Ошибка удаления пользователя на сервере:", e);
+                console.error("[PRO AI] Критическая ошибка удаления:", e);
             }
         }
 
@@ -1796,29 +1823,43 @@
         window.addAllowedUser = async function() {
             const idInput = document.getElementById('new-user-id');
             const id = idInput.value.trim();
-            if (!id || id === MASTER_ADMIN) return;
+            if (!id || id === MASTER_ADMIN) {
+                alert("Некорректный ID");
+                return;
+            }
             
+            // Сначала обновляем локально для мгновенного отклика
             let users = getAllowedUsers();
             if (!users.includes(id)) {
                 users.push(id);
                 SafeStorage.setItem('allowed_users', JSON.stringify(users));
                 _allowedUsersCache = users;
-                
-                // Отправляем на сервер
-                await syncAddUserToServer(id);
-                
                 renderAdminList();
             }
+            
+            // Отправляем на сервер (Supabase)
+            const success = await syncAddUserToServer(id);
+            
+            if (success) {
+                alert("Пользователь успешно добавлен в Supabase!");
+            }
+            
             idInput.value = '';
+            
+            // Финальная синхронизация
+            await renderAdminList();
         };
 
         window.removeUser = async function(id) {
+            if (!confirm(`Удалить пользователя ${id} из Supabase?`)) return;
+            
             let users = getAllowedUsers().filter(u => u !== String(id));
             SafeStorage.setItem('allowed_users', JSON.stringify(users));
             _allowedUsersCache = users;
+            renderAdminList();
             
             await syncRemoveUserFromServer(id);
-            renderAdminList();
+            await renderAdminList();
         };
 
         async function renderAdminList() {
