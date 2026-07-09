@@ -893,14 +893,14 @@
 
     <div class="container">
         <div class="screen" id="access-denied-screen">
-            <h2 style="color: var(--neon-red); justify-content: center; font-size: 32px; margin-bottom: 15px; text-shadow: 0 0 20px rgba(255,46,99,0.5);" data-i18n="access_denied">⛔ ДОСТУП ЗАКРЫТ</h2>
+            <h2 style="color: var(--neon-red); justify-content: center; font-size: 32px; margin-bottom: 15px; text-shadow: 0 0 20px rgba(255,46,99,0.5);">⛔ ДОСТУП ЗАКРЫТ</h2>
             <div class="glass-box" style="text-align: center;">
-                <p style="color: #a4b1cd; font-size: 14px; line-height: 1.6; margin-bottom: 24px; font-weight: 600;" data-i18n="access_denied_desc">Система безопасности PRO AI не распознала ваш Telegram ID в реестре закрытого клуба.</p>
+                <p style="color: #a4b1cd; font-size: 14px; line-height: 1.6; margin-bottom: 24px; font-weight: 600;">Система безопасности PRO AI не распознала ваш Telegram ID в реестре закрытого клуба.</p>
                 <div class="info-item" style="border-left-color: var(--neon-red); background: rgba(0,0,0,0.5);">
-                    <h4 data-i18n="your_key">ВАШ ID-КЛЮЧ:</h4>
+                    <h4>ВАШ ID-КЛЮЧ:</h4>
                     <p id="denied-telegram-id" style="font-size: 24px; color: var(--neon-red); font-weight: 900; letter-spacing: 2px; text-shadow: 0 0 10px rgba(255,46,99,0.3);">Определяется...</p>
                 </div>
-                <p style="font-size: 12px; color: #667085; margin-top: 20px; font-weight: 800; text-transform: uppercase;" data-i18n="send_key_admin">Передайте ключ администратору</p>
+                <p style="font-size: 12px; color: #667085; margin-top: 20px; font-weight: 800; text-transform: uppercase;">Передайте ключ администратору</p>
             </div>
         </div>
 
@@ -1222,34 +1222,34 @@
         </div>
 
         <div class="screen" id="bot-selector-screen">
-            <h2>🧠 МОДУЛЬ ИИ PRO</h2>
+            <h2 data-i18n="ai_module_title">🧠 МОДУЛЬ ИИ PRO</h2>
             <div class="ai-mode-selection">
                 <div class="mode-btn" onclick="switchScreen('bot-chat-screen')">
                     <div class="mode-icon" style="color: var(--neon-purple);">💬</div>
                     <div class="mode-info">
-                        <h4>Прямой диалог с Нейросетью</h4>
-                        <p>Консультации по риск-менеджменту и стратегиям</p>
+                        <h4 data-i18n="ai_chat_mode_title">Прямой диалог с Нейросетью</h4>
+                        <p data-i18n="ai_chat_mode_desc">Консультации по риск-менеджменту и стратегиям</p>
                     </div>
                 </div>
                 <div class="mode-btn" onclick="switchScreen('bot-analysis-screen'); window.filterAnalysisPairs();">
                     <div class="mode-icon" style="color: var(--neon-green);">🔍</div>
                     <div class="mode-info">
-                        <h4>Сканер котировок</h4>
-                        <p>Запуск глубокого технического анализа валютных пар</p>
+                        <h4 data-i18n="ai_scanner_mode_title">Сканер котировок</h4>
+                        <p data-i18n="ai_scanner_mode_desc">Запуск глубокого технического анализа валютных пар</p>
                     </div>
                 </div>
             </div>
-            <button class="back-btn" style="margin-top: 24px;">← НАЗАД В ТЕРМИНАЛ</button>
+            <button class="back-btn" style="margin-top: 24px;" data-i18n="back">← НАЗАД В ТЕРМИНАЛ</button>
         </div>
 
         <div class="screen" id="bot-chat-screen">
             <h2>💬 ИИ-КОНСУЛЬТАНТ</h2>
             <div class="chat-box" id="ai-chat-container">
-                <div class="chat-msg bot">Система PRO AI активирована. Готов провести анализ рынка или скорректировать вашу торговую систему. Ввод данных...</div>
+                <div class="chat-msg bot" data-i18n="chat_welcome">Система PRO AI активирована. Готов провести анализ рынка или скорректировать вашу торговую систему. Ввод данных...</div>
                 <div class="chat-msg bot" id="ai-chat-typing" style="display:none; color:var(--neon-green); border:none; background:transparent; box-shadow:none;">Генерация ответа...</div>
             </div>
             <div class="input-area">
-                <input type="text" id="ai-chat-input" placeholder="Введите запрос нейросети...">
+                <input type="text" id="ai-chat-input" placeholder="Введите запрос нейросети..." data-i18n-placeholder="chat_placeholder">
                 <button class="send-btn" onclick="sendAiChatMessage()">SEND</button>
             </div>
             <button class="back-btn" onclick="switchScreen('bot-selector-screen')" style="margin-top:16px;">← СМЕНИТЬ МОДУЛЬ</button>
@@ -2988,7 +2988,7 @@
                 const list = filtered || getTranslatedStrategies();
                 
                 if (list.length === 0) {
-                    container.innerHTML = `<div style="color:#a4b1cd; text-align:center; padding:20px;">${translate('not_found', 'Indicator not found.')}</div>`;
+                    container.innerHTML = '<div style="color:#a4b1cd; text-align:center; padding:20px;">Индикатор не найден.</div>';
                     return;
                 }
                 
@@ -3187,16 +3187,27 @@
                 let balance = currentBalance;
                 let risk = balance * 0.02;
                 let advice = "";
+                const isEn = currentLang === 'en';
                 
                 if (balance < 100) {
-                    advice = "Режим жесткого накопления. Торговля строго фиксированной суммой (без Мартингейла). Цель: постепенное наращивание банка.";
+                    advice = isEn 
+                        ? "Strict accumulation mode. Trade with fixed amount only (no Martingale). Goal: gradual bank growth."
+                        : "Режим жесткого накопления. Торговля строго фиксированной суммой (без Мартингейла). Цель: постепенное наращивание банка.";
                 } else if (balance >= 100 && balance <= 500) {
-                    advice = "Умеренный рост. Допустима 1 ступень перекрытия. Торговля только по уверенным ИИ-сигналам от 85%.";
+                    advice = isEn 
+                        ? "Moderate growth. 1 level of overlapping allowed. Trade only on confident AI signals from 85%."
+                        : "Умеренный рост. Допустима 1 ступень перекрытия. Торговля только по уверенным ИИ-сигналам от 85%.";
                 } else {
-                    advice = "Стабильный портфель. Капитал позволяет использовать полноценный риск-менеджмент. Рекомендуется диверсификация пар.";
+                    advice = isEn 
+                        ? "Stable portfolio. Capital allows full risk management. Diversification of pairs is recommended."
+                        : "Стабильный портфель. Капитал позволяет использовать полноценный риск-менеджмент. Рекомендуется диверсификация пар.";
                 }
 
-                hintEl.innerHTML = `КАПИТАЛ: <b>$${balance}</b><br>АЛГОРИТМ РИСКА: 2% (<b>$${risk.toFixed(2)}</b> / сделка).<br><br><span style="color:#fff;">Резюме нейросети:</span> ${advice}`;
+                const capitalLabel = isEn ? "CAPITAL" : "КАПИТАЛ";
+                const riskLabel = isEn ? "RISK ALGORITHM" : "АЛГОРИТМ РИСКА";
+                const summaryLabel = isEn ? "Neural network summary:" : "Резюме нейросети:";
+
+                hintEl.innerHTML = `${capitalLabel}: <b>$${balance}</b><br>${riskLabel}: 2% (<b>$${risk.toFixed(2)}</b> / trade).<br><br><span style="color:#fff;">${summaryLabel}</span> ${advice}`;
             }
 
             window.calculateTradingPlan = function() {
@@ -3866,8 +3877,8 @@
                     list.innerHTML = `
                         <div style="text-align:center; padding:40px 20px; color:#a4b1cd;">
                             <div style="font-size:42px; margin-bottom:12px; opacity:0.6;">📭</div>
-                            <div style="font-weight:700;">${translate('no_notes', 'No notes yet')}</div>
-                            <div style="font-size:12px; margin-top:6px;">${translate('add_first_note', "Press '+ NEW NOTE' to start")}</div>
+                            <div style="font-weight:700;">Заметок пока нет</div>
+                            <div style="font-size:12px; margin-top:6px;">Нажми «+ НОВАЯ ЗАМЕТКА» чтобы начать</div>
                         </div>`;
                     return;
                 }
@@ -4695,96 +4706,7 @@
                     "sessions_title": "КАЛЬКУЛЯТОР PRO",
                     "notes_title": "ЖУРНАЛ ТРЕЙДЕРА",
                     "news_title": "ИИ НОВОСТИ PRO",
-                    "calendar_title": "МАКРО-ДАННЫЕ",
-                    "access_denied": "ДОСТУП ЗАКРЫТ",
-                    "access_denied_desc": "Система безопасности PRO AI не распознала ваш Telegram ID в реестре закрытого клуба.",
-                    "your_key": "ВАШ ID-КЛЮЧ:",
-                    "send_key_admin": "Передайте ключ администратору",
-                    "ai_consultant": "ИИ-КОНСУЛЬТАНТ",
-                    "ai_ready": "Система PRO AI активирована. Готов провести анализ рынка или скорректировать вашу торговую систему. Ввод данных...",
-                    "ai_placeholder": "Введите запрос нейросети...",
-                    "send": "SEND",
-                    "change_module": "← СМЕНИТЬ МОДУЛЬ",
-                    "scanner_title": "СКАНЕР PRO — ВСЕ АКТИВЫ POCKET OPTION",
-                    "search_placeholder": "Поиск тикера (EUR/USD, BTC, AAPL, US30...)",
-                    "total_assets": "Всего активов:",
-                    "categories_forex": "ВАЛЮТЫ",
-                    "categories_crypto": "КРИПТА",
-                    "categories_commodities": "СЫРЬЁ",
-                    "categories_stocks": "АКЦИИ",
-                    "categories_indices": "ИНДЕКСЫ",
-                    "knowledge_base": "БАЗА ЗНАНИЙ PRO",
-                    "search_book": "Поиск книги...",
-                    "open_book": "ОТКРЫТЬ КНИГУ",
-                    "patterns_title": "ПАТТЕРНЫ РЫНКА",
-                    "patterns_desc": "Классические паттерны технического анализа. Кликни на паттерн для деталей и торговых правил на M1/M5.",
-                    "candlestick_patterns": "СВЕЧНЫЕ ПАТТЕРНЫ (Японские свечи)",
-                    "chart_patterns": "КЛАССИЧЕСКИЕ ГРАФИЧЕСКИЕ ПАТТЕРНЫ",
-                    "harmonic_patterns": "ГАРМОНИЧЕСКИЕ ПАТТЕРНЫ",
-                    "strategies_title": "СТРАТЕГИИ PRO — POCKET OPTION M1",
-                    "strategies_desc": "Все индикаторы платформы Pocket Option + точные правила входа на 1-минутном таймфрейме для бинарных опционов / турбо.",
-                    "pro_tip": "СОВЕТ PRO",
-                    "pro_tip_text": "На M1 используй 1-2 индикатора max + подтверждение свечным паттерном. Экспирация 1-3 минуты. Риск на сделку ≤2% от депозита. Всегда жди закрытия свечи!",
-                    "search_strategy": "Поиск индикатора или стратегии...",
-                    "calculator_title": "КАЛЬКУЛЯТОР PRO",
-                    "input_data": "ВХОДНЫЕ ДАННЫЕ",
-                    "current_deposit": "ТЕКУЩИЙ ДЕПОЗИТ ($)",
-                    "risk_per_trade": "РИСК НА СДЕЛКУ",
-                    "payout_on_win": "ВЫПЛАТА ПРИ ВЫИГРЫШЕ",
-                    "expected_winrate": "ВИНРЕЙТ (ОЖИДАЕМЫЙ)",
-                    "trades_per_day": "СДЕЛОК В ДЕНЬ",
-                    "calculation_results": "РЕЗУЛЬТАТЫ РАСЧЁТА",
-                    "risk_per_trade_res": "РИСК НА 1 СДЕЛКУ",
-                    "profit_on_win": "ПРИБЫЛЬ ПРИ ВЫИГРЫШЕ",
-                    "expected_day": "Ожидаемая прибыль за ДЕНЬ",
-                    "expected_week": "Ожидаемая прибыль за НЕДЕЛЮ",
-                    "expected_month": "Ожидаемая прибыль за МЕСЯЦ",
-                    "goal_calc": "РАСЧЁТ ПО ЦЕЛИ",
-                    "goal_week": "Хочу заработать за неделю ($)",
-                    "macro_title": "МАКРО-ДАННЫЕ",
-                    "click_day": "Нажмите на число, чтобы получить ИИ-сводку о важных экономических новостях.",
-                    "journal_title": "ЖУРНАЛ ТРЕЙДЕРА",
-                    "filter_all": "ВСЕ",
-                    "filter_deals": "СДЕЛКИ",
-                    "filter_ideas": "ИДЕИ",
-                    "filter_errors": "ОШИБКИ",
-                    "filter_observations": "НАБЛЮДЕНИЯ",
-                    "new_note": "+ НОВАЯ ЗАМЕТКА",
-                    "clear_all": "🗑️ ОЧИСТИТЬ ВСЁ",
-                    "note_section": "РАЗДЕЛ",
-                    "note_deal": "СДЕЛКА",
-                    "note_idea": "ИДЕЯ",
-                    "note_error": "ОШИБКА",
-                    "note_observation": "НАБЛЮДЕНИЕ",
-                    "pair": "ВАЛЮТНАЯ ПАРА",
-                    "direction": "НАПРАВЛЕНИЕ",
-                    "result": "РЕЗУЛЬТАТ",
-                    "amount": "СУММА ($)",
-                    "comment_lesson": "КОММЕНТАРИЙ / УРОК",
-                    "cancel": "ОТМЕНА",
-                    "save": "СОХРАНИТЬ",
-                    "no_notes": "Заметок пока нет",
-                    "add_first_note": "Нажми «+ НОВАЯ ЗАМЕТКА» чтобы начать",
-                    "ai_news": "ИИ НОВОСТИ PRO",
-                    "live_market": "📡 LIVE РЫНОК",
-                    "grok_ai": "🤖 GROK AI ГЕНЕРАЦИЯ",
-                    "economic_calendar": "📅 ЭКОНОМИЧЕСКИЙ КАЛЕНДАРЬ",
-                    "generate_grok": "✨ СГЕНЕРИРОВАТЬ НОВОСТИ ОТ GROK",
-                    "grok_thinking": "Grok думает над рынком...",
-                    "grok_desc": "Искусственный интеллект создаёт актуальные рыночные обзоры специально для PRO трейдеров",
-                    "grok_disclaimer": "⚡ Новости полностью сгенерированы Grok — мощной моделью xAI. Они носят аналитический характер и помогают лучше понимать рыночный контекст. Не является финансовой рекомендацией.",
-                    "developer_panel": "DEVELOPER PANEL",
-                    "only_root": "ТОЛЬКО ДЛЯ ROOT АДМИНИСТРАТОРА • ИЗМЕНЕНИЕ ПРИЛОЖЕНИЯ В РЕАЛЬНОМ ВРЕМЕНИ",
-                    "ai_chat_placeholder": "Введите запрос нейросети...",
-                    "not_found": "Индикатор не найден.",
-                    "no_notes_yet": "Заметок пока нет. Нажми «+ НОВАЯ ЗАМЕТКА» чтобы начать",
-                    "delete_note_confirm": "Удалить эту заметку?",
-                    "clear_all_confirm": "Очистить ВЕСЬ журнал заметок?",
-                    "heavy_book_note": "На телефоне книги лучше всего читать в нативном просмотрщике",
-                    "open_in_browser": "📱 Открыть в браузере (рекомендую на телефоне)",
-                    "try_again": "Попробовать ещё раз в приложении",
-                    "book_loading": "📖 Загружаем книгу...",
-                    "book_loading_note": "Это может занять 3–10 секунд"
+                    "calendar_title": "МАКРО-ДАННЫЕ"
                 },
                 en: {
                     "welcome": "POCKET OPTION",
@@ -4808,118 +4730,21 @@
                     "sessions_title": "PRO CALCULATOR",
                     "notes_title": "TRADER'S JOURNAL",
                     "news_title": "PRO AI NEWS",
-                    "calendar_title": "MACRO DATA",
-                    "access_denied": "ACCESS DENIED",
-                    "access_denied_desc": "PRO AI security system did not recognize your Telegram ID in the closed club registry.",
-                    "your_key": "YOUR ID KEY:",
-                    "send_key_admin": "Send the key to the administrator",
-                    "ai_consultant": "AI CONSULTANT",
-                    "ai_ready": "PRO AI system activated. Ready to analyze the market or adjust your trading system. Enter data...",
-                    "ai_placeholder": "Enter neural network query...",
-                    "send": "SEND",
-                    "change_module": "← CHANGE MODULE",
-                    "scanner_title": "PRO SCANNER — ALL POCKET OPTION ASSETS",
-                    "search_placeholder": "Search ticker (EUR/USD, BTC, AAPL, US30...)",
-                    "total_assets": "Total assets:",
-                    "categories_forex": "FOREX",
-                    "categories_crypto": "CRYPTO",
-                    "categories_commodities": "COMMODITIES",
-                    "categories_stocks": "STOCKS",
-                    "categories_indices": "INDICES",
-                    "knowledge_base": "PRO KNOWLEDGE BASE",
-                    "search_book": "Search book...",
-                    "open_book": "OPEN BOOK",
-                    "patterns_title": "MARKET PATTERNS",
-                    "patterns_desc": "Classic technical analysis patterns. Click on a pattern for details and trading rules on M1/M5.",
-                    "candlestick_patterns": "CANDLESTICK PATTERNS (Japanese Candles)",
-                    "chart_patterns": "CLASSIC CHART PATTERNS",
-                    "harmonic_patterns": "HARMONIC PATTERNS",
-                    "strategies_title": "PRO STRATEGIES — POCKET OPTION M1",
-                    "strategies_desc": "All Pocket Option platform indicators + exact entry rules on the 1-minute timeframe for binary options / turbo.",
-                    "pro_tip": "PRO TIP",
-                    "pro_tip_text": "On M1 use max 1-2 indicators + confirmation with candlestick pattern. Expiration 1-3 minutes. Risk per trade ≤2% of deposit. Always wait for candle close!",
-                    "search_strategy": "Search indicator or strategy...",
-                    "calculator_title": "PRO CALCULATOR",
-                    "input_data": "INPUT DATA",
-                    "current_deposit": "CURRENT DEPOSIT ($)",
-                    "risk_per_trade": "RISK PER TRADE",
-                    "payout_on_win": "PAYOUT ON WIN",
-                    "expected_winrate": "EXPECTED WINRATE",
-                    "trades_per_day": "TRADES PER DAY",
-                    "calculation_results": "CALCULATION RESULTS",
-                    "risk_per_trade_res": "RISK PER 1 TRADE",
-                    "profit_on_win": "PROFIT ON WIN",
-                    "expected_day": "Expected profit per DAY",
-                    "expected_week": "Expected profit per WEEK",
-                    "expected_month": "Expected profit per MONTH",
-                    "goal_calc": "GOAL CALCULATION",
-                    "goal_week": "I want to earn per week ($)",
-                    "macro_title": "MACRO DATA",
-                    "click_day": "Click on a date to get AI summary of important economic news.",
-                    "journal_title": "TRADER'S JOURNAL",
-                    "filter_all": "ALL",
-                    "filter_deals": "DEALS",
-                    "filter_ideas": "IDEAS",
-                    "filter_errors": "ERRORS",
-                    "filter_observations": "OBSERVATIONS",
-                    "new_note": "+ NEW NOTE",
-                    "clear_all": "🗑️ CLEAR ALL",
-                    "note_section": "SECTION",
-                    "note_deal": "DEAL",
-                    "note_idea": "IDEA",
-                    "note_error": "ERROR",
-                    "note_observation": "OBSERVATION",
-                    "pair": "CURRENCY PAIR",
-                    "direction": "DIRECTION",
-                    "result": "RESULT",
-                    "amount": "AMOUNT ($)",
-                    "comment_lesson": "COMMENT / LESSON",
-                    "cancel": "CANCEL",
-                    "save": "SAVE",
-                    "no_notes": "No notes yet",
-                    "add_first_note": "Press '+ NEW NOTE' to start",
-                    "ai_news": "PRO AI NEWS",
-                    "live_market": "📡 LIVE MARKET",
-                    "grok_ai": "🤖 GROK AI GENERATION",
-                    "economic_calendar": "📅 ECONOMIC CALENDAR",
-                    "generate_grok": "✨ GENERATE NEWS FROM GROK",
-                    "grok_thinking": "Grok is thinking about the market...",
-                    "grok_desc": "Artificial intelligence creates relevant market overviews specifically for PRO traders",
-                    "grok_disclaimer": "⚡ News is fully generated by Grok — powerful xAI model. They are analytical in nature and help better understand market context. Not financial advice.",
-                    "developer_panel": "DEVELOPER PANEL",
-                    "only_root": "FOR ROOT ADMINISTRATOR ONLY • REAL-TIME APP MODIFICATION",
-                    "ai_chat_placeholder": "Enter neural network query...",
-                    "not_found": "Indicator not found.",
-                    "no_notes_yet": "No notes yet. Press '+ NEW NOTE' to start",
-                    "delete_note_confirm": "Delete this note?",
-                    "clear_all_confirm": "Clear the ENTIRE notes journal?",
-                    "heavy_book_note": "On phone, books are best read in the native viewer",
-                    "open_in_browser": "📱 Open in browser (recommended on phone)",
-                    "try_again": "Try again in the app",
-                    "book_loading": "📖 Loading book...",
-                    "book_loading_note": "This may take 3–10 seconds"
+                    "calendar_title": "MACRO DATA"
                 }
             };
 
             let currentLang = 'ru';
 
-            // Global translate helper (synchronous, uses cached translations)
-            let _currentTranslations = EMBEDDED_TRANSLATIONS.ru;
-
-            function translate(key, fallback = '') {
-                if (_currentTranslations && _currentTranslations[key]) {
-                    return _currentTranslations[key];
-                }
-                return fallback || key;
-            }
-
             async function loadTranslations(lang) {
+                // Try to load from external JSON (works when hosted properly)
                 try {
                     const res = await fetch(`./lang/${lang}.json`);
                     if (res.ok) {
                         return await res.json();
                     }
                 } catch (e) {}
+                // Fallback to embedded
                 return EMBEDDED_TRANSLATIONS[lang] || EMBEDDED_TRANSLATIONS.ru;
             }
 
@@ -4932,10 +4757,10 @@
                     pill.classList.toggle('active', pill.getAttribute('data-lang') === lang);
                 });
 
+                // Update key static texts on current screen
                 const t = await loadTranslations(lang);
-                _currentTranslations = t; // cache for translate()
 
-                // Update key static texts
+                // Menu screen texts
                 const welcomeEl = document.querySelector('#menu-screen .welcome');
                 if (welcomeEl) welcomeEl.innerText = t.welcome || 'POCKET OPTION';
 
@@ -4949,80 +4774,50 @@
                     const titleEl = card.querySelector('.card-title');
                     if (!titleEl) return;
 
-                    const map = {
-                        'profile-screen': 'menu_profile',
-                        'bot-selector-screen': 'menu_neural',
-                        'education-screen': 'menu_knowledge',
-                        'patterns-screen': 'menu_patterns',
-                        'strategies-screen': 'menu_strategies',
-                        'sessions-screen': 'menu_calculator',
-                        'calendar-screen': 'menu_macro',
-                        'news-screen': 'menu_news',
-                        'notes-screen': 'menu_notes'
-                    };
-                    if (map[target]) titleEl.innerText = t[map[target]] || titleEl.innerText;
+                    if (target === 'profile-screen') titleEl.innerText = t.menu_profile || 'Профиль';
+                    else if (target === 'bot-selector-screen') titleEl.innerText = t.menu_neural || 'Нейросеть';
+                    else if (target === 'education-screen') titleEl.innerText = t.menu_knowledge || 'База знаний';
+                    else if (target === 'patterns-screen') titleEl.innerText = t.menu_patterns || 'Паттерны';
+                    else if (target === 'strategies-screen') titleEl.innerText = t.menu_strategies || 'Стратегии PRO';
+                    else if (target === 'sessions-screen') titleEl.innerText = t.menu_calculator || 'Калькулятор';
+                    else if (target === 'calendar-screen') titleEl.innerText = t.menu_macro || 'Макро-данные';
+                    else if (target === 'news-screen') titleEl.innerText = t.menu_news || 'ИИ Новости';
+                    else if (target === 'notes-screen') titleEl.innerText = t.menu_notes || 'Мои Заметки';
                 });
 
-                // Update ALL elements with data-i18n (including new ones)
+                // Update back buttons
+                document.querySelectorAll('.back-btn').forEach(btn => {
+                    const txt = btn.innerText || '';
+                    if (txt.includes('НАЗАД') || txt.includes('BACK') || txt.includes('ВЕРНУТЬСЯ')) {
+                        btn.innerText = (lang === 'ru') ? '← НАЗАД В ТЕРМИНАЛ' : '← BACK TO MENU';
+                    }
+                });
+
+                // === FULL TRANSLATION: Apply data-i18n to all elements ===
                 document.querySelectorAll('[data-i18n]').forEach(el => {
                     const key = el.getAttribute('data-i18n');
                     if (t[key]) {
-                        const originalText = el.innerText || el.textContent || '';
+                        // Preserve emoji/icons if present
+                        const originalText = el.innerText || el.textContent;
                         const emojiMatch = originalText.match(/^[\u{1F000}-\u{1F9FF}\u{2600}-\u{27BF}\u{1F300}-\u{1F5FF}\s]+/u);
                         const emoji = emojiMatch ? emojiMatch[0] : '';
-                        if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
-                            if (el.placeholder) el.placeholder = t[key];
-                        } else {
-                            el.innerText = emoji + t[key];
-                        }
+                        el.innerText = emoji + t[key];
                     }
                 });
 
-                // Update back buttons dynamically
-                document.querySelectorAll('.back-btn').forEach(btn => {
-                    const txt = (btn.innerText || '').trim();
-                    if (txt.includes('НАЗАД') || txt.includes('BACK') || txt.includes('ВЕРНУТЬСЯ') || txt.includes('СМЕНИТЬ') || txt.includes('CHANGE')) {
-                        btn.innerText = t.back || '← BACK TO TERMINAL';
-                    }
-                });
-
-                // Update placeholders that have data-i18n
-                document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-                    const key = el.getAttribute('data-i18n-placeholder');
-                    if (t[key]) el.placeholder = t[key];
-                });
-
-                // Re-render dynamic content for current screen
-                const activeScreen = document.querySelector('.screen.active');
-                if (activeScreen) {
-                    const id = activeScreen.id;
-                    if (id === 'patterns-screen' && typeof loadPatternsAndStrategies === 'function') {
-                        setTimeout(() => loadPatternsAndStrategies(), 50);
-                    }
-                    if (id === 'strategies-screen' && typeof renderStrategiesList === 'function') {
-                        setTimeout(() => renderStrategiesList(), 50);
-                    }
-                    if (id === 'education-screen' && typeof loadBooks === 'function') {
-                        setTimeout(() => loadBooks(), 50);
-                    }
-                    if (id === 'notes-screen' && typeof renderNotes === 'function') {
-                        setTimeout(() => renderNotes(currentNoteFilter), 50);
-                    }
-                    if (id === 'bot-analysis-screen' && typeof filterAnalysisPairs === 'function') {
-                        setTimeout(() => filterAnalysisPairs(), 50);
-                    }
+                // Re-render dynamic sections with new language
+                if (document.getElementById('patterns-screen')?.classList.contains('active')) {
+                    loadPatternsAndStrategies();
                 }
-
-                // Update AI hint if profile is open
-                if (typeof updateProfileAiHint === 'function' && document.getElementById('profile-screen')?.classList.contains('active')) {
-                    updateProfileAiHint();
+                if (document.getElementById('strategies-screen')?.classList.contains('active')) {
+                    renderStrategiesList();
+                }
+                if (document.getElementById('education-screen')?.classList.contains('active')) {
+                    loadBooks();
                 }
 
                 console.log(`[PRO AI] Language switched to: ${lang.toUpperCase()}`);
             }
-
-            // Expose translate for use in JS-generated content
-            window.translate = translate;
 
             window.switchLanguage = async function(lang) {
                 if (lang === currentLang) return;
