@@ -2271,6 +2271,84 @@
                 { name: "Акула (Shark)", type: "Разворот", desc: "0.886-1.13 extension. Новый паттерн, агрессивный.", signal: "Вход на 5-0 развороте. Хорош на M1 с объемом." }
             ];
 
+            // ==================== ENGLISH VERSIONS (Full Translation) ====================
+            const PRO_BOOKS_EN = [
+                { title: "The Wolf of Wall Street", desc: "Jordan Belfort — legendary story of rise, fall and redemption of the king of brokers", file: "Волк с Уолл-стрит.pdf" },
+                { title: "Reminiscences of a Stock Operator", desc: "Edwin Lefèvre — classic on market psychology and Jesse Livermore's trading life", file: "Воспоминания_биржевого_спекулянта.pdf" },
+                { title: "How to Make Money in Stocks", desc: "Practical guide to trading, psychology and proven strategies", file: "Как играть и выигрывать на бирже.pdf" },
+                { title: "Capital in the Twenty-First Century", desc: "Thomas Piketty — fundamental analysis of inequality, capital and markets", file: "Капитал в XXI веке.pdf" },
+                { title: "Small Trader's Encyclopedia", desc: "Eric Naiman — complete reference of terms, indicators and methods", file: "Малая энциклопедия трейдера.pdf" },
+                { title: "Japanese Candlestick Charting Techniques", desc: "Steve Nison — the bible of candlestick patterns and graphical analysis", file: "Нисон_С_Японские_свечи_графический_анализ_финансовых_рынков_2016.pdf" },
+                { title: "Elliott Wave Principle", desc: "The wave principle — the ABC of wave market analysis", file: "Пособие по Эллиоту.pdf" },
+                { title: "Trading Psychology", desc: "Vladimir Gortsev — emotional control, discipline and success formula", file: "Психология трейдинга.pdf" },
+                { title: "The Complete TurtleTrader", desc: "Curtis Faith — the legendary Richard Dennis experiment and trend trading system", file: "Путь Черепах.pdf" },
+                { title: "Technical Analysis of the Financial Markets", desc: "John Murphy — theory and practice of classic technical analysis", file: "Технический_анализ_фьючерсных_рынков.pdf" },
+                { title: "Trading Chaos", desc: "Bill Williams — expert methods to maximize profits using chaos theory", file: "Торговый хаос.pdf" },
+                { title: "The Puppeteer Trading Algorithm", desc: "Detailed algorithm for trading against the crowd using reversal formations", file: "Торговый_алгоритм.pdf" },
+                { title: "The Warren Buffett Way", desc: "Robert Hagstrom — strategy and tactics of the greatest investor from Omaha", file: "Уоррен_Баффет_Как_5_долларов_превратить_в_50_миллиардов.pdf" },
+                { title: "Trading Basics for Beginners", desc: "Robert Rossman — basic course and first steps in trading", file: "Rossman_R._Osnovyi_Treyidinga_Dlya_N.a4.pdf" },
+                { title: "Simple Trading Book", desc: "Simple and effective strategies for crypto, forex and binary options", file: "Simple Trade Book (rus).pdf" }
+            ];
+
+            const CANDLESTICK_PATTERNS_EN = [
+                { name: "Doji", type: "Reversal / Neutral", desc: "Open price ≈ close price. Signal of uncertainty. On M1 often precedes reversal with volume.", signal: "Wait for confirmation from the next candle. Stronger near support/resistance." },
+                { name: "Hammer", type: "Bullish Reversal", desc: "Small body on top, long lower shadow (2x+ body). Shows bounce from support.", signal: "Call on the next candle after confirmation. Ideal on M1 at support level." },
+                { name: "Inverted Hammer", type: "Bullish Reversal", desc: "Small body at bottom, long upper shadow. Potential growth signal after decline.", signal: "Call. Especially strong after downtrend on M1." },
+                { name: "Hanging Man", type: "Bearish Reversal", desc: "Similar to hammer but appears in uptrend. Warns of growth ending.", signal: "Put. Confirmation — next red candle." },
+                { name: "Shooting Star", type: "Bearish Reversal", desc: "Small body at bottom, long upper shadow. Rejection of resistance.", signal: "Put on M1. Stronger with RSI >70." },
+                { name: "Bullish Engulfing", type: "Strong Bullish Reversal", desc: "Second green candle completely engulfs the previous red candle's body.", signal: "Call. One of the strongest reversal signals on M1." },
+                { name: "Bearish Engulfing", type: "Strong Bearish Reversal", desc: "Second red candle engulfs the previous green candle.", signal: "Put. Excellent entry on trend reversal." },
+                { name: "Morning Star", type: "Bullish Reversal", desc: "3-candle formation: large red → small (doji/spinning top) → large green.", signal: "Call. Classic reversal pattern on M1/M5." },
+                { name: "Evening Star", type: "Bearish Reversal", desc: "Opposite of Morning Star: large green → small → large red.", signal: "Put. Strong signal of uptrend exhaustion." },
+                { name: "Three White Soldiers", type: "Continuation / Bullish Reversal", desc: "3 consecutive rising green candles with small bodies/shadows.", signal: "Call. Strong bullish momentum on M1." },
+                { name: "Three Black Crows", type: "Continuation / Bearish Reversal", desc: "3 falling red candles. Signal of strong bearish pressure.", signal: "Put. Great for short entries on M1." },
+                { name: "Piercing Line", type: "Bullish Reversal", desc: "Green candle opens below previous red's low and closes above its midpoint.", signal: "Call. Good signal at support." },
+                { name: "Dark Cloud Cover", type: "Bearish Reversal", desc: "Red candle opens above previous green's high and closes below its midpoint.", signal: "Put. Strong at resistance." }
+            ];
+
+            const CHART_PATTERNS_EN = [
+                { name: "Head & Shoulders", type: "Bearish Reversal", desc: "Classic reversal: left shoulder → head → right shoulder + neckline.", signal: "Sell/Put on neckline break downward. Target = head height from neckline." },
+                { name: "Inverse Head & Shoulders", type: "Bullish Reversal", desc: "Mirror version. Upward reversal signal.", signal: "Buy/Call on neckline break upward." },
+                { name: "Double Top", type: "Bearish Reversal", desc: "Two peaks at same level + neck. Classic reversal pattern.", signal: "Put on neck break down. Works great on M1/M5." },
+                { name: "Double Bottom", type: "Bullish Reversal", desc: "Two lows at support. Reversal signal upward.", signal: "Call on neck break upward." },
+                { name: "Triple Top/Bottom", type: "Reversal", desc: "Three touches of a level. More reliable than double patterns.", signal: "Enter in direction of level break." },
+                { name: "Ascending Triangle", type: "Bullish Continuation", desc: "Horizontal resistance + rising lows. Bullish bias.", signal: "Call on resistance break or bounce from support." },
+                { name: "Descending Triangle", type: "Bearish Continuation", desc: "Horizontal support + falling highs. Bearish bias.", signal: "Put on support break." },
+                { name: "Symmetrical Triangle", type: "Continuation / Reversal", desc: "Converging trendlines. Wait for breakout.", signal: "Enter in direction of strong volume breakout." },
+                { name: "Rising Wedge", type: "Bearish Reversal", desc: "Upward converging lines. Often ends with a drop.", signal: "Put on lower wedge line break." },
+                { name: "Falling Wedge", type: "Bullish Reversal", desc: "Downward converging lines. Often reverses upward.", signal: "Call on upper wedge line break." },
+                { name: "Flag", type: "Trend Continuation", desc: "Short consolidation against trend after sharp move.", signal: "Enter in previous impulse direction on flag break. M1 is ideal." },
+                { name: "Pennant", type: "Continuation", desc: "Small symmetrical triangle after impulse move.", signal: "Call/Put in trend direction on breakout." },
+                { name: "Rectangle", type: "Consolidation", desc: "Horizontal range between support and resistance.", signal: "Trade range boundaries until breakout. Scalp edges on M1." },
+                { name: "Cup & Handle", type: "Bullish Continuation", desc: "U-shaped bottom + small flag/handle.", signal: "Call on handle resistance break. Better on M5+." }
+            ];
+
+            const HARMONIC_PATTERNS_EN = [
+                { name: "Gartley", type: "Reversal", desc: "AB=CD + 0.618 retracement. One of the most reliable harmonic patterns.", signal: "Enter at point D in reversal direction. Stop beyond X." },
+                { name: "Bat", type: "Reversal", desc: "0.886 retracement of XA. Deeper correction than Gartley.", signal: "Call/Put on pattern completion at point D." },
+                { name: "Butterfly", type: "Extreme Reversal", desc: "1.272 extension of AB=CD. Often appears at trend ends.", signal: "Reversal signal. Enter against current trend at D." },
+                { name: "Crab", type: "Extreme Reversal", desc: "1.618 extension. The deepest of harmonic patterns.", signal: "Strong reversal. Use with divergences." },
+                { name: "Shark", type: "Reversal", desc: "0.886-1.13 extension. New aggressive pattern.", signal: "Enter on 5-0 reversal. Good on M1 with volume." }
+            ];
+
+            const POCKET_OPTION_INDICATORS_EN = [
+                { name: "RSI (Relative Strength Index)", tf: "M1", settings: "Period 14 (standard) or 7 for M1", rules: "Call: RSI < 30 + rising + bullish candle. Put: RSI > 70 + falling. Divergences are strong signals. Combine with MA(9).", accuracy: "68-78% on M1 with filter" },
+                { name: "MACD", tf: "M1/M5", settings: "Fast 12, Slow 26, Signal 9. On M1 try 5,13,1", rules: "Call: MACD line crosses Signal upward + histogram rising. Put: downward. Best in direction of MA200 trend.", accuracy: "65-75%" },
+                { name: "Bollinger Bands", tf: "M1", settings: "Period 20, Deviation 2. Squeeze = low volatility", rules: "Call: price touches lower band + bounce + RSI<30. Put: upper band. Band breakout = strong impulse.", accuracy: "70%+ on bounces" },
+                { name: "Stochastic Oscillator", tf: "M1", settings: "%K 14, %D 3, Smoothing 3. Levels 20/80", rules: "Call: %K crosses %D upward below 20. Put: downward above 80. Extreme readings = overbought/oversold.", accuracy: "62-72%" },
+                { name: "Moving Averages (MA/SMA/EMA)", tf: "M1", settings: "EMA 9 + EMA 21 or SMA 50/200. Golden/Death Cross", rules: "Call: EMA9 > EMA21 and price above. Put: below. EMA9/21 crossover = entry signal. EMA200 = trend filter.", accuracy: "60-70% in trend" },
+                { name: "Parabolic SAR", tf: "M1/M5", settings: "Step 0.02, Max 0.2", rules: "Call: SAR dots below price (uptrend). Put: above price. SAR reversal = trend change signal. Excellent for trailing on M1.", accuracy: "65%" },
+                { name: "Ichimoku Kinko Hyo", tf: "M5+", settings: "Standard 9,26,52. On M1 try 7,22,44", rules: "Call: price above cloud + Tenkan > Kijun + Chikou above. Put: below cloud. Cloud acts as dynamic S/R.", accuracy: "70%+ in trend" },
+                { name: "Awesome Oscillator (AO)", tf: "M1", settings: "5/34 periods (Bill Williams)", rules: "Call: AO >0 and rising (green bars). Put: <0 and falling. Zero line + saucer signals. From 'Trading Chaos' book.", accuracy: "68%" },
+                { name: "Alligator", tf: "M1/M5", settings: "13/8/5 with shift 8/5/3 (Williams)", rules: "Call: lines ordered upward (green > red > blue). Put: downward. 'Alligator awakening' = new trend.", accuracy: "65-75%" },
+                { name: "Fractals", tf: "M1", settings: "Standard Bill Williams (5 bars)", rules: "Call: break of upper fractal upward. Put: lower fractal downward. Use as entry/stop levels. Best with Alligator.", accuracy: "60%+" },
+                { name: "CCI (Commodity Channel Index)", tf: "M1", settings: "Period 20, levels ±100", rules: "Call: CCI < -100 + reversal up. Put: > +100. Divergences are very strong on M1.", accuracy: "65%" },
+                { name: "ADX (Average Directional Index)", tf: "M5", settings: "Period 14, +DI/-DI", rules: "Strong trend if ADX > 25. Call: +DI > -DI. Put: -DI > +DI. Avoid flat (ADX<20).", accuracy: "70% in trend" },
+                { name: "SuperTrend", tf: "M1/M5", settings: "Period 10, Multiplier 3", rules: "Call: price above SuperTrend line (green). Put: below (red). Excellent trailing stop and trend filter on M1.", accuracy: "72%" },
+                { name: "Volume + Volume Profile", tf: "M1", settings: "Volume histogram", rules: "Call/Put in direction of high volume on level breakout. Volume clusters = strong S/R levels.", accuracy: "Confirming 75%+" },
+                { name: "ZigZag + Fibonacci", tf: "M1/M5", settings: "Depth 12, Deviation 5", rules: "Look for 0.618/0.786 retracement from ZigZag impulse. Enter at Fib levels + pattern.", accuracy: "68%" }
+            ];
+
             const POCKET_OPTION_INDICATORS = [
                 { name: "RSI (Relative Strength Index)", tf: "M1", settings: "Период 14 (стандарт) или 7 для M1", rules: "Call: RSI < 30 + рост + бычья свеча. Put: RSI > 70 + падение. Дивергенции — сильный сигнал. Сочетается с MA(9).", accuracy: "68-78% на M1 с фильтром" },
                 { name: "MACD", tf: "M1/M5", settings: "Fast 12, Slow 26, Signal 9 (стандарт). На M1 можно 5,13,1", rules: "Call: MACD линия пересекает Signal вверх + гистограмма растет. Put: вниз. Лучше в направлении тренда по MA200.", accuracy: "65-75%" },
@@ -2907,7 +2985,7 @@
                 const container = document.getElementById('strategies-list-box');
                 if (!container) return;
                 container.innerHTML = '';
-                const list = filtered || POCKET_OPTION_INDICATORS;
+                const list = filtered || getTranslatedStrategies();
                 
                 if (list.length === 0) {
                     container.innerHTML = '<div style="color:#a4b1cd; text-align:center; padding:20px;">Индикатор не найден.</div>';
@@ -2955,20 +3033,45 @@
 
             window.filterStrategies = function() {
                 const q = document.getElementById('strategy-search').value.toLowerCase().trim();
+                const sourceList = getTranslatedStrategies();
                 if (!q) {
                     renderStrategiesList();
                     return;
                 }
-                const filtered = POCKET_OPTION_INDICATORS.filter(i => 
+                const filtered = sourceList.filter(i => 
                     i.name.toLowerCase().includes(q) || i.rules.toLowerCase().includes(q) || i.settings.toLowerCase().includes(q)
                 );
                 renderStrategiesList(filtered);
             };
 
+            function getTranslatedPatterns() {
+                if (currentLang === 'en') {
+                    return {
+                        candlestick: CANDLESTICK_PATTERNS_EN,
+                        chart: CHART_PATTERNS_EN,
+                        harmonic: HARMONIC_PATTERNS_EN
+                    };
+                }
+                return {
+                    candlestick: CANDLESTICK_PATTERNS,
+                    chart: CHART_PATTERNS,
+                    harmonic: HARMONIC_PATTERNS
+                };
+            }
+
+            function getTranslatedStrategies() {
+                return currentLang === 'en' ? POCKET_OPTION_INDICATORS_EN : POCKET_OPTION_INDICATORS;
+            }
+
+            function getTranslatedBooks() {
+                return currentLang === 'en' ? PRO_BOOKS_EN : PRO_BOOKS;
+            }
+
             function loadPatternsAndStrategies() {
-                renderPatternList('candlestick-patterns-list', CANDLESTICK_PATTERNS);
-                renderPatternList('chart-patterns-list', CHART_PATTERNS);
-                renderPatternList('harmonic-patterns-list', HARMONIC_PATTERNS);
+                const p = getTranslatedPatterns();
+                renderPatternList('candlestick-patterns-list', p.candlestick);
+                renderPatternList('chart-patterns-list', p.chart);
+                renderPatternList('harmonic-patterns-list', p.harmonic);
                 renderStrategiesList();
             }
 
@@ -4135,16 +4238,18 @@
                 const container = document.getElementById('books-list-box');
                 if (!container) return;
                 container.innerHTML = '';
-                PRO_BOOKS.forEach(b => {
+                const books = getTranslatedBooks();
+                books.forEach(b => {
                     const item = document.createElement('div');
                     item.className = 'book-item';
                     item.setAttribute('data-title', b.title.toLowerCase());
+                    const readBtnText = currentLang === 'en' ? 'OPEN BOOK' : 'ОТКРЫТЬ КНИГУ';
                     item.innerHTML = `
                         <div class="book-info">
                             <h4>${b.title}</h4>
                             <p>${b.desc}</p>
                         </div>
-                        <button class="read-btn" data-file="${b.file}" data-title="${b.title}">ОТКРЫТЬ КНИГУ</button>
+                        <button class="read-btn" data-file="${b.file}" data-title="${b.title}">${readBtnText}</button>
                     `;
                     item.querySelector('.read-btn').addEventListener('click', (e) => {
                         openPdfViewer(e.target.getAttribute('data-file'), e.target.getAttribute('data-title'));
@@ -4651,14 +4756,25 @@
                     else if (target === 'notes-screen') titleEl.innerText = t.menu_notes || 'Мои Заметки';
                 });
 
-                // Update back buttons (simple global replace for visible ones)
+                // Update back buttons
                 document.querySelectorAll('.back-btn').forEach(btn => {
-                    if (btn.innerText.includes('НАЗАД') || btn.innerText.includes('BACK')) {
-                        btn.innerText = (lang === 'ru') ? '← НАЗАД В ТЕРМИНАЛ' : '← BACK TO TERMINAL';
+                    const txt = btn.innerText || '';
+                    if (txt.includes('НАЗАД') || txt.includes('BACK') || txt.includes('ВЕРНУТЬСЯ')) {
+                        btn.innerText = (lang === 'ru') ? '← НАЗАД В ТЕРМИНАЛ' : '← BACK TO MENU';
                     }
                 });
 
-                // You can expand this function easily by adding more data-i18n or IDs
+                // Re-render dynamic sections with new language
+                if (document.getElementById('patterns-screen')?.classList.contains('active')) {
+                    loadPatternsAndStrategies();
+                }
+                if (document.getElementById('strategies-screen')?.classList.contains('active')) {
+                    renderStrategiesList();
+                }
+                if (document.getElementById('education-screen')?.classList.contains('active')) {
+                    loadBooks();
+                }
+
                 console.log(`[PRO AI] Language switched to: ${lang.toUpperCase()}`);
             }
 
