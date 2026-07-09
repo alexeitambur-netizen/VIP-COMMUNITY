@@ -1,42 +1,70 @@
 const express = require('express');
 const cors = require('cors');
 const Parser = require('rss-parser');
-const { Telegraf, Markup } = require('telegraf');
-const { createClient } = require('@supabase/supabase-js');
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto'); // for potential future Telegram hash verification
+const { Telegraf, Markup } = require('telegraf'); // Подключили Telegraf
+const { createClient } = require('@supabase/supabase-js'); // Supabase для хранения allowed users
 
-// ==================== КОНФИГ (лучше всего хранить в .env) ====================
+const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Telegram
-const BOT_TOKEN = process.env.BOT_TOKEN || "8988084203:AAGMNH763cv170X0lRGczjTwUY6Ir-TWlFI";
-const WELCOME_GIF_URL = process.env.WELCOME_GIF_URL || "https://i.postimg.cc/ryWPSfVL/89a66af6cb2045bab65e10448563532b.gif";
-
-// Supabase (рекомендуется использовать SERVICE_ROLE_KEY в продакшене!)
-const SUPABASE_URL = process.env.SUPABASE_URL || 'https://rjhnlzayhwidycqdroms.supabase.co';
-const SUPABASE_KEY = process.env.SUPABASE_KEY || 'sb_publishable_2BKzk8OP3abRq8l6wiLbkA_8fJFzh3x';
-
-// Главный админ (ROOT)
-const MASTER_ADMIN = process.env.MASTER_ADMIN || "5817328317";
-
-// ==================== ИНИЦИАЛИЗАЦИЯ ====================
-const app = express();
 app.use(cors());
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json());
 
 const parser = new Parser();
-const bot = new Telegraf(BOT_TOKEN);
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// In-memory кэш пользователей (для быстрых проверок)
+// ==================== КОНФИГ ====================
+const MASTER_ADMIN = "5817328317";
+
+// Твой токен от BotFather (замени на настоящий)
+const BOT_TOKEN = "8988084203:AAGMNH763cv170X0lRGczjTwUY6Ir-TWlFI"; 
+
+// Ссылка на приветственную GIF-анимацию (внешняя, postimg.cc)
+const WELCOME_GIF_URL = "https://i.postimg.cc/ryWPSfVL/89a66af6cb2045bab65e10448563532b.gif";
+
+// ==================== SUPABASE CONFIG ====================
+const SUPABASE_URL = 'https://rjhnlzayhwidycqdroms.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_2BKzk8OP3abRq8l6wiLbkA_8fJFzh3x';
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const bot = new Telegraf(BOT_TOKEN);
+
+// Белый список (персистентный)
 let allowedUsers = [];
 
-// ==================== ЛОГИРОВАНИЕ ====================
-function log(message, type = 'INFO') {
-    const time = new Date().toISOString();
-    console.log(`[${time}] [${type}] ${message}`);
-}
+// ==================== ЛОГИКА ТЕЛЕГРАМ БОТА ====================
 
-// ==================== SUPABASE — РАБОТА С ПОЛЬЗОВАТЕЛЯМИ ====================
+bot.start(async (ctx) => {
+    const welcomeText = 
+        `👋 *Привет, трейдер! Добро пожаловать в VIP Community!* 💎\n\n` +
+        `Здесь тебя ждет мощная аналитика рынка, приватное обучение и лучшие торговые инструменты. 🚀\n\n` +
+        `⚠️ *Важно:* Чтобы получить полный доступ к боту и начать зарабатывать с командой, тебе необходимо обязательно зарегистрироваться по нашей ссылке на Pocket Option.\n\n` +
+        `Нажимай на кнопку ниже, регистрируйся и пиши администратору для подтверждения!`;
+
+    try {
+        // Отправляем приветственную GIF-анимацию по URL (внешняя ссылка)
+        await ctx.replyWithAnimation(WELCOME_GIF_URL);
+        
+        // Отправляем текст с красивыми кнопками-ссылками
+        await ctx.replyWithMarkdown(welcomeText, Markup.inlineKeyboard([
+            [Markup.button.url('🔗 Зарегистрироваться в Pocket Option', 'https://u3.shortink.io/login?social=Google&utm_campaign=848628&utm_source=affiliate&utm_medium=sr&a=yueyrPjXG4Zw24&al=1774254&ac=alifavip&cid=963312')],
+            [Markup.button.url('👨‍💻 Написать Администратору VIP', 'https://t.me/alifavip')]
+        ]));
+    } catch (error) {
+        console.error('[Bot Error] Не удалось отправить приветствие:', error.message);
+    }
+});
+
+// Запуск бота
+bot.launch().then(() => {
+    console.log('[Bot] Telegram бот успешно запущен и обрабатывает /start');
+}).catch((err) => {
+    console.error('[Bot Init Error] Ошибка запуска бота:', err.message);
+});
+
+// ==================== SUPABASE PERSISTENCE (замена file-based на БД) ====================
 async function loadAllowedUsers() {
     try {
         const { data, error } = await supabase
@@ -46,47 +74,45 @@ async function loadAllowedUsers() {
 
         if (error) throw error;
 
-        allowedUsers = (data || []).map(row => row.user_id);
+        allowedUsers = data.map(row => row.user_id);
 
-        // Если таблица пустая — добавляем дефолтных пользователей
+        // Если база пустая — добавляем дефолтных пользователей (один раз)
         if (allowedUsers.length === 0) {
-            const defaults = ["644265574", "5211910606", "987654321", MASTER_ADMIN];
-            for (const uid of defaults) {
-                await supabase.from('allowed_users').upsert({ user_id: uid }, { onConflict: 'user_id' });
+            const defaultUsers = ["644265574", "5211910606", "987654321", MASTER_ADMIN];
+            for (const uid of defaultUsers) {
+                await supabase.from('allowed_users').insert({ user_id: uid }).select();
             }
-            allowedUsers = defaults;
-            log('Добавлены дефолтные пользователи в Supabase', 'SUPABASE');
+            allowedUsers = defaultUsers;
+            console.log('[Users] Добавлены дефолтные пользователи в Supabase');
         }
 
-        log(`Загружено ${allowedUsers.length} пользователей из Supabase`, 'SUPABASE');
+        console.log(`[Users] Загружено ${allowedUsers.length} пользователей из Supabase`);
     } catch (e) {
-        log(`Ошибка загрузки пользователей из Supabase: ${e.message}`, 'ERROR');
+        console.error('[Users] Ошибка загрузки из Supabase:', e.message);
         allowedUsers = [MASTER_ADMIN];
     }
 }
 
 async function addUserToSupabase(userId) {
-    const normalized = String(userId).trim();
-    if (allowedUsers.includes(normalized)) {
-        return { success: true, alreadyExists: true };
-    }
+    const normalized = normalizeId(userId);
+    if (allowedUsers.includes(normalized)) return { success: true, alreadyExists: true };
 
     const { error } = await supabase
         .from('allowed_users')
-        .upsert({ user_id: normalized }, { onConflict: 'user_id' });
+        .insert({ user_id: normalized });
 
     if (error) {
-        log(`Ошибка добавления пользователя ${normalized}: ${error.message}`, 'ERROR');
+        console.error('[Supabase] Ошибка добавления пользователя:', error.message);
         return { success: false, error: error.message };
     }
 
     allowedUsers.push(normalized);
-    log(`Пользователь ${normalized} добавлен в Supabase`, 'SUPABASE');
+    console.log(`[Admin] Пользователь ${normalized} добавлен в Supabase`);
     return { success: true };
 }
 
 async function removeUserFromSupabase(userId) {
-    const normalized = String(userId).trim();
+    const normalized = normalizeId(userId);
     if (normalized === MASTER_ADMIN) {
         return { success: false, error: 'Нельзя удалить ROOT администратора' };
     }
@@ -97,15 +123,34 @@ async function removeUserFromSupabase(userId) {
         .eq('user_id', normalized);
 
     if (error) {
-        log(`Ошибка удаления пользователя ${normalized}: ${error.message}`, 'ERROR');
+        console.error('[Supabase] Ошибка удаления пользователя:', error.message);
         return { success: false, error: error.message };
     }
 
-    allowedUsers = allowedUsers.filter(id => id !== normalized);
-    log(`Пользователь ${normalized} удалён из Supabase`, 'SUPABASE');
+    allowedUsers = allowedUsers.filter(id => normalizeId(id) !== normalized);
+    console.log(`[Admin] Пользователь ${normalized} удалён из Supabase`);
     return { success: true };
 }
 
+// ==================== TELEGRAM INITDATA VERIFICATION ====================
+function verifyTelegramInitData(initData, botToken) {
+    return true; // заглушка
+}
+
+// ==================== ДАННЫЕ РЫНКА ====================
+let currentPayouts = { 
+    status: "ONLINE", 
+    timestamp: Date.now(),
+    categories: {
+        currencies: [],
+        crypto: [],
+        commodities: [],
+        stocks: [],
+        indices: []
+    }
+};
+
+// ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
 function isMaster(adminId) {
     return String(adminId) === MASTER_ADMIN;
 }
@@ -114,56 +159,10 @@ function normalizeId(id) {
     return String(id).trim();
 }
 
-// ==================== TELEGRAM БОТ ====================
-bot.start(async (ctx) => {
-    const welcomeText = 
-        `👋 *Привет, трейдер! Добро пожаловать в VIP Community!* 💎\n\n` +
-        `Здесь тебя ждет мощная аналитика рынка, приватное обучение и лучшие торговые инструменты. 🚀\n\n` +
-        `⚠️ *Важно:* Чтобы получить полный доступ к боту и начать зарабатывать с командой, тебе необходимо обязательно зарегистрироваться по нашей ссылке на Pocket Option.\n\n` +
-        `Нажимай на кнопку ниже, регистрируйся и пиши администратору для подтверждения!`;
-
-    try {
-        await ctx.replyWithAnimation(WELCOME_GIF_URL);
-        await ctx.replyWithMarkdown(welcomeText, Markup.inlineKeyboard([
-            [Markup.button.url('🔗 Зарегистрироваться в Pocket Option', 'https://u3.shortink.io/login?social=Google&utm_campaign=848628&utm_source=affiliate&utm_medium=sr&a=yueyrPjXG4Zw24&al=1774254&ac=alifavip&cid=963312')],
-            [Markup.button.url('👨‍💻 Написать Администратору VIP', 'https://t.me/alifavip')]
-        ]));
-    } catch (error) {
-        log(`Ошибка отправки приветствия: ${error.message}`, 'ERROR');
-    }
-});
-
-// Полезные команды
-bot.command('help', (ctx) => {
-    ctx.replyWithMarkdown(
-        `📋 *Доступные команды:*\n\n` +
-        `/start — приветствие и регистрация\n` +
-        `/myid — узнать свой Telegram ID\n` +
-        `/help — эта справка`
-    );
-});
-
-bot.command('myid', (ctx) => {
-    ctx.reply(`Ваш Telegram ID: \`${ctx.from.id}\``);
-});
-
-// Запуск бота
-bot.launch()
-    .then(() => log('Telegram бот успешно запущен', 'BOT'))
-    .catch((err) => log(`Ошибка запуска бота: ${err.message}`, 'ERROR'));
-
 // ==================== ОСНОВНЫЕ ЭНДПОИНТЫ ====================
-app.get('/', (req, res) => {
-    res.json({
-        status: 'ok',
-        service: 'VIP COMMUNITY PRO AI Backend',
-        version: '2.0-supabase',
-        endpoints: ['/api/check-access', '/api/allowed-users', '/api/admin/add-user', '/api/admin/remove-user', '/api/news', '/api/news/refresh', '/api/health']
-    });
-});
 
-app.get('/api/health', (req, res) => {
-    res.json({ status: 'healthy', timestamp: Date.now(), usersLoaded: allowedUsers.length });
+app.get('/', (req, res) => {
+    res.send('<h1>VIP COMMUNITY PRO AI Backend — OK</h1><p>Endpoints: /api/check-access, /api/allowed-users, /api/admin/add-user, /api/admin/remove-user, /api/news, /api/news/refresh</p>');
 });
 
 app.get('/api/check-access', (req, res) => {
@@ -175,15 +174,33 @@ app.get('/api/check-access', (req, res) => {
 });
 
 app.get('/api/allowed-users', (req, res) => {
-    res.json({
-        success: true,
-        count: allowedUsers.length,
+    res.json({ 
+        success: true, 
         users: allowedUsers,
+        count: allowedUsers.length,
         master: MASTER_ADMIN
     });
 });
 
-// ==================== АДМИН ЭНДПОИНТЫ ====================
+app.get('/api/payouts', (req, res) => {
+    res.json(currentPayouts);
+});
+
+app.post('/api/update-payouts', (req, res) => {
+    const { data } = req.body;
+    if (!data) return res.status(400).json({ success: false, error: 'data required' });
+
+    currentPayouts = {
+        status: "ONLINE",
+        timestamp: Date.now(),
+        categories: data
+    };
+    console.log('[Market] Данные обновлены от Python');
+    res.json({ success: true });
+});
+
+// ==================== АДМИН ЭНДПОИНТЫ (защищённые) ====================
+
 app.post('/api/admin/add-user', async (req, res) => {
     const { userId, adminId } = req.body;
 
@@ -197,7 +214,7 @@ app.post('/api/admin/add-user', async (req, res) => {
         return res.status(500).json({ success: false, error: result.error });
     }
 
-    res.json({ success: true, users: allowedUsers, alreadyExists: !!result.alreadyExists });
+    res.json({ success: true, users: allowedUsers, alreadyExists: result.alreadyExists || false });
 });
 
 app.post('/api/admin/remove-user', async (req, res) => {
@@ -216,14 +233,14 @@ app.post('/api/admin/remove-user', async (req, res) => {
     res.json({ success: true, users: allowedUsers });
 });
 
-// Legacy endpoints (для совместимости)
+// ==================== СТАРЫЕ ЭНДПОИНТЫ ====================
 app.post('/api/add-user', async (req, res) => {
     req.body.adminId = MASTER_ADMIN;
     const { userId } = req.body;
     if (!userId) return res.status(400).json({ success: false, error: 'userId required' });
 
     await addUserToSupabase(userId);
-    res.json({ success: true, users: allowedUsers, note: 'Используйте /api/admin/add-user' });
+    res.json({ success: true, users: allowedUsers, note: 'Используйте /api/admin/add-user для явной проверки' });
 });
 
 app.post('/api/remove-user', async (req, res) => {
@@ -233,24 +250,6 @@ app.post('/api/remove-user', async (req, res) => {
 
     await removeUserFromSupabase(userId);
     res.json({ success: true, users: allowedUsers });
-});
-
-// ==================== PAYOUTS ====================
-let currentPayouts = {
-    status: "ONLINE",
-    timestamp: Date.now(),
-    categories: { currencies: [], crypto: [], commodities: [], stocks: [], indices: [] }
-};
-
-app.get('/api/payouts', (req, res) => res.json(currentPayouts));
-
-app.post('/api/update-payouts', (req, res) => {
-    const { data } = req.body;
-    if (!data) return res.status(400).json({ success: false, error: 'data required' });
-
-    currentPayouts = { status: "ONLINE", timestamp: Date.now(), categories: data };
-    log('Данные выплат обновлены', 'MARKET');
-    res.json({ success: true });
 });
 
 // ==================== LIVE NEWS ====================
@@ -265,7 +264,9 @@ const RSS_FEEDS = [
 
 async function refreshNewsCache(force = false) {
     const now = Date.now();
-    if (!force && (now - lastNewsUpdate < NEWS_CACHE_TTL) && cachedNews.length > 0) return;
+    if (!force && (now - lastNewsUpdate < NEWS_CACHE_TTL) && cachedNews.length > 0) {
+        return;
+    }
 
     try {
         const allNews = [];
@@ -274,14 +275,18 @@ async function refreshNewsCache(force = false) {
         for (const feedUrl of RSS_FEEDS) {
             try {
                 const feed = await parser.parseURL(feedUrl);
+                
                 feed.items.slice(0, 8).forEach(item => {
                     const pubDate = new Date(item.pubDate || Date.now());
                     const timeAgo = getTimeAgo(pubDate);
-                    const content = ((item.title || "") + " " + (item.contentSnippet || "")).toLowerCase();
-
+                    
                     let category = "google";
-                    if (content.includes("crypto") || content.includes("bitcoin") || content.includes("ethereum") || content.includes("solana")) category = "tv";
-                    else if (content.includes("pocket option") || content.includes("binary option")) category = "pocket";
+                    const content = ((item.title || "") + " " + (item.contentSnippet || "")).toLowerCase();
+                    if (content.includes("crypto") || content.includes("bitcoin") || content.includes("ethereum") || content.includes("solana")) {
+                        category = "tv";
+                    } else if (content.includes("pocket option") || content.includes("binary option")) {
+                        category = "pocket";
+                    }
 
                     allNews.push({
                         id: idCounter++,
@@ -289,28 +294,31 @@ async function refreshNewsCache(force = false) {
                         pair: "Рынок • Новости",
                         text: (item.contentSnippet || item.title || "").replace(/<[^>]+>/g, '').substring(0, 165) + "...",
                         source: feed.title || "Финансовые новости",
-                        category,
+                        category: category,
                         time: timeAgo,
                         image: item.enclosure?.url || item.thumbnail || "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=600&q=80",
                         full: (item.contentSnippet || item.title || "").replace(/<[^>]+>/g, ''),
                         link: item.link || "#"
                     });
                 });
-            } catch (_) {}
+            } catch (feedErr) {
+                // тихо пропускаем
+            }
         }
 
         if (allNews.length > 0) {
             cachedNews = allNews.slice(0, 18);
             lastNewsUpdate = now;
-            log(`Кэш новостей обновлён: ${cachedNews.length} новостей`, 'NEWS');
+            console.log(`[News] Кэш обновлён: ${cachedNews.length} новостей`);
         }
     } catch (err) {
-        log(`Ошибка обновления новостей: ${err.message}`, 'ERROR');
+        console.error("[News] Ошибка обновления кэша:", err.message);
     }
 }
 
 function getTimeAgo(date) {
-    const diffMin = Math.floor((new Date() - date) / 60000);
+    const now = new Date();
+    const diffMin = Math.floor((now - date) / 60000);
     if (diffMin < 1) return "только что";
     if (diffMin < 60) return `${diffMin} мин назад`;
     const diffH = Math.floor(diffMin / 60);
@@ -319,25 +327,35 @@ function getTimeAgo(date) {
 
 app.get('/api/news', async (req, res) => {
     await refreshNewsCache();
-    res.json({ success: true, lastUpdated: lastNewsUpdate, count: cachedNews.length, news: cachedNews });
+    res.json({
+        success: true,
+        lastUpdated: lastNewsUpdate,
+        count: cachedNews.length,
+        news: cachedNews
+    });
 });
 
 app.post('/api/news/refresh', async (req, res) => {
     await refreshNewsCache(true);
-    res.json({ success: true, lastUpdated: lastNewsUpdate, count: cachedNews.length, message: "Новости обновлены" });
+    res.json({ 
+        success: true, 
+        lastUpdated: lastNewsUpdate, 
+        count: cachedNews.length,
+        message: "Новости обновлены"
+    });
 });
 
 // ==================== ЗАПУСК ====================
 app.listen(PORT, async () => {
-    log('==================================================', 'START');
-    log(`VIP COMMUNITY PRO AI Backend запущен на порту ${PORT}`, 'START');
-    log('==================================================', 'START');
-
+    console.log(`==================================================`);
+    console.log(` VIP COMMUNITY PRO AI Backend запущен на порту ${PORT}`);
+    console.log(`==================================================`);
+    
     await loadAllowedUsers();
     await refreshNewsCache(true);
-    setInterval(() => refreshNewsCache(), NEWS_CACHE_TTL);
+    setInterval(() => refreshNewsCache(), 2 * 60 * 1000);
 });
 
-// Корректное завершение
-process.once('SIGINT', () => { bot.stop('SIGINT'); log('Бот остановлен (SIGINT)', 'SHUTDOWN'); });
-process.once('SIGTERM', () => { bot.stop('SIGTERM'); log('Бот остановлен (SIGTERM)', 'SHUTDOWN'); });
+// Корректное завершение работы бота при рестарте сервера
+process.once('SIGINT', () => bot.stop('SIGINT'));
+process.once('SIGTERM', () => bot.stop('SIGTERM'));
