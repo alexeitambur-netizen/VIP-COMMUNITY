@@ -3115,14 +3115,21 @@
             // Реальные новости загружаются ТОЛЬКО с сервера через NewsAPI (никаких фейковых данных)
             // newsDb полностью удалён — только liveNews из backend
 
-            // ==================== LIVE NEWS (Backend → RSS Fallback) ====================
+            // ==================== LIVE NEWS — Полностью в обход Render (чистый Frontend) ====================
             let liveNews = [];
-            const RSS_PROXY = "https://api.rss2json.com/v1/api.json?rss_url=";
-            const NEWS_RSS_FEEDS = [
+
+            // Несколько публичных CORS-прокси (пробуем по очереди, если один не работает)
+            const CORS_PROXIES = [
+                "https://api.allorigins.win/raw?url=",
+                "https://corsproxy.io/?",
+                "https://proxy.cors.sh/"
+            ];
+
+            // Хорошие источники финансовых новостей (приоритет — ForexLive)
+            const NEWS_RSS_SOURCES = [
                 "https://www.forexlive.com/feed/",
-                "https://news.google.com/rss/search?q=financial+markets+OR+forex+OR+crypto&hl=ru&gl=RU&ceid=RU:ru",
-                "https://www.investing.com/rss/news.rss",
-                "https://rss.app/feeds/v1.1/5qQvN2vN2vN2vN2vN2vN2vN2.rss"   // fallback financial rss (если нужно)
+                "https://news.google.com/rss/search?q=forex+OR+crypto+OR+markets&hl=ru&gl=RU&ceid=RU:ru",
+                "https://www.investing.com/rss/news.rss"
             ];
 
             async function fetchLiveNews() {
@@ -3149,53 +3156,67 @@
                     console.warn("[PRO AI] Backend /api/news недоступен, пробуем RSS...", backendErr.message);
                 }
 
-                // === 2. Fallback: RSS через публичный прокси ===
+                // === Чистый Frontend: Прямой парсинг RSS через несколько CORS-прокси ===
                 try {
                     const allItems = [];
-                    
-                    for (const rssUrl of NEWS_RSS_FEEDS) {
-                        const response = await fetch(RSS_PROXY + encodeURIComponent(rssUrl));
-                        if (!response.ok) continue;
-                        
-                        const data = await response.json();
-                        if (data.status !== "ok" || !data.items) continue;
-                        
-                        data.items.slice(0, 8).forEach((item) => {
-                            const pubDate = new Date(item.pubDate || Date.now());
-                            const timeAgo = getTimeAgo(pubDate);
-                            
-                            let category = "google";
-                            const titleLower = (item.title + " " + (item.description || "")).toLowerCase();
-                            if (titleLower.includes("crypto") || titleLower.includes("bitcoin") || titleLower.includes("ethereum")) {
-                                category = "tv";
-                            } else if (titleLower.includes("pocket option") || titleLower.includes("binary")) {
-                                category = "pocket";
-                            }
-                            
-                            allItems.push({
-                                id: 1000 + allItems.length,
-                                title: item.title.length > 110 ? item.title.substring(0, 107) + "..." : item.title,
-                                pair: "Рынок • Новости",
-                                text: item.description ? item.description.replace(/<[^>]+>/g, '').substring(0, 160) + "..." : "Читайте полную новость на источнике.",
-                                source: data.feed?.title || "Финансовые новости",
-                                category: category,
-                                time: timeAgo,
-                                image: item.enclosure?.link || item.thumbnail || "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=600&q=80",
-                                full: item.description ? item.description.replace(/<[^>]+>/g, '') : item.title,
-                                link: item.link || "#"
-                            });
-                        });
+
+                    for (const rssUrl of NEWS_RSS_SOURCES) {
+                        let success = false;
+
+                        for (const proxy of CORS_PROXIES) {
+                            try {
+                                const res = await fetch(proxy + encodeURIComponent(rssUrl));
+                                if (!res.ok) continue;
+
+                                const xmlText = await res.text();
+                                const parser = new DOMParser();
+                                const xml = parser.parseFromString(xmlText, "text/xml");
+                                const items = xml.querySelectorAll("item");
+
+                                const sourceName = rssUrl.includes("forexlive") ? "ForexLive" : 
+                                                   rssUrl.includes("investing") ? "Investing.com" : "Google News";
+
+                                items.forEach((item, i) => {
+                                    if (i > 5 || allItems.length >= 10) return;
+                                    const title = item.querySelector("title")?.textContent?.trim();
+                                    if (!title) return;
+
+                                    const desc = (item.querySelector("description")?.textContent || "").replace(/<[^>]+>/g, "").trim();
+                                    const link = item.querySelector("link")?.textContent?.trim() || "#";
+                                    const pub = item.querySelector("pubDate")?.textContent;
+
+                                    allItems.push({
+                                        id: 4000 + Date.now() + i,
+                                        title: title.length > 115 ? title.substring(0, 112) + "..." : title,
+                                        pair: sourceName === "ForexLive" ? "Forex • Новости" : "Рынок • Новости",
+                                        text: desc.substring(0, 165) || "Читайте полную новость на источнике.",
+                                        source: sourceName,
+                                        time: getTimeAgo(pub ? new Date(pub) : new Date()),
+                                        image: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=600&q=80",
+                                        full: desc || title,
+                                        link: link
+                                    });
+                                });
+
+                                if (allItems.length > 0) {
+                                    success = true;
+                                    break;
+                                }
+                            } catch (e) {}
+                        }
+
+                        if (success && allItems.length >= 6) break;
                     }
-                    
+
                     if (allItems.length > 0) {
-                        liveNews = allItems.slice(0, 12);
-                        console.log("%c[PRO AI] Новости загружены через RSS (fallback)", "color:#ffaa00");
+                        liveNews = allItems;
+                        console.log(`%c[PRO AI] Загружено ${allItems.length} реальных новостей напрямую (в обход Render)`, "color:#00FFAA");
                         return true;
                     }
-                } catch (rssErr) {
-                    console.warn("[PRO AI] RSS fallback тоже не сработал:", rssErr.message);
+                } catch (e) {
+                    console.warn("[PRO AI] Ошибка при загрузке RSS:", e.message);
                 }
-                
+
                 return false;
             }
 
@@ -3226,22 +3247,13 @@
 
                     if (toShow.length === 0) {
                         box.innerHTML = `
-                            <div style="text-align:center; padding:40px 20px; color:#a4b1cd;">
-                                <div style="font-size:48px; margin-bottom:14px; opacity:0.6;">📰</div>
-                                <div style="font-weight:800; font-size:16px; margin-bottom:10px; color:#fff;">Не удалось загрузить Live-новости</div>
-                                
-                                <div style="font-size:13px; line-height:1.55; color:#c8d0e0; max-width:280px; margin:0 auto 18px;">
-                                    Backend на Render не отвечает.<br>
-                                    RSS-прокси временно недоступен.
-                                </div>
-
-                                <button onclick="switchNewsTab('grok'); document.getElementById('news-grok-tab').scrollIntoView({behavior:'smooth'})" 
-                                        style="background: linear-gradient(90deg, var(--neon-purple) 0%, #c026ff 100%); color:#fff; border:none; padding:12px 28px; border-radius:999px; font-size:13px; font-weight:900; cursor:pointer; box-shadow: 0 0 20px rgba(157,0,255,0.4);">
-                                    🤖 Перейти к Grok AI новостям
-                                </button>
-                                
-                                <div style="margin-top:16px; font-size:11px; color:#667085;">
-                                    Или нажми «ОБНОВИТЬ LIVE СЕЙЧАС» ещё раз
+                            <div style="text-align:center; padding:50px 20px; color:#a4b1cd;">
+                                <div style="font-size:48px; margin-bottom:16px; opacity:0.6;">📰</div>
+                                <div style="font-weight:800; font-size:16px; margin-bottom:10px; color:#fff;">Загрузка реальных новостей...</div>
+                                <div style="font-size:13px; line-height:1.6; color:#ffaa00; max-width:260px; margin:0 auto;">
+                                    Если новости не появляются —<br>
+                                    убедись, что <b>NEWSAPI_KEY</b> добавлен на Render<br>
+                                    и сделан Manual Deploy.
                                 </div>
                             </div>`;
                         box.style.opacity = 1;
@@ -3376,21 +3388,6 @@
                         grokBtn.style.background = 'rgba(255,255,255,0.06)';
                         grokBtn.style.color = '#fff';
                         grokBtn.style.border = '1px solid rgba(255,255,255,0.15)';
-                    }
-
-                    // Автозагрузка новостей при первом открытии вкладки Live
-                    if (typeof liveNews !== 'undefined' && liveNews.length === 0) {
-                        setTimeout(() => {
-                            const loadingEl = document.getElementById('news-loading');
-                            const boxEl = document.getElementById('live-news-box');
-                            if (loadingEl) loadingEl.style.display = 'block';
-                            if (boxEl) boxEl.innerHTML = '';
-
-                            fetchLiveNews().then(success => {
-                                if (loadingEl) loadingEl.style.display = 'none';
-                                renderAiNewsFeed();
-                            });
-                        }, 150);
                     }
                 } else {
                     liveTab.style.display = 'none';
