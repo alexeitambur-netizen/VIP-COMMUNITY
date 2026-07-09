@@ -1227,15 +1227,15 @@
                 <div class="mode-btn" onclick="switchScreen('bot-chat-screen')">
                     <div class="mode-icon" style="color: var(--neon-purple);">💬</div>
                     <div class="mode-info">
-                        <h4>Прямой диалог с Нейросетью</h4>
-                        <p>Консультации по риск-менеджменту и стратегиям</p>
+                        <h4>Direct Chat with Neural Net</h4>
+                        <p>Consultations on risk management and strategies</p>
                     </div>
                 </div>
                 <div class="mode-btn" onclick="switchScreen('bot-analysis-screen'); window.filterAnalysisPairs();">
                     <div class="mode-icon" style="color: var(--neon-green);">🔍</div>
                     <div class="mode-info">
-                        <h4>Сканер котировок</h4>
-                        <p>Запуск глубокого технического анализа валютных пар</p>
+                        <h4>Quote Scanner</h4>
+                        <p>Launch deep technical analysis of currency pairs</p>
                     </div>
                 </div>
             </div>
@@ -1243,13 +1243,13 @@
         </div>
 
         <div class="screen" id="bot-chat-screen">
-            <h2>💬 ИИ-КОНСУЛЬТАНТ</h2>
+            <h2>💬 AI CONSULTANT</h2>
             <div class="chat-box" id="ai-chat-container">
                 <div class="chat-msg bot">PRO AI system activated. Ready to analyze the market or adjust your trading system. Enter data...</div>
                 <div class="chat-msg bot" id="ai-chat-typing" style="display:none; color:var(--neon-green); border:none; background:transparent; box-shadow:none;">Генерация ответа...</div>
             </div>
             <div class="input-area">
-                <input type="text" id="ai-chat-input" placeholder="Введите запрос нейросети...">
+                <input type="text" id="ai-chat-input" placeholder="Enter neural network query...">
                 <button class="send-btn" onclick="sendAiChatMessage()">SEND</button>
             </div>
             <button class="back-btn" onclick="switchScreen('bot-selector-screen')" style="margin-top:16px;">← СМЕНИТЬ МОДУЛЬ</button>
@@ -1369,7 +1369,7 @@
             
             <!-- ВХОДНЫЕ ДАННЫЕ -->
             <div class="glass-box">
-                <h4 style="text-align:center; color:var(--neon-green); margin-bottom:16px; font-size:14px; letter-spacing:1px;">ВХОДНЫЕ ДАННЫЕ</h4>
+                <h4 style="text-align:center; color:var(--neon-green); margin-bottom:16px; font-size:14px; letter-spacing:1px;">INPUT DATA</h4>
                 
                 <div style="margin-bottom:18px;">
                     <div style="font-size:12px; color:#a4b1cd; margin-bottom:6px; font-weight:700;">ТЕКУЩИЙ ДЕПОЗИТ ($)</div>
@@ -1411,7 +1411,7 @@
             
             <!-- РЕЗУЛЬТАТЫ -->
             <div class="glass-box" style="background: linear-gradient(135deg, rgba(0,255,170,0.07) 0%, rgba(157,0,255,0.05) 100%); border-color: rgba(0,255,170,0.25);">
-                <h4 style="text-align:center; color:var(--neon-green); margin-bottom:14px; font-size:14px; letter-spacing:1px;">РЕЗУЛЬТАТЫ РАСЧЁТА</h4>
+                <h4 style="text-align:center; color:var(--neon-green); margin-bottom:14px; font-size:14px; letter-spacing:1px;">CALCULATION RESULTS</h4>
                 
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
                     <div style="background:rgba(0,0,0,0.45); border-radius:18px; padding:14px; text-align:center; border:1px solid rgba(255,46,99,0.2);">
@@ -1442,7 +1442,7 @@
             
             <!-- РАСЧЁТ ПО ЦЕЛИ -->
             <div class="glass-box">
-                <h4 style="text-align:center; color:#fff; margin-bottom:12px; font-size:13px; letter-spacing:1px;">РАСЧЁТ ПО ЦЕЛИ</h4>
+                <h4 style="text-align:center; color:#fff; margin-bottom:12px; font-size:13px; letter-spacing:1px;">GOAL CALCULATION</h4>
                 
                 <div style="margin-bottom:12px;">
                     <div style="font-size:12px; color:#a4b1cd; margin-bottom:6px; font-weight:700;">Хочу заработать за неделю ($)</div>
