@@ -1011,10 +1011,10 @@
         </div>
 
         <div class="screen" id="profile-screen">
-            <h2>👤 ДАННЫЕ ТРЕЙДЕРА</h2>
+            <h2 data-i18n="profile_title">👤 ДАННЫЕ ТРЕЙДЕРА</h2>
             <div class="glass-box">
                 <div class="info-item">
-                    <h4>Позывной</h4>
+                    <h4 data-i18n="profile_callsign">Позывной</h4>
                     <p id="profile-username">Загрузка...</p>
                 </div>
                 <div class="info-item">
@@ -1022,7 +1022,7 @@
                     <p id="profile-telegram-id">Загрузка...</p>
                 </div>
                 <div class="info-item">
-                    <h4>Рабочий капитал</h4>
+                    <h4 data-i18n="profile_working_capital">Рабочий капитал</h4>
                     <div class="pocket-input-wrapper" style="background: rgba(0,0,0,0.5); margin-top: 10px;">
                         <span>$</span>
                         <input type="number" id="profile-pocket-input" class="pocket-balance-input" value="1000" oninput="syncBalances(this.value)">
@@ -1030,11 +1030,11 @@
                 </div>
 
                 <div id="admin-link-box" style="display: none; margin-top: 20px;">
-                    <button class="back-btn" style="color: #000; background: var(--neon-purple); border: none; font-size: 15px; box-shadow: 0 0 20px rgba(157,0,255,0.4);" onclick="switchScreen('admin-panel-screen')">⚙️ ПАНЕЛЬ УПРАВЛЕНИЯ</button>
+                    <button class="back-btn" style="color: #000; background: var(--neon-purple); border: none; font-size: 15px; box-shadow: 0 0 20px rgba(157,0,255,0.4);" onclick="switchScreen('admin-panel-screen')" data-i18n="admin_panel">⚙️ ПАНЕЛЬ УПРАВЛЕНИЯ</button>
                 </div>
 
                 <div class="target-box" style="margin-top:20px; border-color: var(--neon-green);">
-                    <h4 style="color:var(--neon-green); font-size:14px; margin-bottom:8px; font-weight:800; text-transform:uppercase;">🧠 Директива ИИ:</h4>
+                    <h4 style="color:var(--neon-green); font-size:14px; margin-bottom:8px; font-weight:800; text-transform:uppercase;" data-i18n="ai_directive">🧠 Директива ИИ:</h4>
                     <div class="ai-hint-label" id="ai-profile-hint">Сбор данных для анализа...</div>
                 </div>
             </div>
@@ -4686,7 +4686,12 @@
                     "menu_news": "ИИ Новости",
                     "menu_notes": "Мои Заметки",
                     "back": "← НАЗАД В ТЕРМИНАЛ",
-                    "back_to_menu": "← НАЗАД В МЕНЮ"
+                    "back_to_menu": "← НАЗАД В МЕНЮ",
+                    "profile_title": "ДАННЫЕ ТРЕЙДЕРА",
+                    "profile_callsign": "Позывной",
+                    "profile_working_capital": "Рабочий капитал",
+                    "admin_panel": "ПАНЕЛЬ УПРАВЛЕНИЯ",
+                    "ai_directive": "Директива ИИ:"
                 },
                 en: {
                     "welcome": "POCKET OPTION",
@@ -4701,7 +4706,12 @@
                     "menu_news": "AI News",
                     "menu_notes": "My Notes",
                     "back": "← BACK TO TERMINAL",
-                    "back_to_menu": "← BACK TO MENU"
+                    "back_to_menu": "← BACK TO MENU",
+                    "profile_title": "TRADER DATA",
+                    "profile_callsign": "Callsign",
+                    "profile_working_capital": "Working Capital",
+                    "admin_panel": "ADMIN PANEL",
+                    "ai_directive": "AI DIRECTIVE:"
                 }
             };
 
@@ -4761,6 +4771,18 @@
                     const txt = btn.innerText || '';
                     if (txt.includes('НАЗАД') || txt.includes('BACK') || txt.includes('ВЕРНУТЬСЯ')) {
                         btn.innerText = (lang === 'ru') ? '← НАЗАД В ТЕРМИНАЛ' : '← BACK TO MENU';
+                    }
+                });
+
+                // === FULL TRANSLATION: Apply data-i18n to all elements ===
+                document.querySelectorAll('[data-i18n]').forEach(el => {
+                    const key = el.getAttribute('data-i18n');
+                    if (t[key]) {
+                        // Preserve emoji/icons if present
+                        const originalText = el.innerText || el.textContent;
+                        const emojiMatch = originalText.match(/^[\u{1F000}-\u{1F9FF}\u{2600}-\u{27BF}\u{1F300}-\u{1F5FF}\s]+/u);
+                        const emoji = emojiMatch ? emojiMatch[0] : '';
+                        el.innerText = emoji + t[key];
                     }
                 });
 
