@@ -163,6 +163,36 @@
         .icon-circle { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, rgba(0,255,170,0.15) 0%, rgba(157,0,255,0.15) 100%); display: flex; justify-content: center; align-items: center; margin-bottom: 16px; font-size: 28px; border: 1px solid rgba(255,255,255,0.05); box-shadow: inset 0 0 15px rgba(0,0,0,0.5); }
         .card-title { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #fff; text-align: center; }
 
+        /* Language pills on main screen - small elegant boxes */
+        .lang-pill {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 999px;
+            padding: 6px 14px;
+            font-size: 12px;
+            font-weight: 800;
+            color: #a4b1cd;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .lang-pill span {
+            font-weight: 900;
+            letter-spacing: 0.5px;
+        }
+        .lang-pill.active {
+            background: var(--neon-green);
+            color: #000;
+            border-color: var(--neon-green);
+            box-shadow: 0 0 12px rgba(0,255,170,0.4);
+        }
+        .lang-pill:active {
+            transform: scale(0.95);
+        }
+
         /* Внутренние экраны */
         .screen-content { background: var(--glass-bg); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border-radius: 40px; padding: 24px; margin-bottom: 16px; border: 1px solid var(--glass-border); box-shadow: 0 15px 35px rgba(0,0,0,0.3); }
         .info-item { padding: 18px; background: rgba(0,0,0,0.3); border-radius: 25px; margin-bottom: 14px; border-left: 4px solid var(--neon-green); position: relative; overflow: hidden; }
@@ -878,6 +908,16 @@
             <div class="welcome" style="font-size:11px; letter-spacing:3px;">POCKET OPTION</div>
             <div class="brand-title">PRO AI BOT</div>
             
+            <!-- Language Selector - Small elegant pills on main screen -->
+            <div style="display: flex; justify-content: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap;">
+                <div onclick="switchLanguage('ru')" class="lang-pill active" data-lang="ru" id="lang-pill-ru">
+                    🇷🇺 <span>РУ</span>
+                </div>
+                <div onclick="switchLanguage('en')" class="lang-pill" data-lang="en" id="lang-pill-en">
+                    🇬🇧 <span>EN</span>
+                </div>
+            </div>
+            
             <div class="time-bar glass-box" style="padding: 12px 20px; margin-bottom: 16px;">
                 <div class="time-item">МОСКВА <span id="clock-moscow">00:00</span></div>
                 <div class="time-item">КИЕВ <span id="clock-kyiv">00:00</span></div>
@@ -989,15 +1029,6 @@
                     </div>
                 </div>
 
-                <!-- Language Switcher -->
-                <div class="info-item" style="border-left-color: var(--neon-purple);">
-                    <h4>Язык интерфейса / Interface Language</h4>
-                    <div style="display:flex; gap:12px; margin-top:12px;">
-                        <button onclick="setLanguage('ru')" class="back-btn" style="flex:1; background: var(--neon-green); color:#000; border:none; font-weight:900;">🇷🇺 Русский</button>
-                        <button onclick="setLanguage('en')" class="back-btn" style="flex:1; background: var(--neon-purple); color:#fff; border:none; font-weight:900;">🇬🇧 English</button>
-                    </div>
-                </div>
-                
                 <div id="admin-link-box" style="display: none; margin-top: 20px;">
                     <button class="back-btn" style="color: #000; background: var(--neon-purple); border: none; font-size: 15px; box-shadow: 0 0 20px rgba(157,0,255,0.4);" onclick="switchScreen('admin-panel-screen')">⚙️ ПАНЕЛЬ УПРАВЛЕНИЯ</button>
                 </div>
@@ -4535,17 +4566,127 @@
                 }
             }
 
-            // Language system (minimal working version)
-            function setLanguage(lang) {
-                SafeStorage.setItem('app_language', lang);
-                alert(lang === 'ru' ? 'Язык изменён на Русский. Полная поддержка будет в следующей версии.' : 'Language changed to English. Full support coming in next version.');
-                // In full version here we would translate all data-i18n elements
+            // ==================== FULL LANGUAGE SYSTEM (RU / EN) ====================
+            const EMBEDDED_TRANSLATIONS = {
+                ru: {
+                    "welcome": "POCKET OPTION",
+                    "brand": "PRO AI BOT",
+                    "menu_profile": "Профиль",
+                    "menu_neural": "Нейросеть",
+                    "menu_knowledge": "База знаний",
+                    "menu_patterns": "Паттерны",
+                    "menu_strategies": "Стратегии PRO",
+                    "menu_calculator": "Калькулятор",
+                    "menu_macro": "Макро-данные",
+                    "menu_news": "ИИ Новости",
+                    "menu_notes": "Мои Заметки",
+                    "back": "← НАЗАД В ТЕРМИНАЛ",
+                    "back_to_menu": "← НАЗАД В МЕНЮ"
+                },
+                en: {
+                    "welcome": "POCKET OPTION",
+                    "brand": "PRO AI BOT",
+                    "menu_profile": "Profile",
+                    "menu_neural": "Neural Net",
+                    "menu_knowledge": "Knowledge Base",
+                    "menu_patterns": "Patterns",
+                    "menu_strategies": "PRO Strategies",
+                    "menu_calculator": "Calculator",
+                    "menu_macro": "Macro Data",
+                    "menu_news": "AI News",
+                    "menu_notes": "My Notes",
+                    "back": "← BACK TO TERMINAL",
+                    "back_to_menu": "← BACK TO MENU"
+                }
+            };
+
+            let currentLang = 'ru';
+
+            async function loadTranslations(lang) {
+                // Try to load from external JSON (works when hosted properly)
+                try {
+                    const res = await fetch(`./lang/${lang}.json`);
+                    if (res.ok) {
+                        return await res.json();
+                    }
+                } catch (e) {}
+                // Fallback to embedded
+                return EMBEDDED_TRANSLATIONS[lang] || EMBEDDED_TRANSLATIONS.ru;
             }
 
-            function initLanguage() {
-                const saved = SafeStorage.getItem('app_language') || 'ru';
-                // Can be expanded later
+            async function applyLanguage(lang) {
+                currentLang = lang;
+                SafeStorage.setItem('app_language', lang);
+
+                // Update active pill
+                document.querySelectorAll('.lang-pill').forEach(pill => {
+                    pill.classList.toggle('active', pill.getAttribute('data-lang') === lang);
+                });
+
+                // Update key static texts on current screen
+                const t = await loadTranslations(lang);
+
+                // Menu screen texts
+                const welcomeEl = document.querySelector('#menu-screen .welcome');
+                if (welcomeEl) welcomeEl.innerText = t.welcome || 'POCKET OPTION';
+
+                const brandEl = document.querySelector('#menu-screen .brand-title');
+                if (brandEl) brandEl.innerText = t.brand || 'PRO AI BOT';
+
+                // Update menu cards
+                const cards = document.querySelectorAll('#menu-screen .card');
+                cards.forEach(card => {
+                    const target = card.getAttribute('data-target');
+                    const titleEl = card.querySelector('.card-title');
+                    if (!titleEl) return;
+
+                    if (target === 'profile-screen') titleEl.innerText = t.menu_profile || 'Профиль';
+                    else if (target === 'bot-selector-screen') titleEl.innerText = t.menu_neural || 'Нейросеть';
+                    else if (target === 'education-screen') titleEl.innerText = t.menu_knowledge || 'База знаний';
+                    else if (target === 'patterns-screen') titleEl.innerText = t.menu_patterns || 'Паттерны';
+                    else if (target === 'strategies-screen') titleEl.innerText = t.menu_strategies || 'Стратегии PRO';
+                    else if (target === 'sessions-screen') titleEl.innerText = t.menu_calculator || 'Калькулятор';
+                    else if (target === 'calendar-screen') titleEl.innerText = t.menu_macro || 'Макро-данные';
+                    else if (target === 'news-screen') titleEl.innerText = t.menu_news || 'ИИ Новости';
+                    else if (target === 'notes-screen') titleEl.innerText = t.menu_notes || 'Мои Заметки';
+                });
+
+                // Update back buttons (simple global replace for visible ones)
+                document.querySelectorAll('.back-btn').forEach(btn => {
+                    if (btn.innerText.includes('НАЗАД') || btn.innerText.includes('BACK')) {
+                        btn.innerText = (lang === 'ru') ? '← НАЗАД В ТЕРМИНАЛ' : '← BACK TO TERMINAL';
+                    }
+                });
+
+                // You can expand this function easily by adding more data-i18n or IDs
+                console.log(`[PRO AI] Language switched to: ${lang.toUpperCase()}`);
             }
+
+            window.switchLanguage = async function(lang) {
+                if (lang === currentLang) return;
+                await applyLanguage(lang);
+                
+                // Optional: gentle haptic
+                if (typeof triggerHaptic === 'function') triggerHaptic('light');
+            };
+
+            async function initLanguage() {
+                const saved = SafeStorage.getItem('app_language') || 'ru';
+                currentLang = saved;
+                
+                // Set initial active pill
+                document.querySelectorAll('.lang-pill').forEach(pill => {
+                    pill.classList.toggle('active', pill.getAttribute('data-lang') === saved);
+                });
+
+                // Apply language (non-blocking)
+                setTimeout(async () => {
+                    await applyLanguage(saved);
+                }, 300);
+            }
+
+            // Make sure init calls the language init
+            // (already called at the bottom)
 
             init();
             initLanguage();
