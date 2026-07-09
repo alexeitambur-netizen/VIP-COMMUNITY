@@ -1106,32 +1106,34 @@
                 <button onclick="switchNewsTab('grok')" id="news-tab-grok" class="back-btn" style="flex:1; max-width:160px; font-size:13px;">🤖 GROK AI ГЕНЕРАЦИЯ</button>
             </div>
 
-            <!-- === LIVE NEWS TAB (полностью в обход Render, большие карточки + модалка внутри app) === -->
+            <!-- === LIVE NEWS TAB === -->
             <div id="news-live-tab">
-                <div style="text-align:center; margin-bottom:16px;">
-                    <div style="color:var(--neon-green); font-size:18px; font-weight:900;">📰 РЕАЛЬНЫЕ НОВОСТИ РЫНКОВ</div>
-                    <div style="color:#a4b1cd; font-size:12px; font-weight:600;">ForexLive + Investing • Обновление в реальном времени</div>
+                <div class="glass-box" style="padding: 20px 18px; margin-bottom: 12px;">
+                    <div style="text-align:center; margin-bottom:16px;">
+                        <div style="color:var(--neon-green); font-size:16px; font-weight:900; letter-spacing:0.5px;">РЕАЛЬНЫЕ НОВОСТИ РЫНКОВ</div>
+                        <div style="color:#a4b1cd; font-size:11px; font-weight:600; margin-top:4px;">NewsAPI + RSS • Обновление в реальном времени</div>
+                    </div>
+                    
+                    <div id="news-loading" style="display: none; text-align: center; padding: 30px 20px;">
+                        <div style="font-size: 48px; margin-bottom: 12px; opacity: 0.7;">📰</div>
+                        <div style="color: #fff; font-weight: 800; font-size: 15px; margin-bottom: 6px;">Загрузка реальных новостей...</div>
+                        <div style="color: #a4b1cd; font-size: 13px;">Подключение к глобальным источникам</div>
+                    </div>
+                    
+                    <div class="news-container" id="live-news-box" style="gap: 14px; min-height: 180px;">
+                        <!-- Реальные новости -->
+                    </div>
+                    
+                    <div style="text-align:center; margin-top:16px;">
+                        <div style="font-size:10px; color:#667085; font-weight:600;" id="news-last-updated">
+                            Обновление каждые 5 минут • Автоматически
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Индикатор загрузки -->
-                <div id="live-news-loading" style="display:none; text-align:center; padding:40px 20px;">
-                    <div style="font-size:42px; margin-bottom:12px;">📰</div>
-                    <div style="color:#fff; font-weight:800; font-size:16px;">Загружаем свежие новости...</div>
-                    <div style="color:#a4b1cd; font-size:13px; margin-top:6px;">Прямой парсинг из надёжных источников</div>
-                </div>
-
-                <!-- Большие карточки новостей -->
-                <div id="live-news-big-list" style="display:flex; flex-direction:column; gap:14px; margin-bottom:16px;">
-                    <!-- JS рендерит большие карточки сюда -->
-                </div>
-
-                <button onclick="refreshLiveBigNews()" class="back-btn" style="background: var(--neon-purple); color:#fff; border:none; font-weight:900; box-shadow:0 0 20px rgba(157,0,255,0.35); margin-bottom:12px;">
-                    🔄 ОБНОВИТЬ НОВОСТИ
+                <button onclick="forceRefreshNews()" class="back-btn" style="background: var(--neon-purple); color: #fff; border: none; font-weight: 900; box-shadow: 0 0 20px rgba(157,0,255,0.35); margin-bottom: 8px;">
+                    🔄 ОБНОВИТЬ LIVE СЕЙЧАС
                 </button>
-
-                <div style="text-align:center; font-size:11px; color:#667085; font-weight:600;">
-                    Данные загружаются напрямую • Кликни на новость — читай внутри приложения
-                </div>
             </div>
 
             <!-- === GROK AI GENERATION TAB === -->
@@ -3617,71 +3619,6 @@
             }
 
             // Календарь
-            // ==================== БОЛЬШИЕ КАРТОЧКИ ДЛЯ LIVE РЫНОК (с модалкой внутри app) ====================
-            async function refreshLiveBigNews() {
-                const loading = document.getElementById('live-news-loading');
-                const list = document.getElementById('live-news-big-list');
-                if (!list) return;
-
-                if (loading) loading.style.display = 'block';
-                list.innerHTML = '';
-
-                const success = await fetchLiveNews();
-
-                if (loading) loading.style.display = 'none';
-
-                if (!success || liveNews.length === 0) {
-                    list.innerHTML = `
-                        <div style="text-align:center; padding:30px; color:#a4b1cd; background:rgba(0,0,0,0.3); border-radius:20px;">
-                            Не удалось загрузить новости.<br>
-                            <button onclick="refreshLiveBigNews()" style="margin-top:12px; background:var(--neon-purple); color:#fff; border:none; padding:10px 20px; border-radius:999px; font-weight:900;">Попробовать снова</button>
-                        </div>`;
-                    return;
-                }
-
-                renderLiveBigNews();
-            }
-
-            function renderLiveBigNews() {
-                const list = document.getElementById('live-news-big-list');
-                if (!list) return;
-                list.innerHTML = '';
-
-                const toShow = liveNews.slice(0, 8);
-
-                toShow.forEach(news => {
-                    const card = document.createElement('div');
-                    card.style.cssText = 'background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.08); border-radius:24px; overflow:hidden; cursor:pointer; transition:all 0.2s;';
-                    
-                    card.innerHTML = `
-                        <div style="position:relative;">
-                            <img src="${news.image}" style="width:100%; height:160px; object-fit:cover;" onerror="this.src='https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=600&q=80'">
-                            <div style="position:absolute; top:12px; left:12px; background:rgba(0,0,0,0.75); padding:5px 14px; border-radius:20px; font-size:11px; font-weight:900; color:#fff;">
-                                ${news.source}
-                            </div>
-                            <div style="position:absolute; top:12px; right:12px; background:rgba(0,255,170,0.9); color:#000; padding:4px 11px; border-radius:20px; font-size:11px; font-weight:900;">
-                                ${news.time}
-                            </div>
-                        </div>
-                        <div style="padding:18px 20px 20px;">
-                            <div style="font-size:12px; color:var(--neon-green); font-weight:800; margin-bottom:6px; text-transform:uppercase;">${news.pair}</div>
-                            <div style="font-size:16px; line-height:1.3; font-weight:800; color:#fff; margin-bottom:10px;">${news.title}</div>
-                            <div style="font-size:14px; line-height:1.5; color:#c8d0e0;">${news.text}</div>
-                            
-                            <div style="margin-top:14px; text-align:right;">
-                                <span style="background:rgba(157,0,255,0.2); color:var(--neon-purple); padding:6px 16px; border-radius:999px; font-size:12px; font-weight:900;">ЧИТАТЬ ПОЛНОСТЬЮ →</span>
-                            </div>
-                        </div>
-                    `;
-
-                    card.addEventListener('click', () => {
-                        showNewsDetail(news.id);
-                    });
-
-                    list.appendChild(card);
-                });
-            }
-
             window.generateNewsCalendar = function() {
                 const grid = document.getElementById('calendar-days-box');
                 const title = document.getElementById('calendar-month-title');
