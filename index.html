@@ -1108,32 +1108,39 @@
 
             <!-- === LIVE NEWS TAB === -->
             <div id="news-live-tab">
-                <div class="glass-box" style="padding: 20px 18px; margin-bottom: 12px;">
-                    <div style="text-align:center; margin-bottom:16px;">
-                        <div style="color:var(--neon-green); font-size:16px; font-weight:900; letter-spacing:0.5px;">РЕАЛЬНЫЕ НОВОСТИ РЫНКОВ</div>
-                        <div style="color:#a4b1cd; font-size:11px; font-weight:600; margin-top:4px;">NewsAPI + RSS • Обновление в реальном времени</div>
+                <div class="glass-box" style="padding: 18px 16px; margin-bottom: 12px; border-color: rgba(157,0,255,0.3);">
+                    <div style="text-align:center; margin-bottom:12px;">
+                        <div style="color:var(--neon-purple); font-size:15px; font-weight:900;">📅 ЭКОНОМИЧЕСКИЙ КАЛЕНДАРЬ</div>
+                        <div style="color:#a4b1cd; font-size:11px; font-weight:600;">TradingView • Реальные события рынков в реальном времени</div>
                     </div>
-                    
-                    <div id="news-loading" style="display: none; text-align: center; padding: 30px 20px;">
-                        <div style="font-size: 48px; margin-bottom: 12px; opacity: 0.7;">📰</div>
-                        <div style="color: #fff; font-weight: 800; font-size: 15px; margin-bottom: 6px;">Загрузка реальных новостей...</div>
-                        <div style="color: #a4b1cd; font-size: 13px;">Подключение к глобальным источникам</div>
+
+                    <!-- TradingView Economic Calendar — работает полностью в обход Render, как тикер котировок сверху -->
+                    <div class="tradingview-widget-container" style="border-radius: 20px; overflow: hidden; border: 1px solid rgba(255,255,255,0.08);">
+                        <div class="tradingview-widget-container__widget"></div>
+                        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-events.js" async>
+                        {
+                        "width": "100%",
+                        "height": "560",
+                        "currencyFilter": "USD,EUR,GBP,JPY,CHF,CAD,AUD,NZD",
+                        "importanceFilter": "-1,0,1",
+                        "colorTheme": "dark",
+                        "isTransparent": true,
+                        "locale": "ru",
+                        "importance": "1"
+                        }
+                        </script>
                     </div>
-                    
-                    <div class="news-container" id="live-news-box" style="gap: 14px; min-height: 180px;">
-                        <!-- Реальные новости -->
-                    </div>
-                    
-                    <div style="text-align:center; margin-top:16px;">
-                        <div style="font-size:10px; color:#667085; font-weight:600;" id="news-last-updated">
-                            Обновление каждые 5 минут • Автоматически
-                        </div>
+
+                    <div style="font-size:10px; color:#667085; text-align:center; margin-top:10px; font-weight:600;">
+                        Данные в реальном времени • Высоковолатильные события
                     </div>
                 </div>
 
-                <button onclick="forceRefreshNews()" class="back-btn" style="background: var(--neon-purple); color: #fff; border: none; font-weight: 900; box-shadow: 0 0 20px rgba(157,0,255,0.35); margin-bottom: 8px;">
-                    🔄 ОБНОВИТЬ LIVE СЕЙЧАС
-                </button>
+                <div style="text-align:center; margin: 8px 0 16px;">
+                    <button onclick="switchNewsTab('grok')" class="back-btn" style="background: rgba(157,0,255,0.15); color:#fff; border:1px solid rgba(157,0,255,0.3); font-size:13px; padding:12px 24px;">
+                        🤖 Или сгенерировать анализ от Grok AI
+                    </button>
+                </div>
             </div>
 
             <!-- === GROK AI GENERATION TAB === -->
@@ -3115,20 +3122,11 @@
             // Реальные новости загружаются ТОЛЬКО с сервера через NewsAPI (никаких фейковых данных)
             // newsDb полностью удалён — только liveNews из backend
 
-            // ==================== LIVE NEWS — Полностью в обход Render (чистый Frontend) ====================
+            // ==================== LIVE NEWS (Backend → RSS Fallback) ====================
             let liveNews = [];
-
-            // Несколько публичных CORS-прокси (пробуем по очереди, если один не работает)
-            const CORS_PROXIES = [
-                "https://api.allorigins.win/raw?url=",
-                "https://corsproxy.io/?",
-                "https://proxy.cors.sh/"
-            ];
-
-            // Хорошие источники финансовых новостей (приоритет — ForexLive)
-            const NEWS_RSS_SOURCES = [
-                "https://www.forexlive.com/feed/",
-                "https://news.google.com/rss/search?q=forex+OR+crypto+OR+markets&hl=ru&gl=RU&ceid=RU:ru",
+            const RSS_PROXY = "https://api.rss2json.com/v1/api.json?rss_url=";
+            const NEWS_RSS_FEEDS = [
+                "https://news.google.com/rss/search?q=forex+OR+crypto+OR+stock+market+OR+binary+options&hl=ru&gl=RU&ceid=RU:ru",
                 "https://www.investing.com/rss/news.rss"
             ];
 
@@ -3156,67 +3154,53 @@
                     console.warn("[PRO AI] Backend /api/news недоступен, пробуем RSS...", backendErr.message);
                 }
 
-                // === Чистый Frontend: Прямой парсинг RSS через несколько CORS-прокси ===
+                // === 2. Fallback: RSS через публичный прокси ===
                 try {
                     const allItems = [];
-
-                    for (const rssUrl of NEWS_RSS_SOURCES) {
-                        let success = false;
-
-                        for (const proxy of CORS_PROXIES) {
-                            try {
-                                const res = await fetch(proxy + encodeURIComponent(rssUrl));
-                                if (!res.ok) continue;
-
-                                const xmlText = await res.text();
-                                const parser = new DOMParser();
-                                const xml = parser.parseFromString(xmlText, "text/xml");
-                                const items = xml.querySelectorAll("item");
-
-                                const sourceName = rssUrl.includes("forexlive") ? "ForexLive" : 
-                                                   rssUrl.includes("investing") ? "Investing.com" : "Google News";
-
-                                items.forEach((item, i) => {
-                                    if (i > 5 || allItems.length >= 10) return;
-                                    const title = item.querySelector("title")?.textContent?.trim();
-                                    if (!title) return;
-
-                                    const desc = (item.querySelector("description")?.textContent || "").replace(/<[^>]+>/g, "").trim();
-                                    const link = item.querySelector("link")?.textContent?.trim() || "#";
-                                    const pub = item.querySelector("pubDate")?.textContent;
-
-                                    allItems.push({
-                                        id: 4000 + Date.now() + i,
-                                        title: title.length > 115 ? title.substring(0, 112) + "..." : title,
-                                        pair: sourceName === "ForexLive" ? "Forex • Новости" : "Рынок • Новости",
-                                        text: desc.substring(0, 165) || "Читайте полную новость на источнике.",
-                                        source: sourceName,
-                                        time: getTimeAgo(pub ? new Date(pub) : new Date()),
-                                        image: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=600&q=80",
-                                        full: desc || title,
-                                        link: link
-                                    });
-                                });
-
-                                if (allItems.length > 0) {
-                                    success = true;
-                                    break;
-                                }
-                            } catch (e) {}
-                        }
-
-                        if (success && allItems.length >= 6) break;
+                    
+                    for (const rssUrl of NEWS_RSS_FEEDS) {
+                        const response = await fetch(RSS_PROXY + encodeURIComponent(rssUrl));
+                        if (!response.ok) continue;
+                        
+                        const data = await response.json();
+                        if (data.status !== "ok" || !data.items) continue;
+                        
+                        data.items.slice(0, 8).forEach((item) => {
+                            const pubDate = new Date(item.pubDate || Date.now());
+                            const timeAgo = getTimeAgo(pubDate);
+                            
+                            let category = "google";
+                            const titleLower = (item.title + " " + (item.description || "")).toLowerCase();
+                            if (titleLower.includes("crypto") || titleLower.includes("bitcoin") || titleLower.includes("ethereum")) {
+                                category = "tv";
+                            } else if (titleLower.includes("pocket option") || titleLower.includes("binary")) {
+                                category = "pocket";
+                            }
+                            
+                            allItems.push({
+                                id: 1000 + allItems.length,
+                                title: item.title.length > 110 ? item.title.substring(0, 107) + "..." : item.title,
+                                pair: "Рынок • Новости",
+                                text: item.description ? item.description.replace(/<[^>]+>/g, '').substring(0, 160) + "..." : "Читайте полную новость на источнике.",
+                                source: data.feed?.title || "Финансовые новости",
+                                category: category,
+                                time: timeAgo,
+                                image: item.enclosure?.link || item.thumbnail || "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=600&q=80",
+                                full: item.description ? item.description.replace(/<[^>]+>/g, '') : item.title,
+                                link: item.link || "#"
+                            });
+                        });
                     }
-
+                    
                     if (allItems.length > 0) {
-                        liveNews = allItems;
-                        console.log(`%c[PRO AI] Загружено ${allItems.length} реальных новостей напрямую (в обход Render)`, "color:#00FFAA");
+                        liveNews = allItems.slice(0, 12);
+                        console.log("%c[PRO AI] Новости загружены через RSS (fallback)", "color:#ffaa00");
                         return true;
                     }
-                } catch (e) {
-                    console.warn("[PRO AI] Ошибка при загрузке RSS:", e.message);
+                } catch (rssErr) {
+                    console.warn("[PRO AI] RSS fallback тоже не сработал:", rssErr.message);
                 }
-
+                
                 return false;
             }
 
