@@ -1,0 +1,70 @@
+{
+  "app": {
+    "title": "VIP COMMUNITY PRO AI",
+    "welcome": "POCKET OPTION",
+    "brand": "PRO AI BOT"
+  },
+  "menu": {
+    "profile": "Профиль",
+    "neural": "Нейросеть",
+    "knowledge": "База знаний",
+    "patterns": "Паттерны",
+    "strategies": "Стратегии PRO",
+    "calculator": "Калькулятор",
+    "macro": "Макро-данные",
+    "news": "ИИ Новости",
+    "notes": "Мои Заметки",
+    "developer": "DEVELOPER"
+  },
+  "profile": {
+    "title": "ДАННЫЕ ТРЕЙДЕРА",
+    "callsign": "Позывной",
+    "telegram_id": "Telegram ID",
+    "working_capital": "Рабочий капитал",
+    "ai_directive": "Директива ИИ"
+  },
+  "news": {
+    "title": "ИИ НОВОСТИ PRO",
+    "live_tab": "LIVE РЫНОК",
+    "grok_tab": "GROK AI ГЕНЕРАЦИЯ",
+    "grok_generate": "СГЕНЕРИРОВАТЬ НОВОСТИ ОТ GROK",
+    "grok_thinking": "Grok думает над рынком..."
+  },
+  "patterns": {
+    "title": "ПАТТЕРНЫ РЫНКА",
+    "candlestick": "СВЕЧНЫЕ ПАТТЕРНЫ",
+    "chart": "КЛАССИЧЕСКИЕ ГРАФИЧЕСКИЕ ПАТТЕРНЫ",
+    "harmonic": "ГАРМОНИЧЕСКИЕ ПАТТЕРНЫ"
+  },
+  "strategies": {
+    "title": "СТРАТЕГИИ PRO — POCKET OPTION M1",
+    "search_placeholder": "Поиск индикатора или стратегии..."
+  },
+  "sessions": {
+    "title": "КАЛЬКУЛЯТОР PRO"
+  },
+  "calendar": {
+    "title": "МАКРО-ДАННЫЕ"
+  },
+  "notes": {
+    "title": "ЖУРНАЛ ТРЕЙДЕРА",
+    "add_new": "+ НОВАЯ ЗАМЕТКА",
+    "clear_all": "ОЧИСТИТЬ ВСЁ",
+    "filter_all": "ВСЕ",
+    "filter_deals": "СДЕЛКИ",
+    "filter_ideas": "ИДЕИ",
+    "filter_errors": "ОШИБКИ",
+    "filter_observations": "НАБЛЮДЕНИЯ"
+  },
+  "common": {
+    "back": "← НАЗАД В ТЕРМИНАЛ",
+    "back_to_menu": "← НАЗАД В МЕНЮ",
+    "loading": "Загрузка...",
+    "save": "СОХРАНИТЬ",
+    "cancel": "ОТМЕНА"
+  },
+  "language": {
+    "ru": "Русский",
+    "en": "English"
+  }
+}
