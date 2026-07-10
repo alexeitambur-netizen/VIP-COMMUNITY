@@ -2010,49 +2010,25 @@
         // Base lessons (можно расширять)
         window.VIDEO_LESSONS = window.VIDEO_LESSONS || [];
 
-        async function getCustomVideoLessons() {
-            try {
-                const res = await fetch(`${SERVER_URL}/api/video-lessons`);
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data && Array.isArray(data.lessons)) return data.lessons;
-                }
-            } catch (e) {}
+        function getCustomVideoLessons() {
             try {
                 return JSON.parse(SafeStorage.getItem('custom_video_lessons') || '[]');
             } catch (e) { return []; }
         }
         window.getCustomVideoLessons = getCustomVideoLessons;
 
-        async function saveCustomVideoLessons(list) {
-            try {
-                const res = await fetch(`${SERVER_URL}/api/admin/video-lessons`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ lessons: list, adminId: "5817328317" })
-                });
-                if (res.ok) {
-                    const result = await res.json();
-                    if (result.success) {
-                        console.log('%c[PRO AI] Видеоуроки сохранены в Supabase (глобально для всех)', 'color:#00FFAA');
-                        return true;
-                    }
-                }
-            } catch (e) {
-                console.warn('Supabase недоступен, сохраняем локально');
-            }
+        function saveCustomVideoLessons(list) {
             SafeStorage.setItem('custom_video_lessons', JSON.stringify(list));
-            return true;
         }
         window.saveCustomVideoLessons = saveCustomVideoLessons;
 
-        async function getAllVideoLessons() {
-            const custom = await getCustomVideoLessons();
+        function getAllVideoLessons() {
+            const custom = getCustomVideoLessons();
             const base = window.VIDEO_LESSONS || [];
             const all = [...base];
             custom.forEach(c => {
                 if (!all.some(a => a.title === c.title)) {
-                    all.push({ ...c, isCustom: true });
+                    all.push(c);
                 }
             });
             return all;
@@ -2084,7 +2060,7 @@
             });
         }
 
-        window.devAddVideoLesson = function() {
+        window.devAddVideoLesson = async function() {
             const title = document.getElementById('new-video-title').value.trim();
             const youtube = document.getElementById('new-video-youtube').value.trim();
             const category = document.getElementById('new-video-category').value;
@@ -2108,35 +2084,37 @@
                 isCustom: true
             };
 
-            const custom = getCustomVideoLessons();
-            custom.push(newLesson);
-            saveCustomVideoLessons(custom);
+            try {
+                const custom = await getCustomVideoLessons();
+                custom.push(newLesson);
+                await saveCustomVideoLessons(custom);
 
-            // Clear form
-            document.getElementById('new-video-title').value = '';
-            document.getElementById('new-video-youtube').value = '';
-            document.getElementById('new-video-desc').value = '';
+                // Clear form
+                document.getElementById('new-video-title').value = '';
+                document.getElementById('new-video-youtube').value = '';
+                document.getElementById('new-video-desc').value = '';
 
-            renderDevVideoList();
-            
-            // Обновляем список в разделе Видеообучение, если он открыт
-            if (typeof renderVideoLessons === 'function') {
-                const currentFilter = document.querySelector('#video-training-screen .note-chip.active')?.getAttribute('data-filter') || 'all';
-                renderVideoLessons(currentFilter);
+                if (typeof renderDevVideoList === 'function') renderDevVideoList();
+                if (typeof renderVideoLessons === 'function') await renderVideoLessons('all');
+
+                alert('Видеоурок успешно добавлен в Supabase! Теперь он виден всем пользователям.');
+            } catch (err) {
+                console.error('Ошибка сохранения видеоурока:', err);
+                alert('Ошибка при сохранении. Проверьте консоль (F12).');
             }
-            
-            alert('Видеоурок успешно добавлен! Он сразу появился в разделе Видеообучение.');
         };
 
-        window.devDeleteVideoLesson = function(index) {
+        window.devDeleteVideoLesson = async function(index) {
             if (!confirm('Удалить этот кастомный урок?')) return;
-            const custom = getCustomVideoLessons();
-            custom.splice(index, 1);
-            saveCustomVideoLessons(custom);
-            renderDevVideoList();
-            
-            if (typeof renderVideoLessons === 'function') {
-                renderVideoLessons('all');
+            try {
+                const custom = await getCustomVideoLessons();
+                custom.splice(index, 1);
+                await saveCustomVideoLessons(custom);
+                if (typeof renderDevVideoList === 'function') renderDevVideoList();
+                if (typeof renderVideoLessons === 'function') await renderVideoLessons('all');
+            } catch (err) {
+                console.error(err);
+                alert('Ошибка при удалении.');
             }
         };
 
@@ -4730,18 +4708,12 @@
             }
 
             // ==================== VIDEO TRAINING FUNCTIONS ====================
-            async function renderVideoLessons(filter = 'all') {
+            function renderVideoLessons(filter = 'all') {
                 const container = document.getElementById('video-lessons-list');
                 if (!container) return;
                 container.innerHTML = '';
 
-                let list = [];
-                if (typeof getAllVideoLessons === 'function') {
-                    list = await getAllVideoLessons();
-                } else {
-                    list = window.VIDEO_LESSONS || [];
-                }
-
+                let list = (typeof getAllVideoLessons === 'function') ? getAllVideoLessons() : (window.VIDEO_LESSONS || []);
                 if (filter !== 'all') {
                     list = list.filter(l => l.category === filter);
                 }
