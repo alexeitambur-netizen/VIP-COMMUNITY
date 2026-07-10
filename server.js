@@ -43,11 +43,10 @@ try {
     supabaseEnabled = false;
 }
 
-// In-memory кэш пользователей (для быстрых проверок)
+// In-memory кэш (для быстрых проверок и fallback)
 let allowedUsers = [];
-
-// In-memory кэш видеоуроков (fallback)
 let cachedVideoLessons = [];
+let cachedChatMessages = []; // ← Кэш для чата
 
 // ==================== ЛОГИРОВАНИЕ ====================
 function log(message, type = 'INFO') {
@@ -153,7 +152,7 @@ function normalizeId(id) {
 // ==================== SUPABASE — ВИДЕОУРОКИ ====================
 async function loadVideoLessonsFromSupabase() {
     if (!supabaseEnabled || !supabase) {
-        log('Supabase отключён — видеоуроки загружаются только из памяти/локально', 'WARN');
+        log('Supabase отключён — видеоуроки загружаются только из памяти', 'WARN');
         return cachedVideoLessons;
     }
 
@@ -221,6 +220,72 @@ async function saveVideoLessonToSupabase(lessonData) {
     }
 }
 
+// ==================== SUPABASE — ЧАТ (НОВОЕ) ====================
+async function loadChatMessagesFromSupabase() {
+    if (!supabaseEnabled || !supabase) {
+        log('Supabase отключён — чат загружается только из памяти', 'WARN');
+        return cachedChatMessages;
+    }
+
+    try {
+        const { data, error } = await supabase
+            .from('chat_messages')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(100); // Берем только последние 100 сообщений, чтобы не грузить систему
+
+        if (error) throw error;
+
+        // Переворачиваем, чтобы старые были сверху, новые снизу (стандарт для чата)
+        cachedChatMessages = (data || []).reverse(); 
+
+        log(`Загружено ${cachedChatMessages.length} сообщений чата из Supabase`, 'SUPABASE');
+        return cachedChatMessages;
+    } catch (e) {
+        log(`Ошибка загрузки чата из Supabase: ${e.message}`, 'ERROR');
+        return cachedChatMessages;
+    }
+}
+
+async function saveChatMessageToSupabase(chatData) {
+    if (!supabaseEnabled || !supabase) {
+        const newMsg = {
+            id: Date.now(),
+            user_id: chatData.user_id,
+            user_name: chatData.user_name || 'Аноним',
+            message: chatData.message,
+            created_at: new Date().toISOString()
+        };
+        cachedChatMessages.push(newMsg);
+        if (cachedChatMessages.length > 100) cachedChatMessages.shift();
+        log('Сообщение сохранено только в память (Supabase отключён)', 'WARN');
+        return { success: true, memoryOnly: true, message: newMsg };
+    }
+
+    try {
+        const { data, error } = await supabase
+            .from('chat_messages')
+            .insert([{
+                user_id: String(chatData.user_id).trim(),
+                user_name: String(chatData.user_name || 'Аноним').trim(),
+                message: String(chatData.message).trim()
+            }])
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        // Обновляем кэш
+        cachedChatMessages.push(data);
+        if (cachedChatMessages.length > 100) cachedChatMessages.shift();
+
+        return { success: true, message: data };
+    } catch (e) {
+        log(`Ошибка сохранения сообщения: ${e.message}`, 'ERROR');
+        return { success: false, error: e.message };
+    }
+}
+
 // ==================== TELEGRAM БОТ ====================
 bot.start(async (ctx) => {
     const welcomeText = 
@@ -262,13 +327,14 @@ app.get('/', (req, res) => {
     res.json({
         status: 'ok',
         service: 'VIP COMMUNITY PRO AI Backend',
-        version: '2.1-video-lessons-fixed',
+        version: '2.2-chat-added',
         endpoints: [
             '/api/check-access', 
             '/api/allowed-users', 
             '/api/admin/add-user', 
             '/api/admin/remove-user', 
             '/api/video-lessons',
+            '/api/chat',               // ← Новый эндпоинт чата
             '/api/news', 
             '/api/news/refresh', 
             '/api/health'
@@ -282,6 +348,7 @@ app.get('/api/health', (req, res) => {
         timestamp: Date.now(), 
         usersLoaded: allowedUsers.length,
         videoLessonsLoaded: cachedVideoLessons.length,
+        chatMessagesLoaded: cachedChatMessages.length,
         supabaseEnabled 
     });
 });
@@ -304,7 +371,6 @@ app.get('/api/allowed-users', (req, res) => {
 });
 
 // ==================== ВИДЕОУРОКИ — ЭНДПОИНТЫ ====================
-
 app.get('/api/video-lessons', async (req, res) => {
     try {
         const lessons = await loadVideoLessonsFromSupabase();
@@ -384,6 +450,68 @@ app.delete('/api/video-lessons/:id', async (req, res) => {
 
         await loadVideoLessonsFromSupabase();
         res.json({ success: true, message: 'Видеоурок удалён из Supabase' });
+    } catch (e) {
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
+// ==================== ЧАТ — ЭНДПОИНТЫ (НОВОЕ) ====================
+app.get('/api/chat', async (req, res) => {
+    try {
+        const messages = await loadChatMessagesFromSupabase();
+        res.json({ 
+            success: true, 
+            count: messages.length, 
+            messages: messages,
+            source: supabaseEnabled ? 'supabase' : 'memory'
+        });
+    } catch (e) {
+        res.status(500).json({ success: false, error: e.message, messages: cachedChatMessages });
+    }
+});
+
+app.post('/api/chat', async (req, res) => {
+    const { user_id, user_name, message } = req.body;
+
+    if (!user_id || !message) {
+        return res.status(400).json({ 
+            success: false, 
+            error: 'Обязательные поля: user_id, message' 
+        });
+    }
+
+    const result = await saveChatMessageToSupabase({ user_id, user_name, message });
+
+    if (!result.success) {
+        return res.status(500).json({ success: false, error: result.error });
+    }
+
+    res.json({ success: true, message: result.message });
+});
+
+app.delete('/api/chat/:id', async (req, res) => {
+    const { id } = req.params;
+    const adminId = req.body?.adminId || req.query?.adminId;
+
+    if (adminId && !isMaster(adminId)) {
+        return res.status(403).json({ success: false, error: 'Только ROOT ADMIN может удалять сообщения' });
+    }
+
+    if (!supabaseEnabled || !supabase) {
+        cachedChatMessages = cachedChatMessages.filter(m => String(m.id) !== String(id));
+        return res.json({ success: true, message: 'Сообщение удалено из памяти' });
+    }
+
+    try {
+        const { error } = await supabase
+            .from('chat_messages')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+
+        await loadChatMessagesFromSupabase();
+        res.json({ success: true, message: 'Сообщение удалено из Supabase' });
     } catch (e) {
         res.status(500).json({ success: false, error: e.message });
     }
@@ -541,6 +669,7 @@ app.listen(PORT, async () => {
 
     await loadAllowedUsers();
     await loadVideoLessonsFromSupabase();
+    await loadChatMessagesFromSupabase(); // ← ВАЖНО: загружаем историю чата при старте
     await refreshNewsCache(true);
     setInterval(() => refreshNewsCache(), NEWS_CACHE_TTL);
 });
