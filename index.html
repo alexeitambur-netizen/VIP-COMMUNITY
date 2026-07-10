@@ -961,6 +961,10 @@
                     <div class="icon-circle">🌍</div>
                     <div class="card-title">ИИ Новости</div>
                 </div>
+                <div class="card" data-target="traders-chat-screen">
+                    <div class="icon-circle">👥</div>
+                    <div class="card-title">Чат трейдеров</div>
+                </div>
                 <div class="card" data-target="notes-screen" style="grid-column: span 2; aspect-ratio: unset; padding: 25px 20px;">
                     <div class="icon-circle" style="margin-bottom: 12px; width: 70px; height: 70px; font-size: 32px;">📝</div>
                     <div class="card-title">Мои Заметки</div>
@@ -1513,6 +1517,40 @@
             
             <button onclick="clearAllNotes()" class="back-btn" style="margin-bottom: 8px;">🗑️ ОЧИСТИТЬ ВСЁ</button>
             <button class="back-btn">← НАЗАД В ТЕРМИНАЛ</button>
+        </div>
+
+        <!-- ==================== ЧАТ ТРЕЙДЕРОВ (новый раздел) ==================== -->
+        <div class="screen" id="traders-chat-screen">
+            <h2>👥 ЧАТ СООБЩЕСТВА PRO</h2>
+            
+            <div class="glass-box" style="margin-bottom: 10px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; border-color: rgba(0,255,170,0.25);">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 10px; height: 10px; background: var(--neon-green); border-radius: 50%; box-shadow: 0 0 12px var(--neon-green); animation: pulse 2s infinite;"></div>
+                    <div>
+                        <span style="color: var(--neon-green); font-weight: 900; font-size: 15px;">ONLINE</span>
+                        <span id="chat-online-count" style="color: #fff; font-weight: 900; font-size: 18px; margin-left: 6px;">147</span>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 11px; color: #a4b1cd; font-weight: 700;">VIP COMMUNITY</div>
+                    <div style="font-size: 10px; color: var(--neon-purple); font-weight: 800;">127 трейдеров в сети</div>
+                </div>
+            </div>
+
+            <div class="chat-box" id="traders-chat-container" style="height: 52vh; background: rgba(8,12,28,0.6);">
+                <!-- Сообщения чата динамически добавляются JS -->
+            </div>
+
+            <div class="input-area" style="margin-top: 8px;">
+                <input type="text" id="traders-chat-input" placeholder="Напиши сообщение в чат сообщества..." style="font-size: 15px;">
+                <button class="send-btn" onclick="sendTradersChatMessage()" style="padding: 0 28px;">SEND</button>
+            </div>
+
+            <div style="margin-top: 12px; text-align: center;">
+                <div style="font-size: 11px; color: #667085; font-weight: 700;">Сообщения сохраняются локально • Будь уважителен</div>
+            </div>
+
+            <button class="back-btn" onclick="switchScreen('menu-screen')" style="margin-top: 16px;">← НАЗАД В МЕНЮ</button>
         </div>
 
         <!-- ==================== МОДАЛКА ДОБАВЛЕНИЯ ЗАМЕТКИ ==================== -->
@@ -3264,6 +3302,13 @@
                             }
                         }, 80);
                     }
+                    if (screenId === 'traders-chat-screen') {
+                        setTimeout(() => {
+                            if (typeof renderTradersChatMessages === 'function') renderTradersChatMessages();
+                            const onlineEl = document.getElementById('chat-online-count');
+                            if (onlineEl) onlineEl.innerText = (138 + Math.floor(Math.random() * 25));
+                        }, 120);
+                    }
                 }
             }
 
@@ -4677,6 +4722,125 @@
 
             window.switchScreen = switchScreen;
 
+            // ============================================
+            // ЧАТ ТРЕЙДЕРОВ — Community Chat (локальное хранилище + имитация живого чата)
+            // ============================================
+            let tradersChatMessages = [];
+
+            function loadTradersChatMessages() {
+                try {
+                    const saved = localStorage.getItem('pro_traders_chat_v1');
+                    tradersChatMessages = saved ? JSON.parse(saved) : [];
+                } catch (e) {
+                    tradersChatMessages = [];
+                }
+                
+                // Если чат пустой — добавляем приветственные сообщения от сообщества (один раз)
+                if (tradersChatMessages.length === 0) {
+                    const now = Date.now();
+                    tradersChatMessages = [
+                        { id: now - 1000*60*12, user: "Alex_PRO", text: "Всем привет! Сегодня отличный день для EUR/USD по моему паттерну. Кто в лонг?", isSelf: false, time: "11:48" },
+                        { id: now - 1000*60*8, user: "CryptoQueen", text: "BTC держит 108k. Жду откат для хорошего входа в шорт на M5.", isSelf: false, time: "11:52" },
+                        { id: now - 1000*60*3, user: "TradeMaster", text: "Ребята, кто смотрел свежий урок по гармоническим паттернам? Очень мощно зашло на XAU.", isSelf: false, time: "11:57" },
+                    ];
+                    saveTradersChatMessages();
+                }
+            }
+
+            function saveTradersChatMessages() {
+                try {
+                    localStorage.setItem('pro_traders_chat_v1', JSON.stringify(tradersChatMessages));
+                } catch (e) {}
+            }
+
+            function renderTradersChatMessages() {
+                const container = document.getElementById('traders-chat-container');
+                if (!container) return;
+
+                container.innerHTML = '';
+
+                // Сортируем по времени (старые сверху)
+                const sorted = [...tradersChatMessages].sort((a, b) => a.id - b.id);
+
+                sorted.forEach(msg => {
+                    const msgEl = document.createElement('div');
+                    msgEl.className = `chat-msg ${msg.isSelf ? 'user' : 'bot'}`;
+                    
+                    const timeHtml = `<div style="font-size:9px; opacity:0.6; margin-top:4px; text-align:right;">${msg.time || ''}</div>`;
+                    
+                    if (msg.isSelf) {
+                        msgEl.innerHTML = `${msg.text}${timeHtml}`;
+                    } else {
+                        msgEl.innerHTML = `<strong style="color:var(--neon-purple); font-size:12px;">${msg.user}</strong><br>${msg.text}${timeHtml}`;
+                    }
+                    container.appendChild(msgEl);
+                });
+
+                // Прокрутка вниз
+                container.scrollTop = container.scrollHeight;
+            }
+
+            window.sendTradersChatMessage = function() {
+                const input = document.getElementById('traders-chat-input');
+                if (!input) return;
+                const text = input.value.trim();
+                if (!text) return;
+
+                // Получаем имя пользователя из Telegram если есть
+                let userName = "You";
+                try {
+                    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
+                        const u = window.Telegram.WebApp.initDataUnsafe.user;
+                        userName = u.first_name || "PRO";
+                        if (u.last_name) userName += " " + u.last_name;
+                    }
+                } catch(e) {}
+
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+
+                const newMsg = {
+                    id: Date.now(),
+                    user: userName,
+                    text: text,
+                    isSelf: true,
+                    time: timeStr
+                };
+
+                tradersChatMessages.push(newMsg);
+                saveTradersChatMessages();
+                renderTradersChatMessages();
+
+                input.value = '';
+
+                // Имитация ответа от другого трейдера (для ощущения живого чата)
+                setTimeout(() => {
+                    const replies = [
+                        "Согласен! Сейчас хорошая ликвидность.",
+                        "Спасибо за идею, попробую на демо.",
+                        "А у меня сегодня по золоту зашло +47$.",
+                        "Кто-то видел новости по ФРС?",
+                        "Отличный чат, ребята. Удачи всем в сделках!",
+                        "Жду закрытия свечи на GBP/USD.",
+                    ];
+                    const randomReply = replies[Math.floor(Math.random() * replies.length)];
+                    const fakeUsers = ["PRO_Trader", "BinaryKing", "M1_Master", "RiskManager", "ScalpGod"];
+                    const fakeUser = fakeUsers[Math.floor(Math.random() * fakeUsers.length)];
+
+                    const fakeMsg = {
+                        id: Date.now() + 1,
+                        user: fakeUser,
+                        text: randomReply,
+                        isSelf: false,
+                        time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+                    };
+                    tradersChatMessages.push(fakeMsg);
+                    saveTradersChatMessages();
+                    renderTradersChatMessages();
+                }, 1800 + Math.random() * 1200);
+            };
+
+            // ============================================
             // ИНИЦИАЛИЗАЦИЯ ВСЕХ МОДУЛЕЙ
             async function init() {
                 let userId = null;
@@ -4764,6 +4928,7 @@
                 applyFeatureFlagsOnInit();  // Применяем флаги функций
                 window.generateNewsCalendar();
                 loadTraderNotes();
+                loadTradersChatMessages();   // Загружаем чат трейдеров
                 
                 // Примечание: Автозагрузка LIVE новостей отключена по запросу.
                 // Новости в разделе теперь выдаёт встроенный ИИ (Grok).
