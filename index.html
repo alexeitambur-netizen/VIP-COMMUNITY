@@ -1530,12 +1530,12 @@
                     <div style="width: 10px; height: 10px; background: var(--neon-green); border-radius: 50%; box-shadow: 0 0 12px var(--neon-green); animation: pulse 2s infinite;"></div>
                     <div>
                         <span style="color: var(--neon-green); font-weight: 900; font-size: 15px;">ONLINE</span>
-                        <span id="chat-online-count" style="color: #fff; font-weight: 900; font-size: 18px; margin-left: 6px;">147</span>
+                        <span id="chat-online-count" style="color: #fff; font-weight: 900; font-size: 18px; margin-left: 6px;">0</span>
                     </div>
                 </div>
                 <div style="text-align: right;">
                     <div style="font-size: 11px; color: #a4b1cd; font-weight: 700;">VIP COMMUNITY</div>
-                    <div style="font-size: 10px; color: var(--neon-purple); font-weight: 800;">127 трейдеров в сети</div>
+                    <div style="font-size: 10px; color: var(--neon-purple); font-weight: 800;">реальное кол-во скоро</div>
                 </div>
             </div>
 
@@ -3316,9 +3316,10 @@
                                 subscribeToTraderChat();
                             }
 
-                            // Обновляем онлайн счётчик (можно позже сделать реальным через presence)
+                            // Пока показываем 0. 
+                            // Когда полностью настроишь Supabase + Presence — здесь будет реальное количество онлайн пользователей.
                             const onlineEl = document.getElementById('chat-online-count');
-                            if (onlineEl) onlineEl.innerText = (142 + Math.floor(Math.random() * 18));
+                            if (onlineEl) onlineEl.innerText = '0';
                         }, 150);
                     }
                 }
