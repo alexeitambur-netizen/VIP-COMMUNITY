@@ -879,6 +879,16 @@
         <div class="screen active" id="menu-screen">
             <div class="welcome" style="font-size:11px; letter-spacing:3px;">POCKET OPTION</div>
             <div class="brand-title">PRO AI BOT</div>
+
+            <!-- Глобальный счётчик онлайн пользователей всего приложения -->
+            <div class="glass-box" style="padding: 12px 20px; margin-bottom: 14px; text-align: center; border-color: rgba(0,255,170,0.25); background: linear-gradient(135deg, rgba(0,255,170,0.06) 0%, rgba(157,0,255,0.04) 100%);">
+                <div style="font-size: 13px; color: #a4b1cd; font-weight: 700; margin-bottom: 2px;">Сейчас в приложении онлайн</div>
+                <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <div style="width: 10px; height: 10px; background: var(--neon-green); border-radius: 50%; box-shadow: 0 0 12px var(--neon-green); animation: pulse 2s infinite;"></div>
+                    <span id="global-online-count" style="color: var(--neon-green); font-weight: 900; font-size: 26px; line-height: 1;">0</span>
+                    <span style="color: #fff; font-weight: 800; font-size: 15px;">пользователей</span>
+                </div>
+            </div>
             
             <div class="time-bar glass-box" style="padding: 12px 20px; margin-bottom: 16px;">
                 <div class="time-item">МОСКВА <span id="clock-moscow">00:00</span></div>
@@ -4971,8 +4981,52 @@
             function leaveChatPresence() {
                 if (chatChannel) {
                     chatChannel.untrack();
-                    // Можно также chatChannel.unsubscribe(), но для простоты оставляем
                 }
+            }
+
+            // ============================================
+            // ГЛОБАЛЬНЫЙ Presence — сколько всего людей сейчас в приложении
+            // ============================================
+            let globalPresenceChannel = null;
+
+            function initGlobalAppPresence() {
+                const client = initSupabase();
+                if (!client || globalPresenceChannel) return;
+
+                const userId = currentTelegramUser?.id || 'guest_' + Date.now();
+                const username = currentTelegramUser 
+                    ? (currentTelegramUser.first_name + (currentTelegramUser.last_name ? ' ' + currentTelegramUser.last_name : '')) 
+                    : 'Гость';
+
+                globalPresenceChannel = client.channel('global-app-presence', {
+                    config: {
+                        presence: {
+                            key: String(userId)
+                        }
+                    }
+                });
+
+                // Слушаем изменения Presence
+                globalPresenceChannel.on('presence', { event: 'sync' }, () => {
+                    const state = globalPresenceChannel.presenceState();
+                    const totalOnline = Object.keys(state).length;
+                    
+                    const el = document.getElementById('global-online-count');
+                    if (el) el.innerText = totalOnline;
+                });
+
+                globalPresenceChannel.subscribe(async (status) => {
+                    if (status === 'SUBSCRIBED') {
+                        console.log('%c[PRO AI] Global Presence подключен', 'color:#00FFAA');
+
+                        // Отмечаем себя как онлайн в приложении
+                        await globalPresenceChannel.track({
+                            user_id: String(userId),
+                            username: username,
+                            joined_at: new Date().toISOString()
+                        });
+                    }
+                });
             }
 
             // ============================================
@@ -5038,6 +5092,7 @@
                 if (tgUser) {
                     currentTelegramUser = tgUser;   // Сохраняем для чата
                     initSupabase();                 // Инициализируем Supabase заранее
+                    initGlobalAppPresence();        // Глобальный онлайн пользователей
 
                     // Имя
                     const fullNameEl = document.getElementById('menu-tg-fullname');
