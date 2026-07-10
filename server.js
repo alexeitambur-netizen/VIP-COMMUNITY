@@ -150,7 +150,7 @@ function normalizeId(id) {
     return String(id).trim();
 }
 
-// ==================== SUPABASE — ВИДЕОУРОКИ (ГЛАВНОЕ ИСПРАВЛЕНИЕ) ====================
+// ==================== SUPABASE — ВИДЕОУРОКИ ====================
 async function loadVideoLessonsFromSupabase() {
     if (!supabaseEnabled || !supabase) {
         log('Supabase отключён — видеоуроки загружаются только из памяти/локально', 'WARN');
@@ -166,7 +166,6 @@ async function loadVideoLessonsFromSupabase() {
         if (error) throw error;
 
         cachedVideoLessons = (data || []).map(lesson => {
-            // Нормализация: frontend ожидает .desc и .level
             return {
                 ...lesson,
                 desc: lesson.description || lesson.desc || lesson.описание || '',
@@ -184,7 +183,6 @@ async function loadVideoLessonsFromSupabase() {
 
 async function saveVideoLessonToSupabase(lessonData) {
     if (!supabaseEnabled || !supabase) {
-        // Fallback в память (не глобально!)
         const newLesson = {
             id: Date.now(),
             ...lessonData,
@@ -209,16 +207,17 @@ async function saveVideoLessonToSupabase(lessonData) {
             .select()
             .single();
 
-        if (error) throw error;
+        if (error) {
+            log(`БД Ошибка вставки: ${JSON.stringify(error)}`, 'ERROR');
+            throw error;
+        }
 
-        // Обновляем кэш
         await loadVideoLessonsFromSupabase();
-
         log(`Видеоурок "${lessonData.title}" успешно сохранён в Supabase`, 'SUPABASE');
         return { success: true, lesson: data };
     } catch (e) {
-        log(`Ошибка сохранения видеоурока в Supabase: ${e.message}`, 'ERROR');
-        return { success: false, error: e.message };
+        log(`Ошибка сохранения видеоурока: ${e.message || JSON.stringify(e)}`, 'ERROR');
+        return { success: false, error: e.message || JSON.stringify(e) };
     }
 }
 
@@ -241,7 +240,6 @@ bot.start(async (ctx) => {
     }
 });
 
-// Полезные команды
 bot.command('help', (ctx) => {
     ctx.replyWithMarkdown(
         `📋 *Доступные команды:*\n\n` +
@@ -255,7 +253,6 @@ bot.command('myid', (ctx) => {
     ctx.reply(`Ваш Telegram ID: \`${ctx.from.id}\``);
 });
 
-// Запуск бота
 bot.launch()
     .then(() => log('Telegram бот успешно запущен', 'BOT'))
     .catch((err) => log(`Ошибка запуска бота: ${err.message}`, 'ERROR'));
@@ -271,7 +268,7 @@ app.get('/', (req, res) => {
             '/api/allowed-users', 
             '/api/admin/add-user', 
             '/api/admin/remove-user', 
-            '/api/video-lessons',           // ← НОВЫЙ
+            '/api/video-lessons',
             '/api/news', 
             '/api/news/refresh', 
             '/api/health'
@@ -306,9 +303,8 @@ app.get('/api/allowed-users', (req, res) => {
     });
 });
 
-// ==================== ВИДЕОУРОКИ — ГЛАВНЫЕ ЭНДПОИНТЫ (ИСПРАВЛЕНИЕ ОШИБКИ) ====================
+// ==================== ВИДЕОУРОКИ — ЭНДПОИНТЫ ====================
 
-// GET — получить все видеоуроки (используется фронтендом при открытии раздела ВИДЕО)
 app.get('/api/video-lessons', async (req, res) => {
     try {
         const lessons = await loadVideoLessonsFromSupabase();
@@ -324,14 +320,9 @@ app.get('/api/video-lessons', async (req, res) => {
     }
 });
 
-// POST — добавить новый видеоурок 
-// Примечание: проверка adminId убрана, потому что фронтенд (dev console) 
-// уже доступен только авторизованным пользователям. 
-// Для усиления безопасности можно добавить проверку Telegram initData в будущем.
 app.post('/api/video-lessons', async (req, res) => {
     const { title, category, duration, level, description, desc, youtube, adminId } = req.body;
 
-    // Мягкая проверка: если adminId передан — проверяем, что это master
     if (adminId && !isMaster(adminId)) {
         return res.status(403).json({ 
             success: false, 
@@ -358,7 +349,7 @@ app.post('/api/video-lessons', async (req, res) => {
     const result = await saveVideoLessonToSupabase(lessonData);
 
     if (!result.success) {
-        return res.status(500).json({ success: false, error: result.error || 'Ошибка сохранения' });
+        return res.status(500).json({ success: false, error: result.error || 'Ошибка сохранения (проверьте RLS политики в Supabase)' });
     }
 
     res.json({ 
@@ -370,12 +361,10 @@ app.post('/api/video-lessons', async (req, res) => {
     });
 });
 
-// DELETE — удалить видеоурок 
 app.delete('/api/video-lessons/:id', async (req, res) => {
     const { id } = req.params;
     const adminId = req.body?.adminId || req.query?.adminId;
 
-    // Мягкая проверка
     if (adminId && !isMaster(adminId)) {
         return res.status(403).json({ success: false, error: 'Только ROOT ADMIN может удалять видеоуроки' });
     }
@@ -400,7 +389,7 @@ app.delete('/api/video-lessons/:id', async (req, res) => {
     }
 });
 
-// ==================== АДМИН ЭНДПОИНТЫ (ПОЛЬЗОВАТЕЛИ) ====================
+// ==================== АДМИН ЭНДПОИНТЫ ====================
 app.post('/api/admin/add-user', async (req, res) => {
     const { userId, adminId } = req.body;
 
@@ -433,7 +422,6 @@ app.post('/api/admin/remove-user', async (req, res) => {
     res.json({ success: true, users: allowedUsers });
 });
 
-// Legacy endpoints (для совместимости)
 app.post('/api/add-user', async (req, res) => {
     req.body.adminId = MASTER_ADMIN;
     const { userId } = req.body;
@@ -552,7 +540,7 @@ app.listen(PORT, async () => {
     log('==================================================', 'START');
 
     await loadAllowedUsers();
-    await loadVideoLessonsFromSupabase();   // ← ВАЖНО: загружаем видеоуроки при старте
+    await loadVideoLessonsFromSupabase();
     await refreshNewsCache(true);
     setInterval(() => refreshNewsCache(), NEWS_CACHE_TTL);
 });
