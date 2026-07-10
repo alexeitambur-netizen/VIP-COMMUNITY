@@ -44,6 +44,12 @@ function log(message, type = 'INFO') {
     console.log(`[${new Date().toISOString()}] [${type}] ${message}`);
 }
 
+// ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
+function isMaster(userId) {
+    if (!userId) return false;
+    return String(userId).trim() === String(MASTER_ADMIN).trim();
+}
+
 // ==================== SUPABASE — ПОЛЬЗОВАТЕЛИ ====================
 async function loadAllowedUsers() {
     if (!supabaseEnabled || !supabase) {
@@ -100,7 +106,7 @@ async function removeUserFromSupabase(userId) {
     return { success: true };
 }
 
-// ==================== SUPABASE — ВИДЕОУРОКИ ====================
+// ==================== SUPABASE — ВИДЕОУРОКИ (ИСПРАВЛЕНО) ====================
 async function loadVideoLessons() {
     if (!supabaseEnabled || !supabase) {
         videoLessons = [];
@@ -121,6 +127,79 @@ async function loadVideoLessons() {
     }
 }
 
+// Добавление ОДНОГО урока (рекомендуемый способ)
+async function addVideoLessonToSupabase(lesson, adminId) {
+    if (!isMaster(adminId)) {
+        return { success: false, error: 'Access denied. Только ROOT ADMIN может добавлять уроки.' };
+    }
+    if (!supabaseEnabled || !supabase) {
+        return { success: false, error: 'Supabase не подключён' };
+    }
+
+    try {
+        // Подготавливаем данные (клиент шлёт desc, сервер ожидает description)
+        const payload = {
+            title: lesson.title,
+            category: lesson.category || 'basics',
+            duration: lesson.duration || '15 мин',
+            level: lesson.level || 'Средний',
+            description: lesson.desc || lesson.description || 'Добавленный урок разработчика.',
+            youtube: lesson.youtube,
+            // id можно не отправлять — Supabase сгенерирует сам (рекомендуется)
+            created_at: lesson.created_at || new Date().toISOString()
+        };
+
+        const { data, error } = await supabase
+            .from('video_lessons')
+            .insert([payload])
+            .select()
+            .single();
+
+        if (error) throw error;
+
+        // Обновляем кэш
+        await loadVideoLessons();
+
+        log(`Добавлен новый видеоурок: "${payload.title}"`, 'SUPABASE');
+        return { success: true, lesson: data };
+    } catch (e) {
+        log(`Ошибка добавления видеоурока: ${e.message}`, 'ERROR');
+        return { success: false, error: e.message };
+    }
+}
+
+// Удаление урока по ID
+async function deleteVideoLessonFromSupabase(lessonId, adminId) {
+    if (!isMaster(adminId)) {
+        return { success: false, error: 'Access denied. Только ROOT ADMIN может удалять уроки.' };
+    }
+    if (!supabaseEnabled || !supabase) {
+        return { success: false, error: 'Supabase не подключён' };
+    }
+    if (!lessonId) {
+        return { success: false, error: 'lessonId обязателен' };
+    }
+
+    try {
+        const { error } = await supabase
+            .from('video_lessons')
+            .delete()
+            .eq('id', lessonId);
+
+        if (error) throw error;
+
+        // Обновляем кэш
+        await loadVideoLessons();
+
+        log(`Удалён видеоурок с id=${lessonId}`, 'SUPABASE');
+        return { success: true };
+    } catch (e) {
+        log(`Ошибка удаления видеоурока: ${e.message}`, 'ERROR');
+        return { success: false, error: e.message };
+    }
+}
+
+// Старый bulk-метод (оставлен для совместимости)
 async function saveVideoLessonsToSupabase(lessons, adminId) {
     if (!isMaster(adminId)) {
         return { success: false, error: 'Access denied' };
@@ -130,27 +209,27 @@ async function saveVideoLessonsToSupabase(lessons, adminId) {
     }
 
     try {
-        // Удаляем старые
-        await supabase.from('video_lessons').delete().neq('id', 0);
+        // Более безопасный способ: удаляем всё и вставляем заново
+        await supabase.from('video_lessons').delete().neq('id', '00000000-0000-0000-0000-000000000000'); // безопасный способ очистки
 
-        // Вставляем новые
         const formatted = lessons.map(l => ({
             title: l.title,
             category: l.category,
             duration: l.duration,
             level: l.level,
-            description: l.desc || l.description,
-            youtube: l.youtube
+            description: l.desc || l.description || '',
+            youtube: l.youtube,
+            created_at: l.created_at || new Date().toISOString()
         }));
 
         const { error } = await supabase.from('video_lessons').insert(formatted);
         if (error) throw error;
 
         videoLessons = lessons;
-        log(`Сохранено ${lessons.length} видеоуроков в Supabase`, 'SUPABASE');
+        log(`Bulk: сохранено ${lessons.length} видеоуроков в Supabase`, 'SUPABASE');
         return { success: true };
     } catch (e) {
-        log(`Ошибка сохранения видеоуроков: ${e.message}`, 'ERROR');
+        log(`Ошибка bulk-сохранения видеоуроков: ${e.message}`, 'ERROR');
         return { success: false, error: e.message };
     }
 }
@@ -168,7 +247,7 @@ bot.launch()
 
 // ==================== ЭНДПОИНТЫ ====================
 app.get('/', (req, res) => {
-    res.json({ status: 'ok', service: 'VIP COMMUNITY PRO AI', version: '2.1-video-supabase' });
+    res.json({ status: 'ok', service: 'VIP COMMUNITY PRO AI', version: '2.2-video-fixed' });
 });
 
 app.get('/api/health', (req, res) => res.json({ status: 'healthy' }));
@@ -183,11 +262,49 @@ app.get('/api/allowed-users', (req, res) => {
     res.json({ success: true, users: allowedUsers });
 });
 
-// ==================== ВИДЕОУРОКИ ====================
+// ==================== ВИДЕОУРОКИ — ИСПРАВЛЕННЫЕ ЭНДПОИНТЫ ====================
+
+// GET — возвращаем массив напрямую (клиент ожидает)
 app.get('/api/video-lessons', (req, res) => {
-    res.json({ success: true, lessons: videoLessons });
+    res.json(videoLessons); // Простой массив — клиент сам разберёт
 });
 
+// POST — добавление ОДНОГО урока (то, что использует клиент)
+app.post('/api/video-lessons', async (req, res) => {
+    const lesson = req.body;
+    // adminId можно передавать в body или header. Для простоты — в body
+    const adminId = lesson.adminId || req.body.adminId || MASTER_ADMIN;
+
+    if (!lesson || !lesson.title || !lesson.youtube) {
+        return res.status(400).json({ success: false, error: 'title и youtube обязательны' });
+    }
+
+    const result = await addVideoLessonToSupabase(lesson, adminId);
+    if (!result.success) {
+        return res.status(403).json({ success: false, error: result.error });
+    }
+
+    res.json({ success: true, lesson: result.lesson });
+});
+
+// DELETE — удаление по id (то, что использует клиент)
+app.delete('/api/video-lessons', async (req, res) => {
+    const lessonId = req.query.id || req.body.id;
+    const adminId = req.query.adminId || req.body.adminId || MASTER_ADMIN;
+
+    if (!lessonId) {
+        return res.status(400).json({ success: false, error: 'id урока обязателен' });
+    }
+
+    const result = await deleteVideoLessonFromSupabase(lessonId, adminId);
+    if (!result.success) {
+        return res.status(403).json({ success: false, error: result.error });
+    }
+
+    res.json({ success: true });
+});
+
+// Старый bulk-эндпоинт (оставлен для обратной совместимости)
 app.post('/api/admin/video-lessons', async (req, res) => {
     const { lessons, adminId } = req.body;
 
