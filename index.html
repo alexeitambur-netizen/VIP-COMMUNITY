@@ -1776,7 +1776,7 @@
         // ЛОГИКА БЕЗОПАСНОСТИ И АВТОРИЗАЦИИ (СЕРВЕРНАЯ СИНХРОНИЗАЦИЯ)
         // ============================================
         const MASTER_ADMIN = "5817328317";
-        const SERVER_URL = "https://vip-miniapp-1.onrender.com"; 
+        const SERVER_URL = "https://vip-community.onrender.com";  // ← Актуальный URL бэкенда (после деплоя server-fixed.js)
 
         // Глобальный кэш списка (чтобы не дёргать сервер каждый раз)
         let _allowedUsersCache = null;
@@ -2017,7 +2017,16 @@
                 const response = await fetch(`${SERVER_URL}/api/video-lessons`);
                 if (response.ok) {
                     const data = await response.json();
-                    videoLessonsCache = Array.isArray(data) ? data : [];
+                    
+                    // Поддержка нового формата {success, lessons: [...]} и старого (прямой массив)
+                    if (data && data.success && Array.isArray(data.lessons)) {
+                        videoLessonsCache = data.lessons;
+                    } else if (Array.isArray(data)) {
+                        videoLessonsCache = data;
+                    } else {
+                        videoLessonsCache = [];
+                    }
+                    
                     window.VIDEO_LESSONS = videoLessonsCache;
                     console.log(`[VIDEO] Загружено ${videoLessonsCache.length} видеоуроков из Supabase`);
                     return videoLessonsCache;
@@ -2025,9 +2034,10 @@
                     console.warn(`[VIDEO] /api/video-lessons вернул статус ${response.status}`);
                 }
             } catch (e) {
-                console.warn('[VIDEO] Ошибка загрузки с сервера (возможно, нужно добавить endpoint на Render):', e.message);
+                console.warn('[VIDEO] Ошибка загрузки с сервера:', e.message);
             }
-            // Fallback к старому локальному хранилищу
+            
+            // Fallback к локальному хранилищу
             try {
                 const local = JSON.parse(SafeStorage.getItem('custom_video_lessons') || '[]');
                 videoLessonsCache = local;
@@ -2138,8 +2148,19 @@
                     throw new Error('HTTP ' + res.status);
                 }
             } catch (e) {
-                console.error('[VIDEO] Ошибка сохранения на сервер:', e);
-                // 2. Fallback — сохраняем локально (только на этом устройстве)
+                console.error('[VIDEO] Полная ошибка сохранения на сервер:', e);
+                
+                // Более точная диагностика ошибки
+                let errorMessage = 'Неизвестная ошибка';
+                if (e.message && e.message.includes('Failed to fetch')) {
+                    errorMessage = 'Сетевая ошибка / сервер недоступен (проверь интернет или URL бэкенда)';
+                } else if (e.message && e.message.includes('HTTP')) {
+                    errorMessage = 'Сервер вернул ошибку: ' + e.message;
+                } else {
+                    errorMessage = e.message || String(e);
+                }
+
+                // Fallback — сохраняем локально (только на этом устройстве)
                 let custom = [];
                 try {
                     custom = JSON.parse(SafeStorage.getItem('custom_video_lessons') || '[]');
@@ -2152,7 +2173,17 @@
                 renderDevVideoList();
                 if (typeof renderVideoLessons === 'function') renderVideoLessons('all');
 
-                alert('⚠️ Сохранено только на ЭТОМ устройстве (сервер вернул ошибку).\n\nЧтобы уроки сохранялись глобально для всех:\n1. Убедись, что на Render добавлен endpoint POST /api/video-lessons\n2. Таблица video_lessons существует в Supabase\n3. Передеплой сервера');
+                // Улучшенное сообщение пользователю
+                alert(
+                    '⚠️ Сохранено только на ЭТОМ устройстве.\n\n' +
+                    'Ошибка подключения к серверу: ' + errorMessage + '\n\n' +
+                    'Что делать:\n' +
+                    '1. Убедись, что на Render задеплоен server-fixed.js (с эндпоинтом /api/video-lessons)\n' +
+                    '2. Проверь, что таблица video_lessons существует в Supabase (с колонками title, category, youtube, description, level)\n' +
+                    '3. Убедись, что SERVER_URL в этом файле = https://vip-community.onrender.com\n' +
+                    '4. Сделай Redeploy на Render\n\n' +
+                    'Текущий SERVER_URL: ' + SERVER_URL
+                );
             }
         };
 
