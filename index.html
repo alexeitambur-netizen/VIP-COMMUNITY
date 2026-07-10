@@ -2139,7 +2139,18 @@
                 }
             } catch (e) {
                 console.error('[VIDEO] Ошибка сохранения на сервер:', e);
-                // 2. Fallback — сохраняем локально (только на этом устройстве)
+
+                // Показываем РЕАЛЬНУЮ ошибку от сервера (чтобы было видно, что именно не так в Supabase)
+                let errorMessage = 'Неизвестная ошибка';
+                if (e && e.message) errorMessage = e.message;
+                
+                // Если сервер вернул { success: false, error: "..." }
+                if (e && e.error) errorMessage = e.error;
+
+                alert('❌ ОШИБКА SUPABASE:\n\n' + errorMessage + 
+                      '\n\nСкопируй эту ошибку и пришли мне + последние строки из логов Render.');
+
+                // Fallback — сохраняем локально
                 let custom = [];
                 try {
                     custom = JSON.parse(SafeStorage.getItem('custom_video_lessons') || '[]');
@@ -2151,8 +2162,6 @@
 
                 renderDevVideoList();
                 if (typeof renderVideoLessons === 'function') renderVideoLessons('all');
-
-                alert('⚠️ Сохранено только на ЭТОМ устройстве (сервер вернул ошибку).\n\nЧтобы уроки сохранялись глобально для всех:\n1. Убедись, что на Render добавлен endpoint POST /api/video-lessons\n2. Таблица video_lessons существует в Supabase\n3. Передеплой сервера');
             }
         };
 
