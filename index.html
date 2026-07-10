@@ -2010,25 +2010,49 @@
         // Base lessons (можно расширять)
         window.VIDEO_LESSONS = window.VIDEO_LESSONS || [];
 
-        function getCustomVideoLessons() {
+        async function getCustomVideoLessons() {
+            try {
+                const res = await fetch(`${SERVER_URL}/api/video-lessons`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && Array.isArray(data.lessons)) return data.lessons;
+                }
+            } catch (e) {}
             try {
                 return JSON.parse(SafeStorage.getItem('custom_video_lessons') || '[]');
             } catch (e) { return []; }
         }
         window.getCustomVideoLessons = getCustomVideoLessons;
 
-        function saveCustomVideoLessons(list) {
+        async function saveCustomVideoLessons(list) {
+            try {
+                const res = await fetch(`${SERVER_URL}/api/admin/video-lessons`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ lessons: list, adminId: "5817328317" })
+                });
+                if (res.ok) {
+                    const result = await res.json();
+                    if (result.success) {
+                        console.log('%c[PRO AI] Видеоуроки сохранены в Supabase (глобально для всех)', 'color:#00FFAA');
+                        return true;
+                    }
+                }
+            } catch (e) {
+                console.warn('Supabase недоступен, сохраняем локально');
+            }
             SafeStorage.setItem('custom_video_lessons', JSON.stringify(list));
+            return true;
         }
         window.saveCustomVideoLessons = saveCustomVideoLessons;
 
-        function getAllVideoLessons() {
-            const custom = getCustomVideoLessons();
+        async function getAllVideoLessons() {
+            const custom = await getCustomVideoLessons();
             const base = window.VIDEO_LESSONS || [];
             const all = [...base];
             custom.forEach(c => {
                 if (!all.some(a => a.title === c.title)) {
-                    all.push(c);
+                    all.push({ ...c, isCustom: true });
                 }
             });
             return all;
@@ -4706,12 +4730,18 @@
             }
 
             // ==================== VIDEO TRAINING FUNCTIONS ====================
-            function renderVideoLessons(filter = 'all') {
+            async function renderVideoLessons(filter = 'all') {
                 const container = document.getElementById('video-lessons-list');
                 if (!container) return;
                 container.innerHTML = '';
 
-                let list = (typeof getAllVideoLessons === 'function') ? getAllVideoLessons() : (window.VIDEO_LESSONS || []);
+                let list = [];
+                if (typeof getAllVideoLessons === 'function') {
+                    list = await getAllVideoLessons();
+                } else {
+                    list = window.VIDEO_LESSONS || [];
+                }
+
                 if (filter !== 'all') {
                     list = list.filter(l => l.category === filter);
                 }
