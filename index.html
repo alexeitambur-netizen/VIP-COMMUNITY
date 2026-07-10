@@ -937,10 +937,6 @@
                     <div class="icon-circle">📚</div>
                     <div class="card-title">База знаний</div>
                 </div>
-                <div class="card" data-target="video-training-screen">
-                    <div class="icon-circle">🎥</div>
-                    <div class="card-title">Видеообучение</div>
-                </div>
                 <div class="card" data-target="patterns-screen">
                     <div class="icon-circle">📈</div>
                     <div class="card-title">Паттерны</div>
@@ -1285,33 +1281,6 @@
             
             <div class="glass-box" style="max-height: 58vh; overflow-y: auto; padding: 16px;" id="books-list-box"></div>
             
-            <button class="back-btn" onclick="switchScreen('menu-screen')">← НАЗАД В МЕНЮ</button>
-        </div>
-
-        <!-- ==================== VIDEO TRAINING SCREEN ==================== -->
-        <div class="screen" id="video-training-screen">
-            <h2>🎥 ВИДЕООБУЧЕНИЕ PRO</h2>
-            
-            <div class="glass-box" style="margin-bottom: 12px; background: linear-gradient(90deg, rgba(157,0,255,0.08) 0%, rgba(0,255,170,0.04) 100%);">
-                <p style="font-size:13px; color:#a4b1cd; text-align:center; font-weight:600;">Профессиональные видеоуроки по торговле на Pocket Option. Теория + практика на M1. Смотри → применяй → зарабатывай.</p>
-            </div>
-
-            <div style="display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap; justify-content:center;">
-                <button onclick="filterVideoLessons('all')" class="back-btn" style="flex:1; max-width:70px; background:var(--neon-green); color:#000; border:none; font-size:11px; padding:8px 10px;">ВСЕ</button>
-                <button onclick="filterVideoLessons('basics')" class="back-btn" style="flex:1; max-width:85px; font-size:11px; padding:8px 10px;">БАЗА</button>
-                <button onclick="filterVideoLessons('patterns')" class="back-btn" style="flex:1; max-width:90px; font-size:11px; padding:8px 10px;">ПАТТЕРНЫ</button>
-                <button onclick="filterVideoLessons('strategies')" class="back-btn" style="flex:1; max-width:95px; font-size:11px; padding:8px 10px;">СТРАТЕГИИ</button>
-                <button onclick="filterVideoLessons('psychology')" class="back-btn" style="flex:1; max-width:100px; font-size:11px; padding:8px 10px;">ПСИХОЛОГИЯ</button>
-            </div>
-
-            <div class="glass-box" style="max-height: 52vh; overflow-y: auto; padding: 12px 14px; margin-bottom: 12px;" id="video-lessons-list">
-            </div>
-
-            <div class="glass-box" style="background: rgba(0,255,170,0.06); border-color: rgba(0,255,170,0.25);">
-                <h4 style="color:var(--neon-green); text-align:center; margin-bottom:8px; font-size:13px;">💡 СОВЕТ ОТ PRO AI</h4>
-                <p style="font-size:12px; color:#a4b1cd; text-align:center; font-weight:600;">Смотри уроки в 1.5x скорости. После каждого урока сразу практикуй на демо-счёте минимум 20 сделок.</p>
-            </div>
-
             <button class="back-btn" onclick="switchScreen('menu-screen')">← НАЗАД В МЕНЮ</button>
         </div>
 
@@ -2089,10 +2058,17 @@
 
             renderDevVideoList();
             
-            // Обновляем список в разделе Видеообучение, если он открыт
+            // Обновляем список в разделе Видеообучение сразу
             if (typeof renderVideoLessons === 'function') {
-                const currentFilter = document.querySelector('#video-training-screen .note-chip.active')?.getAttribute('data-filter') || 'all';
-                renderVideoLessons(currentFilter);
+                try {
+                    renderVideoLessons('all');
+                } catch(e) {}
+            }
+            
+            // Если экран видеообучения открыт — перерисуем
+            const videoContainer = document.getElementById('video-lessons-list');
+            if (videoContainer && videoContainer.offsetParent !== null) {
+                if (typeof renderVideoLessons === 'function') renderVideoLessons('all');
             }
             
             alert('Видеоурок успешно добавлен! Он сразу появился в разделе Видеообучение.');
@@ -4699,122 +4675,8 @@
                 }
             }
 
-            // ==================== VIDEO TRAINING FUNCTIONS ====================
-            function renderVideoLessons(filter = 'all') {
-                const container = document.getElementById('video-lessons-list');
-                if (!container) return;
-                container.innerHTML = '';
-
-                let list = (typeof getAllVideoLessons === 'function') ? getAllVideoLessons() : (window.VIDEO_LESSONS || []);
-                if (filter !== 'all') {
-                    list = list.filter(l => l.category === filter);
-                }
-
-                if (list.length === 0) {
-                    container.innerHTML = '<div style="color:#a4b1cd; text-align:center; padding:30px 10px; font-weight:600;">В этой категории пока нет уроков.</div>';
-                    return;
-                }
-
-                list.forEach(lesson => {
-                    const card = document.createElement('div');
-                    card.style.cssText = 'background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.08); border-radius:22px; padding:16px 18px; margin-bottom:12px; cursor:pointer;';
-                    const isCustom = lesson.isCustom ? ' <span style="background:rgba(157,0,255,0.3); color:#fff; padding:1px 6px; border-radius:8px; font-size:9px;">CUSTOM</span>' : '';
-                    card.innerHTML = `
-                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
-                            <div style="flex:1;"><div style="font-size:15px; font-weight:900; color:#fff; line-height:1.25;">${lesson.title}${isCustom}</div></div>
-                            <div style="text-align:right; flex-shrink:0; margin-left:12px;">
-                                <div style="font-size:11px; color:#a4b1cd; font-weight:700;">${lesson.duration}</div>
-                                <div style="font-size:10px; color:var(--neon-purple); font-weight:800; margin-top:2px;">${lesson.level}</div>
-                            </div>
-                        </div>
-                        <div style="font-size:13px; color:#a4b1cd; line-height:1.45; margin-bottom:12px;">${lesson.desc}</div>
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <span style="background:rgba(0,255,170,0.12); color:var(--neon-green); padding:6px 14px; border-radius:999px; font-size:12px; font-weight:900;">СМОТРЕТЬ УРОК →</span>
-                        </div>
-                    `;
-                    card.addEventListener('click', () => showVideoModal(lesson));
-                    container.appendChild(card);
-                });
-            }
-
-            window.filterVideoLessons = function(category) {
-                document.querySelectorAll('#video-training-screen .back-btn').forEach(btn => {
-                    const txt = btn.innerText || '';
-                    const active = (category === 'all' && txt.includes('ВСЕ')) || txt.includes(category.toUpperCase());
-                    btn.style.background = active ? 'var(--neon-green)' : 'rgba(255,255,255,0.06)';
-                    btn.style.color = active ? '#000' : '#fff';
-                });
-                renderVideoLessons(category);
-            };
-
-            function showVideoModal(lesson) {
-                const modal = document.getElementById('video-modal');
-                if (!modal) return;
-                document.getElementById('video-modal-title').innerText = lesson.title;
-                document.getElementById('video-modal-duration').innerText = lesson.duration || '';
-                document.getElementById('video-modal-level').innerText = lesson.level || '';
-                document.getElementById('video-modal-desc').innerText = lesson.desc || '';
-                const c = document.getElementById('video-embed-container');
-                c.innerHTML = `<iframe width="100%" height="100%" src="${lesson.youtube}" frameborder="0" allowfullscreen style="border-radius:18px;"></iframe>`;
-                window.currentVideoLesson = lesson;
-                modal.style.display = 'flex';
-            }
-
-            function closeVideoModal() {
-                const modal = document.getElementById('video-modal');
-                if (modal) {
-                    modal.style.display = 'none';
-                    const c = document.getElementById('video-embed-container');
-                    if (c) c.innerHTML = '';
-                }
-            }
-            window.closeVideoModal = closeVideoModal;
-
-            function openVideoInTelegram() {
-                if (window.currentVideoLesson && window.currentVideoLesson.youtube) {
-                    const id = window.currentVideoLesson.youtube.split('/embed/')[1] || '';
-                    const url = id ? `https://www.youtube.com/watch?v=${id}` : window.currentVideoLesson.youtube;
-                    if (window.Telegram && window.Telegram.WebApp) window.Telegram.WebApp.openLink(url);
-                    else window.open(url, '_blank');
-                }
-                closeVideoModal();
-            }
-            window.openVideoInTelegram = openVideoInTelegram;
-
-            // Auto render when opening video screen
-            const _origSwitch = window.switchScreen;
-            window.switchScreen = function(id) {
-                if (_origSwitch) _origSwitch(id);
-                if (id === 'video-training-screen') {
-                    setTimeout(() => { if (typeof renderVideoLessons === 'function') renderVideoLessons('all'); }, 80);
-                }
-            };
-
             init();
         });
     </script>
-
-    <!-- VIDEO MODAL -->
-    <div id="video-modal" class="pattern-modal" onclick="if (event.target.id === 'video-modal') closeVideoModal()">
-        <div class="pattern-modal-content" style="max-width: 480px; border-radius: 32px;" onclick="event.stopImmediatePropagation()">
-            <button class="pattern-modal-close" onclick="closeVideoModal()" style="top: 16px; right: 16px;">×</button>
-            
-            <h3 id="video-modal-title" style="color:#fff; font-size:20px; margin-bottom:6px; line-height:1.2;"></h3>
-            <div style="display:flex; gap:10px; align-items:center; margin-bottom:14px;">
-                <span id="video-modal-duration" style="background:rgba(0,255,170,0.15); color:var(--neon-green); padding:4px 12px; border-radius:20px; font-size:11px; font-weight:800;"></span>
-                <span id="video-modal-level" style="background:rgba(157,0,255,0.15); color:var(--neon-purple); padding:4px 12px; border-radius:20px; font-size:11px; font-weight:800;"></span>
-            </div>
-
-            <div id="video-embed-container" style="width:100%; aspect-ratio:16 / 9; background:#0a0f1f; border-radius:20px; overflow:hidden; border:1px solid rgba(255,255,255,0.1); margin-bottom:16px;"></div>
-
-            <div style="font-size:13.5px; color:#c8d0e0; line-height:1.55; margin-bottom:18px;" id="video-modal-desc"></div>
-
-            <div style="display:flex; gap:10px;">
-                <button onclick="closeVideoModal()" class="back-btn" style="flex:1; font-size:14px;">ЗАКРЫТЬ</button>
-                <button onclick="openVideoInTelegram()" class="back-btn" style="flex:1; background:var(--neon-purple); color:#fff; border:none; font-weight:900; font-size:14px;">ОТКРЫТЬ В БРАУЗЕРЕ</button>
-            </div>
-        </div>
-    </div>
-
 </body>
 </html>
