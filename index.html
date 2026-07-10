@@ -2006,64 +2006,29 @@
             }
         };
 
-        // === YouTube Video Lessons Management (Developer only) - GLOBAL FOR ALL USERS ===
+        // === YouTube Video Lessons Management (Developer only) ===
+        // Base lessons (можно расширять)
         window.VIDEO_LESSONS = window.VIDEO_LESSONS || [];
 
-        // Try to load custom lessons from server first (for all users), fallback to localStorage
-        async function getCustomVideoLessons() {
-            try {
-                // Try server first for global visibility
-                const res = await fetch(`${SERVER_URL}/api/video-lessons`, { method: 'GET' });
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data && Array.isArray(data.lessons)) {
-                        return data.lessons;
-                    }
-                }
-            } catch (e) {
-                // Server not ready or no internet - fallback to local
-            }
-            // Fallback to localStorage (admin only sees his additions until backend is updated)
+        function getCustomVideoLessons() {
             try {
                 return JSON.parse(SafeStorage.getItem('custom_video_lessons') || '[]');
             } catch (e) { return []; }
         }
         window.getCustomVideoLessons = getCustomVideoLessons;
 
-        async function saveCustomVideoLessons(list) {
-            // Try to save to server first (protected)
-            try {
-                const res = await fetch(`${SERVER_URL}/api/admin/video-lessons`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        lessons: list,
-                        adminId: MASTER_ADMIN 
-                    })
-                });
-                if (res.ok) {
-                    const result = await res.json();
-                    if (result.success) {
-                        console.log('%c[PRO AI] Видеоуроки сохранены на сервере (глобально для всех)', 'color:#00FFAA');
-                        return true;
-                    }
-                }
-            } catch (e) {
-                console.warn('[PRO AI] Сервер недоступен, сохраняем локально');
-            }
-            // Fallback to localStorage
+        function saveCustomVideoLessons(list) {
             SafeStorage.setItem('custom_video_lessons', JSON.stringify(list));
-            return true;
         }
         window.saveCustomVideoLessons = saveCustomVideoLessons;
 
-        async function getAllVideoLessons() {
-            const custom = await getCustomVideoLessons();
+        function getAllVideoLessons() {
+            const custom = getCustomVideoLessons();
             const base = window.VIDEO_LESSONS || [];
             const all = [...base];
             custom.forEach(c => {
                 if (!all.some(a => a.title === c.title)) {
-                    all.push({...c, isCustom: true});
+                    all.push(c);
                 }
             });
             return all;
@@ -2095,7 +2060,7 @@
             });
         }
 
-        window.devAddVideoLesson = function() {
+        window.devAddVideoLesson = async function() {
             const title = document.getElementById('new-video-title').value.trim();
             const youtube = document.getElementById('new-video-youtube').value.trim();
             const category = document.getElementById('new-video-category').value;
@@ -2119,35 +2084,41 @@
                 isCustom: true
             };
 
-            const custom = getCustomVideoLessons();
-            custom.push(newLesson);
-            saveCustomVideoLessons(custom);
+            try {
+                const custom = await getCustomVideoLessons();
+                custom.push(newLesson);
+                await saveCustomVideoLessons(custom);
 
-            // Clear form
-            document.getElementById('new-video-title').value = '';
-            document.getElementById('new-video-youtube').value = '';
-            document.getElementById('new-video-desc').value = '';
+                // Clear form
+                document.getElementById('new-video-title').value = '';
+                document.getElementById('new-video-youtube').value = '';
+                document.getElementById('new-video-desc').value = '';
 
-            renderDevVideoList();
-            
-            // Обновляем список в разделе Видеообучение, если он открыт
-            if (typeof renderVideoLessons === 'function') {
-                const currentFilter = document.querySelector('#video-training-screen .note-chip.active')?.getAttribute('data-filter') || 'all';
-                renderVideoLessons(currentFilter);
+                if (typeof renderDevVideoList === 'function') renderDevVideoList();
+                
+                // Обновляем список в разделе Видеообучение
+                if (typeof renderVideoLessons === 'function') {
+                    renderVideoLessons('all');
+                }
+                
+                alert('Видеоурок успешно добавлен!');
+            } catch (err) {
+                console.error(err);
+                alert('Ошибка при сохранении видеоурока. Попробуй ещё раз.');
             }
-            
-            alert('Видеоурок успешно добавлен! Он сразу появился в разделе Видеообучение.');
         };
 
-        window.devDeleteVideoLesson = function(index) {
+        window.devDeleteVideoLesson = async function(index) {
             if (!confirm('Удалить этот кастомный урок?')) return;
-            const custom = getCustomVideoLessons();
-            custom.splice(index, 1);
-            saveCustomVideoLessons(custom);
-            renderDevVideoList();
-            
-            if (typeof renderVideoLessons === 'function') {
-                renderVideoLessons('all');
+            try {
+                const custom = await getCustomVideoLessons();
+                custom.splice(index, 1);
+                await saveCustomVideoLessons(custom);
+                if (typeof renderDevVideoList === 'function') renderDevVideoList();
+                if (typeof renderVideoLessons === 'function') renderVideoLessons('all');
+            } catch (err) {
+                console.error(err);
+                alert('Ошибка при удалении.');
             }
         };
 
