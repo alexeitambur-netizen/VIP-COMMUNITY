@@ -298,7 +298,7 @@ bot.start(async (ctx) => {
         await ctx.replyWithAnimation(WELCOME_GIF_URL);
         await ctx.replyWithMarkdown(welcomeText, Markup.inlineKeyboard([
             [Markup.button.url('🔗 Зарегистрироваться в Pocket Option', 'https://u3.shortink.io/register?utm_campaign=848628&utm_source=affiliate&utm_medium=sr&a=yueyrPjXG4Zw24&al=1774255&ac=alifavip&cid=963312')],
-            [Markup.button.url('👨‍💻 Написать Администратору VIP', 'https://t.me/alifavip')]
+            [Markup.button.url('👨‍💻 Написать Администратору VIP', 'https://t.me/Briliant_VIP_PRO')]
         ]));
     } catch (error) {
         log(`Ошибка отправки приветствия: ${error.message}`, 'ERROR');
