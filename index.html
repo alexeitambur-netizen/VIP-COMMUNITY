@@ -4902,25 +4902,77 @@
                 }
             };
 
-            // Подписка на новые сообщения в реальном времени
+            // ============================================
+            // РЕАЛЬНОЕ КОЛИЧЕСТВО ОНЛАЙН ПОЛЬЗОВАТЕЛЕЙ (Supabase Presence)
+            // ============================================
+            let chatChannel = null;
+
+            function updateOnlineCount(count) {
+                const el = document.getElementById('chat-online-count');
+                if (el) {
+                    el.innerText = count || 0;
+                }
+            }
+
+            // Подписка на сообщения + Presence (кто онлайн)
             function subscribeToTraderChat() {
                 const client = initSupabase();
-                if (!client || tradersChatSubscription) return;
+                if (!client) return;
 
-                tradersChatSubscription = client
-                    .channel('trader-messages')
-                    .on('postgres_changes', 
-                        { event: 'INSERT', schema: 'public', table: 'trader_messages' },
-                        (payload) => {
-                            // Пришло новое сообщение — перезагружаем весь чат (просто и надёжно)
-                            loadTradersChatMessages();
+                // Если уже подписаны — не создаём новый канал
+                if (chatChannel) {
+                    return;
+                }
+
+                const userId = currentTelegramUser?.id || 'guest_' + Date.now();
+                const username = currentTelegramUser 
+                    ? (currentTelegramUser.first_name + (currentTelegramUser.last_name ? ' ' + currentTelegramUser.last_name : '')) 
+                    : 'Гость';
+
+                chatChannel = client.channel('trader-chat-room', {
+                    config: {
+                        presence: {
+                            key: String(userId)
                         }
-                    )
-                    .subscribe((status) => {
-                        if (status === 'SUBSCRIBED') {
-                            console.log('%c[PRO AI] Realtime чат подключен', 'color:#00FFAA');
-                        }
-                    });
+                    }
+                });
+
+                // 1. Сообщения (INSERT)
+                chatChannel.on('postgres_changes', 
+                    { event: 'INSERT', schema: 'public', table: 'trader_messages' },
+                    () => {
+                        loadTradersChatMessages();
+                    }
+                );
+
+                // 2. Presence — кто онлайн прямо сейчас
+                chatChannel.on('presence', { event: 'sync' }, () => {
+                    const state = chatChannel.presenceState();
+                    const onlineUsers = Object.keys(state).length;
+                    updateOnlineCount(onlineUsers);
+                    console.log('%c[PRO AI] Онлайн пользователей:', 'color:#00FFAA', onlineUsers);
+                });
+
+                chatChannel.subscribe(async (status) => {
+                    if (status === 'SUBSCRIBED') {
+                        console.log('%c[PRO AI] Чат + Presence подключены', 'color:#00FFAA');
+
+                        // Отправляем информацию о себе (что мы онлайн)
+                        await chatChannel.track({
+                            user_id: String(userId),
+                            username: username,
+                            online_at: new Date().toISOString()
+                        });
+                    }
+                });
+            }
+
+            // При закрытии экрана чата можно убрать себя из Presence (опционально)
+            function leaveChatPresence() {
+                if (chatChannel) {
+                    chatChannel.untrack();
+                    // Можно также chatChannel.unsubscribe(), но для простоты оставляем
+                }
             }
 
             // ============================================
