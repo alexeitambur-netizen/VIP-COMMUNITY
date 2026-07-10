@@ -2006,29 +2006,64 @@
             }
         };
 
-        // === YouTube Video Lessons Management (Developer only) ===
-        // Base lessons (можно расширять)
+        // === YouTube Video Lessons Management (Developer only) - GLOBAL FOR ALL USERS ===
         window.VIDEO_LESSONS = window.VIDEO_LESSONS || [];
 
-        function getCustomVideoLessons() {
+        // Try to load custom lessons from server first (for all users), fallback to localStorage
+        async function getCustomVideoLessons() {
+            try {
+                // Try server first for global visibility
+                const res = await fetch(`${SERVER_URL}/api/video-lessons`, { method: 'GET' });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && Array.isArray(data.lessons)) {
+                        return data.lessons;
+                    }
+                }
+            } catch (e) {
+                // Server not ready or no internet - fallback to local
+            }
+            // Fallback to localStorage (admin only sees his additions until backend is updated)
             try {
                 return JSON.parse(SafeStorage.getItem('custom_video_lessons') || '[]');
             } catch (e) { return []; }
         }
         window.getCustomVideoLessons = getCustomVideoLessons;
 
-        function saveCustomVideoLessons(list) {
+        async function saveCustomVideoLessons(list) {
+            // Try to save to server first (protected)
+            try {
+                const res = await fetch(`${SERVER_URL}/api/admin/video-lessons`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        lessons: list,
+                        adminId: MASTER_ADMIN 
+                    })
+                });
+                if (res.ok) {
+                    const result = await res.json();
+                    if (result.success) {
+                        console.log('%c[PRO AI] Видеоуроки сохранены на сервере (глобально для всех)', 'color:#00FFAA');
+                        return true;
+                    }
+                }
+            } catch (e) {
+                console.warn('[PRO AI] Сервер недоступен, сохраняем локально');
+            }
+            // Fallback to localStorage
             SafeStorage.setItem('custom_video_lessons', JSON.stringify(list));
+            return true;
         }
         window.saveCustomVideoLessons = saveCustomVideoLessons;
 
-        function getAllVideoLessons() {
-            const custom = getCustomVideoLessons();
+        async function getAllVideoLessons() {
+            const custom = await getCustomVideoLessons();
             const base = window.VIDEO_LESSONS || [];
             const all = [...base];
             custom.forEach(c => {
                 if (!all.some(a => a.title === c.title)) {
-                    all.push(c);
+                    all.push({...c, isCustom: true});
                 }
             });
             return all;
