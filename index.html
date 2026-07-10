@@ -2060,7 +2060,7 @@
             });
         }
 
-        window.devAddVideoLesson = async function() {
+        window.devAddVideoLesson = function() {
             const title = document.getElementById('new-video-title').value.trim();
             const youtube = document.getElementById('new-video-youtube').value.trim();
             const category = document.getElementById('new-video-category').value;
@@ -2084,41 +2084,35 @@
                 isCustom: true
             };
 
-            try {
-                const custom = await getCustomVideoLessons();
-                custom.push(newLesson);
-                await saveCustomVideoLessons(custom);
+            const custom = getCustomVideoLessons();
+            custom.push(newLesson);
+            saveCustomVideoLessons(custom);
 
-                // Clear form
-                document.getElementById('new-video-title').value = '';
-                document.getElementById('new-video-youtube').value = '';
-                document.getElementById('new-video-desc').value = '';
+            // Clear form
+            document.getElementById('new-video-title').value = '';
+            document.getElementById('new-video-youtube').value = '';
+            document.getElementById('new-video-desc').value = '';
 
-                if (typeof renderDevVideoList === 'function') renderDevVideoList();
-                
-                // Обновляем список в разделе Видеообучение
-                if (typeof renderVideoLessons === 'function') {
-                    renderVideoLessons('all');
-                }
-                
-                alert('Видеоурок успешно добавлен!');
-            } catch (err) {
-                console.error(err);
-                alert('Ошибка при сохранении видеоурока. Попробуй ещё раз.');
+            renderDevVideoList();
+            
+            // Обновляем список в разделе Видеообучение, если он открыт
+            if (typeof renderVideoLessons === 'function') {
+                const currentFilter = document.querySelector('#video-training-screen .note-chip.active')?.getAttribute('data-filter') || 'all';
+                renderVideoLessons(currentFilter);
             }
+            
+            alert('Видеоурок успешно добавлен! Он сразу появился в разделе Видеообучение.');
         };
 
-        window.devDeleteVideoLesson = async function(index) {
+        window.devDeleteVideoLesson = function(index) {
             if (!confirm('Удалить этот кастомный урок?')) return;
-            try {
-                const custom = await getCustomVideoLessons();
-                custom.splice(index, 1);
-                await saveCustomVideoLessons(custom);
-                if (typeof renderDevVideoList === 'function') renderDevVideoList();
-                if (typeof renderVideoLessons === 'function') renderVideoLessons('all');
-            } catch (err) {
-                console.error(err);
-                alert('Ошибка при удалении.');
+            const custom = getCustomVideoLessons();
+            custom.splice(index, 1);
+            saveCustomVideoLessons(custom);
+            renderDevVideoList();
+            
+            if (typeof renderVideoLessons === 'function') {
+                renderVideoLessons('all');
             }
         };
 
