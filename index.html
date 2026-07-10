@@ -2006,67 +2006,98 @@
             }
         };
 
-        // === YouTube Video Lessons Management (Developer only) ===
-        // Base lessons (можно расширять)
+        // === YouTube Video Lessons Management via Supabase (GLOBAL для ВСЕХ пользователей) ===
+        // Теперь уроки сохраняются в Supabase через бэкенд и видны на всех аккаунтах/устройствах.
+        // Fallback на localStorage если сервер/endpoint временно недоступен.
         window.VIDEO_LESSONS = window.VIDEO_LESSONS || [];
+        let videoLessonsCache = [];
 
-        function getCustomVideoLessons() {
+        async function loadVideoLessonsFromServer() {
             try {
-                return JSON.parse(SafeStorage.getItem('custom_video_lessons') || '[]');
-            } catch (e) { return []; }
+                const response = await fetch(`${SERVER_URL}/api/video-lessons`);
+                if (response.ok) {
+                    const data = await response.json();
+                    videoLessonsCache = Array.isArray(data) ? data : [];
+                    window.VIDEO_LESSONS = videoLessonsCache;
+                    console.log(`[VIDEO] Загружено ${videoLessonsCache.length} видеоуроков из Supabase`);
+                    return videoLessonsCache;
+                } else {
+                    console.warn(`[VIDEO] /api/video-lessons вернул статус ${response.status}`);
+                }
+            } catch (e) {
+                console.warn('[VIDEO] Ошибка загрузки с сервера (возможно, нужно добавить endpoint на Render):', e.message);
+            }
+            // Fallback к старому локальному хранилищу
+            try {
+                const local = JSON.parse(SafeStorage.getItem('custom_video_lessons') || '[]');
+                videoLessonsCache = local;
+                window.VIDEO_LESSONS = local;
+            } catch (_) {
+                videoLessonsCache = [];
+                window.VIDEO_LESSONS = [];
+            }
+            return videoLessonsCache;
+        }
+        window.loadVideoLessonsFromServer = loadVideoLessonsFromServer;
+
+        function getAllVideoLessons() {
+            return (videoLessonsCache && videoLessonsCache.length > 0) ? videoLessonsCache : (window.VIDEO_LESSONS || []);
+        }
+        window.getAllVideoLessons = getAllVideoLessons;
+
+        // Обёртки для обратной совместимости (теперь работают через кэш Supabase)
+        function getCustomVideoLessons() {
+            return getAllVideoLessons();
         }
         window.getCustomVideoLessons = getCustomVideoLessons;
 
         function saveCustomVideoLessons(list) {
-            SafeStorage.setItem('custom_video_lessons', JSON.stringify(list));
+            SafeStorage.setItem('custom_video_lessons', JSON.stringify(list || []));
+            videoLessonsCache = list || [];
+            window.VIDEO_LESSONS = videoLessonsCache;
         }
         window.saveCustomVideoLessons = saveCustomVideoLessons;
-
-        function getAllVideoLessons() {
-            const custom = getCustomVideoLessons();
-            const base = window.VIDEO_LESSONS || [];
-            const all = [...base];
-            custom.forEach(c => {
-                if (!all.some(a => a.title === c.title)) {
-                    all.push(c);
-                }
-            });
-            return all;
-        }
-        window.getAllVideoLessons = getAllVideoLessons;
 
         function renderDevVideoList() {
             const container = document.getElementById('dev-video-list');
             if (!container) return;
             container.innerHTML = '';
 
-            const custom = getCustomVideoLessons();
-            if (custom.length === 0) {
-                container.innerHTML = '<div style="color:#a4b1cd; font-size:12px; padding:10px; text-align:center;">Пока нет добавленных уроков. Добавь первый выше.</div>';
+            const list = getAllVideoLessons();
+            if (list.length === 0) {
+                container.innerHTML = '<div style="color:#a4b1cd; font-size:12px; padding:10px; text-align:center;">Пока нет добавленных уроков.<br>Добавь первый выше — он сохранится в Supabase и будет виден ВСЕМ.</div>';
                 return;
             }
 
-            custom.forEach((lesson, index) => {
+            list.forEach((lesson, index) => {
                 const item = document.createElement('div');
                 item.style.cssText = 'background:rgba(0,0,0,0.5); border:1px solid rgba(157,0,255,0.3); border-radius:14px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center;';
+                const customTag = lesson.isCustom ? ' <span style="background:rgba(157,0,255,0.45); color:#fff; padding:1px 6px; border-radius:5px; font-size:9px; font-weight:800;">CUSTOM</span>' : '';
                 item.innerHTML = `
                     <div style="flex:1; min-width:0;">
-                        <div style="font-weight:800; color:#fff; font-size:13px; line-height:1.2;">${lesson.title}</div>
-                        <div style="font-size:11px; color:#a4b1cd;">${lesson.category} • ${lesson.duration}</div>
+                        <div style="font-weight:800; color:#fff; font-size:13px; line-height:1.2;">${lesson.title || 'Без названия'}${customTag}</div>
+                        <div style="font-size:11px; color:#a4b1cd;">${lesson.category || '—'} • ${lesson.duration || ''} • ${lesson.level || ''}</div>
                     </div>
-                    <button onclick="devDeleteVideoLesson(${index})" style="background:rgba(255,46,99,0.2); color:var(--neon-red); border:1px solid rgba(255,46,99,0.4); padding:6px 12px; border-radius:999px; font-size:11px; font-weight:900; cursor:pointer;">УДАЛИТЬ</button>
+                    <button onclick="devDeleteVideoLesson(${index}, '${lesson.id || ''}')" style="background:rgba(255,46,99,0.2); color:var(--neon-red); border:1px solid rgba(255,46,99,0.4); padding:6px 12px; border-radius:999px; font-size:11px; font-weight:900; cursor:pointer;">УДАЛИТЬ</button>
                 `;
                 container.appendChild(item);
             });
         }
 
         window.devAddVideoLesson = async function() {
-            const title = document.getElementById('new-video-title').value.trim();
-            const youtube = document.getElementById('new-video-youtube').value.trim();
-            const category = document.getElementById('new-video-category').value;
-            const duration = document.getElementById('new-video-duration').value.trim() || '15 мин';
-            const level = document.getElementById('new-video-level').value.trim() || 'Средний';
-            const desc = document.getElementById('new-video-desc').value.trim() || 'Добавленный урок разработчика.';
+            const titleEl = document.getElementById('new-video-title');
+            const youtubeEl = document.getElementById('new-video-youtube');
+            const categoryEl = document.getElementById('new-video-category');
+            const durationEl = document.getElementById('new-video-duration');
+            const levelEl = document.getElementById('new-video-level');
+            const descEl = document.getElementById('new-video-desc');
+
+            const title = (titleEl && titleEl.value || '').trim();
+            const youtube = (youtubeEl && youtubeEl.value || '').trim();
+            const category = (categoryEl && categoryEl.value) || 'basics';
+            const duration = (durationEl && durationEl.value || '').trim() || '15 мин';
+            const level = (levelEl && levelEl.value || '').trim() || 'Средний';
+            const desc = (descEl && descEl.value || '').trim() || 'Добавленный урок разработчика.';
 
             if (!title || !youtube) {
                 alert('Название и YouTube ссылка обязательны!');
@@ -2081,41 +2112,84 @@
                 level,
                 desc,
                 youtube,
-                isCustom: true
+                isCustom: true,
+                created_at: new Date().toISOString()
             };
 
+            // 1. Пытаемся сохранить в Supabase через сервер
             try {
-                const custom = await getCustomVideoLessons();
+                const res = await fetch(`${SERVER_URL}/api/video-lessons`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newLesson)
+                });
+                if (res.ok) {
+                    await loadVideoLessonsFromServer();
+                    renderDevVideoList();
+                    if (typeof renderVideoLessons === 'function') {
+                        renderVideoLessons('all');
+                    }
+                    if (titleEl) titleEl.value = '';
+                    if (youtubeEl) youtubeEl.value = '';
+                    if (descEl) descEl.value = '';
+                    alert('✅ Видеоурок сохранён в Supabase!\nТеперь он доступен ВСЕМ пользователям в разделе Видеообучение.');
+                    return;
+                } else {
+                    throw new Error('HTTP ' + res.status);
+                }
+            } catch (e) {
+                console.error('[VIDEO] Ошибка сохранения на сервер:', e);
+                // 2. Fallback — сохраняем локально (только на этом устройстве)
+                let custom = [];
+                try {
+                    custom = JSON.parse(SafeStorage.getItem('custom_video_lessons') || '[]');
+                } catch (_) {}
                 custom.push(newLesson);
-                await saveCustomVideoLessons(custom);
+                SafeStorage.setItem('custom_video_lessons', JSON.stringify(custom));
+                videoLessonsCache = custom;
+                window.VIDEO_LESSONS = custom;
 
-                // Clear form
-                document.getElementById('new-video-title').value = '';
-                document.getElementById('new-video-youtube').value = '';
-                document.getElementById('new-video-desc').value = '';
+                renderDevVideoList();
+                if (typeof renderVideoLessons === 'function') renderVideoLessons('all');
 
-                if (typeof renderDevVideoList === 'function') renderDevVideoList();
-                if (typeof renderVideoLessons === 'function') await renderVideoLessons('all');
-
-                alert('Видеоурок успешно добавлен в Supabase! Теперь он виден всем пользователям.');
-            } catch (err) {
-                console.error('Ошибка сохранения видеоурока:', err);
-                alert('Ошибка при сохранении. Проверьте консоль (F12).');
+                alert('⚠️ Сохранено только на ЭТОМ устройстве (сервер вернул ошибку).\n\nЧтобы уроки сохранялись глобально для всех:\n1. Убедись, что на Render добавлен endpoint POST /api/video-lessons\n2. Таблица video_lessons существует в Supabase\n3. Передеплой сервера');
             }
         };
 
-        window.devDeleteVideoLesson = async function(index) {
-            if (!confirm('Удалить этот кастомный урок?')) return;
-            try {
-                const custom = await getCustomVideoLessons();
-                custom.splice(index, 1);
-                await saveCustomVideoLessons(custom);
-                if (typeof renderDevVideoList === 'function') renderDevVideoList();
-                if (typeof renderVideoLessons === 'function') await renderVideoLessons('all');
-            } catch (err) {
-                console.error(err);
-                alert('Ошибка при удалении.');
+        window.devDeleteVideoLesson = async function(index, lessonId = '') {
+            if (!confirm('Удалить урок? Это повлияет на ВСЕХ пользователей.')) return;
+
+            const list = getAllVideoLessons();
+            if (!list[index]) return;
+            const lesson = list[index];
+            const idToDelete = lessonId || lesson.id || lesson.title;
+
+            // Пытаемся удалить через сервер (Supabase)
+            if (idToDelete) {
+                try {
+                    const res = await fetch(`${SERVER_URL}/api/video-lessons?id=${encodeURIComponent(idToDelete)}`, {
+                        method: 'DELETE'
+                    });
+                    if (res.ok) {
+                        await loadVideoLessonsFromServer();
+                        renderDevVideoList();
+                        if (typeof renderVideoLessons === 'function') renderVideoLessons('all');
+                        return;
+                    }
+                } catch (e) {
+                    console.warn('[VIDEO DELETE] Серверная ошибка удаления:', e.message);
+                }
             }
+
+            // Fallback: удаляем из локального хранилища
+            let custom = [];
+            try { custom = JSON.parse(SafeStorage.getItem('custom_video_lessons') || '[]'); } catch(_) {}
+            custom = custom.filter(l => l.id !== lesson.id && l.title !== lesson.title);
+            SafeStorage.setItem('custom_video_lessons', JSON.stringify(custom));
+            videoLessonsCache = custom;
+            window.VIDEO_LESSONS = custom;
+            renderDevVideoList();
+            if (typeof renderVideoLessons === 'function') renderVideoLessons('all');
         };
 
         // === Admin Management in Developer Panel (с синхронизацией на сервер) ===
@@ -4666,6 +4740,11 @@
                 
                 if (typeof loadPatternsAndStrategies === 'function') loadPatternsAndStrategies();
                 
+                // Загружаем глобальные видеоуроки из Supabase (для всех пользователей)
+                if (typeof loadVideoLessonsFromServer === 'function') {
+                    await loadVideoLessonsFromServer();
+                }
+                
                 await updateLivePayouts();
                 setInterval(updateLivePayouts, 5000); 
 
@@ -4789,12 +4868,19 @@
             }
             window.openVideoInTelegram = openVideoInTelegram;
 
-            // Auto render when opening video screen
+            // Auto render + refresh from Supabase when opening video screen (чтобы видеть уроки, добавленные с других аккаунтов)
             const _origSwitch = window.switchScreen;
             window.switchScreen = function(id) {
                 if (_origSwitch) _origSwitch(id);
                 if (id === 'video-training-screen') {
-                    setTimeout(() => { if (typeof renderVideoLessons === 'function') renderVideoLessons('all'); }, 80);
+                    setTimeout(async () => {
+                        try {
+                            if (typeof loadVideoLessonsFromServer === 'function') {
+                                await loadVideoLessonsFromServer();
+                            }
+                        } catch (_) {}
+                        if (typeof renderVideoLessons === 'function') renderVideoLessons('all');
+                    }, 120);
                 }
             };
 
