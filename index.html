@@ -961,6 +961,12 @@
                     <div class="icon-circle" style="margin-bottom: 12px; width: 70px; height: 70px; font-size: 32px;">📝</div>
                     <div class="card-title">Мои Заметки</div>
                 </div>
+
+                <!-- Developer Card (только для ROOT ADMIN) -->
+                <div class="card" id="dev-card" data-target="developer-screen" style="display: none; border: 2px solid var(--neon-purple); box-shadow: 0 0 25px rgba(157,0,255,0.4);">
+                    <div class="icon-circle" style="background: linear-gradient(135deg, rgba(157,0,255,0.25) 0%, rgba(0,255,170,0.15) 100%);">🛠️</div>
+                    <div class="card-title" style="color: var(--neon-purple);">DEVELOPER</div>
+                </div>
             </div>
         </div>
 
@@ -985,11 +991,6 @@
                 
                 <div id="admin-link-box" style="display: none; margin-top: 20px;">
                     <button class="back-btn" style="color: #000; background: var(--neon-purple); border: none; font-size: 15px; box-shadow: 0 0 20px rgba(157,0,255,0.4);" onclick="switchScreen('admin-panel-screen')">⚙️ ПАНЕЛЬ УПРАВЛЕНИЯ</button>
-                </div>
-
-                <!-- Developer Panel button - только для ROOT ADMIN в профиле -->
-                <div id="dev-link-box" style="display: none; margin-top: 12px;">
-                    <button class="back-btn" style="background: linear-gradient(90deg, var(--neon-purple) 0%, #c026ff 100%); color:#fff; border:none; font-size:15px; box-shadow: 0 0 25px rgba(157,0,255,0.5);" onclick="switchScreen('developer-screen')">🛠️ DEVELOPER PANEL (YouTube + Тема + Флаги)</button>
                 </div>
 
                 <div class="target-box" style="margin-top:20px; border-color: var(--neon-green);">
@@ -1024,7 +1025,6 @@
                 <button onclick="showDevTab('theme')" id="dev-tab-btn-theme" class="back-btn" style="flex:1; max-width:105px; font-size:11px; padding:10px 8px;">ТЕМА</button>
                 <button onclick="showDevTab('flags')" id="dev-tab-btn-flags" class="back-btn" style="flex:1; max-width:105px; font-size:11px; padding:10px 8px;">ФЛАГИ</button>
                 <button onclick="showDevTab('console')" id="dev-tab-btn-console" class="back-btn" style="flex:1; max-width:105px; font-size:11px; padding:10px 8px;">КОНСОЛЬ</button>
-                <button onclick="showDevTab('video')" id="dev-tab-btn-video" class="back-btn" style="flex:1; max-width:115px; font-size:11px; padding:10px 8px;">🎥 ВИДЕО</button>
             </div>
 
             <div class="glass-box" style="padding:20px; min-height: 420px;">
@@ -1090,36 +1090,6 @@
                     <button onclick="runDevConsole()" class="back-btn" style="background:var(--neon-red); color:#fff; border:none; width:100%;">ВЫПОЛНИТЬ КОД</button>
                     <div id="dev-console-output" style="margin-top:12px; font-size:12px; color:#a4b1cd; background:rgba(0,0,0,0.4); padding:12px; border-radius:12px; min-height:60px; font-family:monospace; white-space:pre-wrap;"></div>
                     <div style="font-size:10px; color:#ff6b6b; margin-top:8px;">⚠️ Осторожно! Неправильный код может сломать приложение до перезагрузки.</div>
-                </div>
-
-                <!-- TAB: YOUTUBE ВИДЕОУРОКИ (управление для видеообучения) -->
-                <div id="dev-tab-video" style="display:none;">
-                    <h4 style="color:var(--neon-green); font-size:13px; margin-bottom:10px; text-transform:uppercase;">Управление YouTube видеоуроками</h4>
-                    <p style="font-size:12px; color:#a4b1cd; margin-bottom:12px;">Добавляй свои уроки — они сразу появятся в разделе «Видеообучение». Хранятся в браузере админа.</p>
-                    
-                    <!-- Форма добавления -->
-                    <div style="background:rgba(0,0,0,0.4); border-radius:18px; padding:16px; margin-bottom:16px; border:1px solid rgba(157,0,255,0.2);">
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
-                            <input type="text" id="new-video-title" placeholder="Название урока" style="padding:12px 14px; border-radius:14px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.15); color:#fff; font-size:13px;">
-                            <input type="text" id="new-video-youtube" placeholder="YouTube Embed URL (https://www.youtube.com/embed/XXXX)" style="padding:12px 14px; border-radius:14px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.15); color:#fff; font-size:13px;">
-                        </div>
-                        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:10px;">
-                            <select id="new-video-category" style="padding:12px 14px; border-radius:14px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.15); color:#fff; font-size:13px;">
-                                <option value="basics">БАЗА</option>
-                                <option value="patterns">ПАТТЕРНЫ</option>
-                                <option value="strategies">СТРАТЕГИИ</option>
-                                <option value="psychology">ПСИХОЛОГИЯ</option>
-                            </select>
-                            <input type="text" id="new-video-duration" placeholder="Длительность (14 мин)" value="15 мин" style="padding:12px 14px; border-radius:14px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.15); color:#fff; font-size:13px;">
-                            <input type="text" id="new-video-level" placeholder="Уровень (Новичок)" value="Средний" style="padding:12px 14px; border-radius:14px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.15); color:#fff; font-size:13px;">
-                        </div>
-                        <textarea id="new-video-desc" placeholder="Краткое описание урока..." style="width:100%; min-height:60px; padding:12px 14px; border-radius:14px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.15); color:#fff; font-size:13px; resize:vertical;"></textarea>
-                        
-                        <button onclick="devAddVideoLesson()" class="back-btn" style="margin-top:12px; width:100%; background:var(--neon-purple); color:#fff; border:none; font-weight:900;">+ ДОБАВИТЬ ВИДЕОУРОК</button>
-                    </div>
-
-                    <h4 style="color:var(--neon-green); font-size:12px; margin-bottom:8px;">Твои добавленные уроки (кастомные):</h4>
-                    <div id="dev-video-list" style="max-height:220px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;"></div>
                 </div>
 
             </div>
@@ -1933,31 +1903,22 @@
             document.getElementById('dev-tab-theme').style.display = 'none';
             document.getElementById('dev-tab-flags').style.display = 'none';
             document.getElementById('dev-tab-console').style.display = 'none';
-            const videoTab = document.getElementById('dev-tab-video');
-            if (videoTab) videoTab.style.display = 'none';
 
             // Reset button styles
             document.getElementById('dev-tab-btn-admins').style.background = 'rgba(255,255,255,0.05)';
             document.getElementById('dev-tab-btn-theme').style.background = 'rgba(255,255,255,0.05)';
             document.getElementById('dev-tab-btn-flags').style.background = 'rgba(255,255,255,0.05)';
             document.getElementById('dev-tab-btn-console').style.background = 'rgba(255,255,255,0.05)';
-            const videoBtn = document.getElementById('dev-tab-btn-video');
-            if (videoBtn) videoBtn.style.background = 'rgba(255,255,255,0.05)';
 
             // Show selected
-            const selectedTab = document.getElementById('dev-tab-' + tab);
-            if (selectedTab) selectedTab.style.display = 'block';
-            const selectedBtn = document.getElementById('dev-tab-btn-' + tab);
-            if (selectedBtn) {
-                selectedBtn.style.background = 'var(--neon-purple)';
-                selectedBtn.style.color = '#fff';
-            }
+            document.getElementById('dev-tab-' + tab).style.display = 'block';
+            document.getElementById('dev-tab-btn-' + tab).style.background = 'var(--neon-purple)';
+            document.getElementById('dev-tab-btn-' + tab).style.color = '#fff';
 
             currentDevTab = tab;
 
             if (tab === 'admins') renderDevAdminList();
             if (tab === 'flags') renderFeatureFlags();
-            if (tab === 'video') renderDevVideoList();
             if (tab === 'theme') {
                 // Prefill current values
                 const root = getComputedStyle(document.documentElement);
@@ -1972,110 +1933,6 @@
                 if (gInput) gInput.value = green.startsWith('#') ? green : '#00FFAA';
                 if (pInput) pInput.value = purple.startsWith('#') ? purple : '#9D00FF';
                 if (rInput) rInput.value = red.startsWith('#') ? red : '#FF2E63';
-            }
-        };
-
-        // === YouTube Video Lessons Management (Developer only) ===
-        function getCustomVideoLessons() {
-            try {
-                return JSON.parse(SafeStorage.getItem('custom_video_lessons') || '[]');
-            } catch (e) { return []; }
-        }
-
-        function saveCustomVideoLessons(list) {
-            SafeStorage.setItem('custom_video_lessons', JSON.stringify(list));
-        }
-
-        function getAllVideoLessons() {
-            const custom = getCustomVideoLessons();
-            // Merge hardcoded + custom, avoid duplicates by title
-            const all = [...VIDEO_LESSONS];
-            custom.forEach(c => {
-                if (!all.some(a => a.title === c.title)) {
-                    all.push(c);
-                }
-            });
-            return all;
-        }
-
-        function renderDevVideoList() {
-            const container = document.getElementById('dev-video-list');
-            if (!container) return;
-            container.innerHTML = '';
-
-            const custom = getCustomVideoLessons();
-            if (custom.length === 0) {
-                container.innerHTML = '<div style="color:#a4b1cd; font-size:12px; padding:10px; text-align:center;">Пока нет добавленных уроков. Добавь первый выше.</div>';
-                return;
-            }
-
-            custom.forEach((lesson, index) => {
-                const item = document.createElement('div');
-                item.style.cssText = 'background:rgba(0,0,0,0.5); border:1px solid rgba(157,0,255,0.3); border-radius:14px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center;';
-                item.innerHTML = `
-                    <div style="flex:1; min-width:0;">
-                        <div style="font-weight:800; color:#fff; font-size:13px; line-height:1.2;">${lesson.title}</div>
-                        <div style="font-size:11px; color:#a4b1cd;">${lesson.category} • ${lesson.duration}</div>
-                    </div>
-                    <button onclick="devDeleteVideoLesson(${index})" style="background:rgba(255,46,99,0.2); color:var(--neon-red); border:1px solid rgba(255,46,99,0.4); padding:6px 12px; border-radius:999px; font-size:11px; font-weight:900; cursor:pointer;">УДАЛИТЬ</button>
-                `;
-                container.appendChild(item);
-            });
-        }
-
-        window.devAddVideoLesson = function() {
-            const title = document.getElementById('new-video-title').value.trim();
-            const youtube = document.getElementById('new-video-youtube').value.trim();
-            const category = document.getElementById('new-video-category').value;
-            const duration = document.getElementById('new-video-duration').value.trim() || '15 мин';
-            const level = document.getElementById('new-video-level').value.trim() || 'Средний';
-            const desc = document.getElementById('new-video-desc').value.trim() || 'Добавленный урок разработчика.';
-
-            if (!title || !youtube) {
-                alert('Название и YouTube ссылка обязательны!');
-                return;
-            }
-
-            const newLesson = {
-                id: Date.now(),
-                title,
-                category,
-                duration,
-                level,
-                desc,
-                youtube,
-                isCustom: true
-            };
-
-            const custom = getCustomVideoLessons();
-            custom.push(newLesson);
-            saveCustomVideoLessons(custom);
-
-            // Clear form
-            document.getElementById('new-video-title').value = '';
-            document.getElementById('new-video-youtube').value = '';
-            document.getElementById('new-video-desc').value = '';
-
-            renderDevVideoList();
-            
-            // Обновляем список в разделе Видеообучение, если он открыт
-            if (typeof renderVideoLessons === 'function') {
-                const currentFilter = document.querySelector('#video-training-screen .note-chip.active')?.getAttribute('data-filter') || 'all';
-                renderVideoLessons(currentFilter);
-            }
-            
-            alert('Видеоурок успешно добавлен! Он сразу появился в разделе Видеообучение.');
-        };
-
-        window.devDeleteVideoLesson = function(index) {
-            if (!confirm('Удалить этот кастомный урок?')) return;
-            const custom = getCustomVideoLessons();
-            custom.splice(index, 1);
-            saveCustomVideoLessons(custom);
-            renderDevVideoList();
-            
-            if (typeof renderVideoLessons === 'function') {
-                renderVideoLessons('all');
             }
         };
 
@@ -4566,8 +4423,9 @@
                         const adminBtnBox = document.getElementById('admin-link-box');
                         if (adminBtnBox) adminBtnBox.style.display = 'block';
                         
-                        const devBtnBox = document.getElementById('dev-link-box');
-                        if (devBtnBox) devBtnBox.style.display = 'block';
+                        // Показываем карточку Developer
+                        const devCard = document.getElementById('dev-card');
+                        if (devCard) devCard.style.display = 'flex';
                         
                         renderAdminList();
                     }
