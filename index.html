@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>VIP COMMUNITY PRO AI</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- Supabase Client для реального чата сообщества -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800;900&display=swap');
@@ -879,16 +877,6 @@
         <div class="screen active" id="menu-screen">
             <div class="welcome" style="font-size:11px; letter-spacing:3px;">POCKET OPTION</div>
             <div class="brand-title">PRO AI BOT</div>
-
-            <!-- Глобальный счётчик онлайн пользователей всего приложения -->
-            <div class="glass-box" style="padding: 12px 20px; margin-bottom: 14px; text-align: center; border-color: rgba(0,255,170,0.25); background: linear-gradient(135deg, rgba(0,255,170,0.06) 0%, rgba(157,0,255,0.04) 100%);">
-                <div style="font-size: 13px; color: #a4b1cd; font-weight: 700; margin-bottom: 2px;">Сейчас в приложении онлайн</div>
-                <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
-                    <div style="width: 10px; height: 10px; background: var(--neon-green); border-radius: 50%; box-shadow: 0 0 12px var(--neon-green); animation: pulse 2s infinite;"></div>
-                    <span id="global-online-count" style="color: var(--neon-green); font-weight: 900; font-size: 26px; line-height: 1;">0</span>
-                    <span style="color: #fff; font-weight: 800; font-size: 15px;">пользователей</span>
-                </div>
-            </div>
             
             <div class="time-bar glass-box" style="padding: 12px 20px; margin-bottom: 16px;">
                 <div class="time-item">МОСКВА <span id="clock-moscow">00:00</span></div>
@@ -973,10 +961,6 @@
                     <div class="icon-circle">🌍</div>
                     <div class="card-title">ИИ Новости</div>
                 </div>
-                <div class="card" data-target="traders-chat-screen">
-                    <div class="icon-circle">👥</div>
-                    <div class="card-title">Чат трейдеров</div>
-                </div>
                 <div class="card" data-target="notes-screen" style="grid-column: span 2; aspect-ratio: unset; padding: 25px 20px;">
                     <div class="icon-circle" style="margin-bottom: 12px; width: 70px; height: 70px; font-size: 32px;">📝</div>
                     <div class="card-title">Мои Заметки</div>
@@ -1000,22 +984,6 @@
                     <div class="pocket-input-wrapper" style="background: rgba(0,0,0,0.5); margin-top: 10px;">
                         <span>$</span>
                         <input type="number" id="profile-pocket-input" class="pocket-balance-input" value="1000" oninput="syncBalances(this.value)">
-                    </div>
-                </div>
-
-                <!-- КРИПТО БАНКОВСКАЯ КАРТА KOLO -->
-                <div onclick="openKoloCard()" class="glass-box" style="margin-top: 16px; padding: 18px 22px; cursor: pointer; border: 1px solid rgba(0,255,170,0.35); background: linear-gradient(90deg, rgba(0,255,170,0.07) 0%, rgba(157,0,255,0.05) 100%); box-shadow: 0 0 20px rgba(0,255,170,0.1); transition: all 0.2s ease;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-                        <div style="flex: 1; min-width: 0;">
-                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
-                                <span style="font-size: 22px;">💳</span>
-                                <div style="font-size: 16px; font-weight: 900; color: #fff; letter-spacing: 0.5px;">БАНКОВСКАЯ КАРТА</div>
-                            </div>
-                            <div style="font-size: 13px; color: #a4b1cd; font-weight: 600; line-height: 1.4;">Крипто-карта Kolo • Мгновенный вывод и оплата везде</div>
-                        </div>
-                        <div style="background: var(--neon-green); color: #000; padding: 10px 20px; border-radius: 999px; font-weight: 900; font-size: 13px; white-space: nowrap; box-shadow: 0 0 15px rgba(0,255,170,0.4); flex-shrink: 0;">
-                            ОТКРЫТЬ →
-                        </div>
                     </div>
                 </div>
                 
@@ -1284,6 +1252,24 @@
         <div class="screen" id="bot-analysis-screen">
             <h2>🔍 СКАНЕР PRO — ВСЕ АКТИВЫ POCKET OPTION</h2>
             
+            <!-- ==================== ТАЙМФРЕЙМ СКАНИРОВАНИЯ ==================== -->
+            <div style="margin-bottom:16px;">
+                <div style="text-align:center; font-size:11px; color:var(--neon-purple); font-weight:900; letter-spacing:1.5px; margin-bottom:10px; text-transform:uppercase;">
+                    ⏱ ТАЙМФРЕЙМ СКАНИРОВАНИЯ
+                </div>
+                <div style="display:flex; gap:5px; flex-wrap:wrap; justify-content:center;" id="tf-selector">
+                    <button onclick="setScanTimeframe(1)" class="back-btn tf-btn" id="tf-1" style="padding:10px 8px; font-size:13px; flex:1; min-width:48px; max-width:70px; background:var(--neon-green); color:#000; border:none; font-weight:900; border-radius:18px;">1м</button>
+                    <button onclick="setScanTimeframe(2)" class="back-btn tf-btn" id="tf-2" style="padding:10px 8px; font-size:13px; flex:1; min-width:48px; max-width:70px; font-weight:900; border-radius:18px;">2м</button>
+                    <button onclick="setScanTimeframe(3)" class="back-btn tf-btn" id="tf-3" style="padding:10px 8px; font-size:13px; flex:1; min-width:48px; max-width:70px; font-weight:900; border-radius:18px;">3м</button>
+                    <button onclick="setScanTimeframe(5)" class="back-btn tf-btn" id="tf-5" style="padding:10px 8px; font-size:13px; flex:1; min-width:48px; max-width:70px; font-weight:900; border-radius:18px;">5м</button>
+                    <button onclick="setScanTimeframe(10)" class="back-btn tf-btn" id="tf-10" style="padding:10px 8px; font-size:13px; flex:1; min-width:48px; max-width:70px; font-weight:900; border-radius:18px;">10м</button>
+                    <button onclick="setScanTimeframe(15)" class="back-btn tf-btn" id="tf-15" style="padding:10px 8px; font-size:13px; flex:1; min-width:48px; max-width:70px; font-weight:900; border-radius:18px;">15м</button>
+                </div>
+                <div style="text-align:center; font-size:10px; color:#667085; margin-top:8px; font-weight:600;" id="tf-hint">
+                    Сейчас: <span style="color:var(--neon-green); font-weight:900;">M1</span> • Анализ на 1-минутном таймфрейме
+                </div>
+            </div>
+
             <!-- Категории активов (строго по разделам — без кнопки "ВСЕ") -->
             <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; justify-content:center;">
                 <button onclick="setAssetCategory('forex')" class="back-btn" id="cat-forex" style="padding:8px 14px; font-size:11px; flex:1; max-width:85px; background:var(--neon-green); color:#000; border:none;">ВАЛЮТЫ</button>
@@ -1547,40 +1533,6 @@
             <button class="back-btn">← НАЗАД В ТЕРМИНАЛ</button>
         </div>
 
-        <!-- ==================== ЧАТ ТРЕЙДЕРОВ (новый раздел) ==================== -->
-        <div class="screen" id="traders-chat-screen">
-            <h2>👥 ЧАТ СООБЩЕСТВА PRO</h2>
-            
-            <div class="glass-box" style="margin-bottom: 10px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; border-color: rgba(0,255,170,0.25);">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <div style="width: 10px; height: 10px; background: var(--neon-green); border-radius: 50%; box-shadow: 0 0 12px var(--neon-green); animation: pulse 2s infinite;"></div>
-                    <div>
-                        <span style="color: var(--neon-green); font-weight: 900; font-size: 15px;">ONLINE</span>
-                        <span id="chat-online-count" style="color: #fff; font-weight: 900; font-size: 18px; margin-left: 6px;">0</span>
-                    </div>
-                </div>
-                <div style="text-align: right;">
-                    <div style="font-size: 11px; color: #a4b1cd; font-weight: 700;">VIP COMMUNITY</div>
-                    <div style="font-size: 10px; color: var(--neon-purple); font-weight: 800;">реальное кол-во скоро</div>
-                </div>
-            </div>
-
-            <div class="chat-box" id="traders-chat-container" style="height: 52vh; background: rgba(8,12,28,0.6);">
-                <!-- Сообщения чата динамически добавляются JS -->
-            </div>
-
-            <div class="input-area" style="margin-top: 8px;">
-                <input type="text" id="traders-chat-input" placeholder="Напиши сообщение в чат сообщества..." style="font-size: 15px;">
-                <button class="send-btn" onclick="sendTradersChatMessage()" style="padding: 0 28px;">SEND</button>
-            </div>
-
-            <div style="margin-top: 12px; text-align: center;">
-                <div style="font-size: 11px; color: #667085; font-weight: 700;">Сообщения сохраняются локально • Будь уважителен</div>
-            </div>
-
-            <button class="back-btn" onclick="switchScreen('menu-screen')" style="margin-top: 16px;">← НАЗАД В МЕНЮ</button>
-        </div>
-
         <!-- ==================== МОДАЛКА ДОБАВЛЕНИЯ ЗАМЕТКИ ==================== -->
         <div id="note-modal" class="fullscreen-overlay" style="display:none; z-index:10000; background:rgba(4,7,18,0.97);" onclick="if(event.target.id==='note-modal') closeNoteModal()">
             <div class="glass-box" style="max-width:460px; width:95%; padding:24px 22px; border-radius:32px;" onclick="event.stopImmediatePropagation()">
@@ -1622,7 +1574,7 @@
         <!-- ==================== РЫНОК ВНУТРИ (во время сканирования) ==================== -->
         <div id="scanning-market-view" style="display: none; width: 100%; max-width: 300px; margin-bottom: 16px; text-align: center;">
             <div style="background: rgba(10,18,35,0.6); border: 1px solid rgba(0,255,170,0.2); border-radius: 24px; padding: 14px 18px; backdrop-filter: blur(16px);">
-                <div style="font-size: 11px; color: var(--neon-purple); font-weight: 900; letter-spacing: 2px; margin-bottom: 6px;">АНАЛИЗ РЫНКА • M1</div>
+                <div style="font-size: 11px; color: var(--neon-purple); font-weight: 900; letter-spacing: 2px; margin-bottom: 6px;" id="scanning-tf-label">АНАЛИЗ РЫНКА • M1</div>
                 <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 8px;">
                     <div style="font-size: 22px; font-weight: 900; color: #fff;" id="scanning-pair-name">EUR/USD</div>
                     <div style="font-size: 13px; padding: 2px 10px; border-radius: 999px; background: rgba(0,255,170,0.15); color: var(--neon-green); font-weight: 800;" id="scanning-price-change">+0.41%</div>
@@ -1648,7 +1600,7 @@
             <div class="progress-bar-bg"><div class="progress-bar-fill" id="final-progress-fill"></div></div>
             
             <div class="ta-dashboard" style="background: rgba(0,0,0,0.6); border: none;">
-                <div style="font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; color: var(--neon-purple); margin-bottom: 16px; text-align: center;">Техническая сводка (М1)</div>
+                <div style="font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; color: var(--neon-purple); margin-bottom: 16px; text-align: center;" id="ta-summary-tf-label">Техническая сводка (М1)</div>
                 <div class="ta-row">
                     <span class="ta-label">Осциллятор RSI (14)</span>
                     <span class="ta-val" id="ta-rsi-val">0.00</span>
@@ -3330,24 +3282,6 @@
                             }
                         }, 80);
                     }
-                    if (screenId === 'traders-chat-screen') {
-                        setTimeout(async () => {
-                            // Загружаем реальные сообщения из Supabase
-                            if (typeof loadTradersChatMessages === 'function') {
-                                await loadTradersChatMessages();
-                            }
-                            
-                            // Подключаем realtime (один раз)
-                            if (typeof subscribeToTraderChat === 'function') {
-                                subscribeToTraderChat();
-                            }
-
-                            // Пока показываем 0. 
-                            // Когда полностью настроишь Supabase + Presence — здесь будет реальное количество онлайн пользователей.
-                            const onlineEl = document.getElementById('chat-online-count');
-                            if (onlineEl) onlineEl.innerText = '0';
-                        }, 150);
-                    }
                 }
             }
 
@@ -4304,8 +4238,39 @@
                 renderNotes('all');
             };
 
-            // ==================== УЛУЧШЕННЫЙ СКАНЕР С КАТЕГОРИЯМИ ====================
+            // ==================== УЛУЧШЕННЫЙ СКАНЕР С КАТЕГОРИЯМИ + ТАЙМФРЕЙМ ====================
             let currentAssetCategory = 'forex'; // По умолчанию открываем раздел "Валюты"
+            let currentScanTimeframe = 1; // По умолчанию M1 (1 минута)
+
+            function setScanTimeframe(mins) {
+                currentScanTimeframe = mins;
+                
+                // Подсветка активной кнопки таймфрейма
+                document.querySelectorAll('.tf-btn').forEach(btn => {
+                    btn.style.background = 'rgba(255,255,255,0.06)';
+                    btn.style.color = '#fff';
+                    btn.style.border = '1px solid rgba(255,255,255,0.12)';
+                    btn.style.boxShadow = 'none';
+                });
+                const activeTf = document.getElementById('tf-' + mins);
+                if (activeTf) {
+                    activeTf.style.background = 'var(--neon-green)';
+                    activeTf.style.color = '#000';
+                    activeTf.style.border = 'none';
+                    activeTf.style.boxShadow = '0 0 14px rgba(0,255,170,0.45)';
+                }
+
+                // Обновляем подсказку
+                const hint = document.getElementById('tf-hint');
+                if (hint) {
+                    const labels = {1:'1-минутном', 2:'2-минутном', 3:'3-минутном', 5:'5-минутном', 10:'10-минутном', 15:'15-минутном'};
+                    hint.innerHTML = `Сейчас: <span style="color:var(--neon-green); font-weight:900;">M${mins}</span> • Анализ на ${labels[mins] || mins + '-минутном'} таймфрейме`;
+                }
+
+                // Haptic feedback если доступен
+                if (typeof triggerHaptic === 'function') triggerHaptic('light');
+            }
+            window.setScanTimeframe = setScanTimeframe;
 
             function setAssetCategory(category) {
                 currentAssetCategory = category;
@@ -4385,14 +4350,26 @@
                 const radarAnim = document.getElementById('radar-animation-element');
                 const marketView = document.getElementById('scanning-market-view');
                 const scanningPairName = document.getElementById('scanning-pair-name');
+                const scanningTfLabel = document.getElementById('scanning-tf-label');
+                const taSummaryLabel = document.getElementById('ta-summary-tf-label');
+
+                const tf = currentScanTimeframe || 1;
+                const tfLabel = 'M' + tf;
 
                 if(!overlay) return;
                 overlay.style.setProperty('display', 'flex', 'important');
                 if(radarAnim) radarAnim.style.display = 'flex';
-                if(statusText) statusText.style.display = 'block';
+                if(statusText) {
+                    statusText.style.display = 'block';
+                    statusText.innerText = `СКАНИРОВАНИЕ ${tfLabel} • ОБРАБОТКА МАССИВА...`;
+                }
                 if(finalBlock) finalBlock.style.display = 'none';
                 if(marketView) marketView.style.display = 'block';
                 if(scanningPairName) scanningPairName.innerText = pairName;
+                if(scanningTfLabel) scanningTfLabel.innerText = `АНАЛИЗ РЫНКА • ${tfLabel}`;
+
+                // Немного разная длительность сканирования в зависимости от ТФ (визуально)
+                const scanDelay = 2200 + (tf * 80);
 
                 setTimeout(() => {
                     if(radarAnim) radarAnim.style.display = 'none';
@@ -4400,12 +4377,15 @@
                     if(marketView) marketView.style.display = 'none';
                     if(finalBlock) finalBlock.style.display = 'block';
                     
-                    document.getElementById('analyzed-pair-title').innerText = pairName;
+                    document.getElementById('analyzed-pair-title').innerText = pairName + '  •  ' + tfLabel;
+                    if(taSummaryLabel) taSummaryLabel.innerText = `Техническая сводка (${tfLabel})`;
                     
                     let basePrice = pairName.includes("JPY") ? 155.20 : 1.0850;
+                    // Для больших ТФ — чуть больше "шум" (волатильность), для маленьких — точнее
+                    const volatilityFactor = 0.0006 + (tf * 0.00008);
                     let candles = [];
                     for(let i=0; i<20; i++) {
-                        basePrice += (Math.random() - 0.5) * (basePrice * 0.001);
+                        basePrice += (Math.random() - 0.5) * (basePrice * volatilityFactor);
                         candles.push(basePrice);
                     }
                     
@@ -4416,7 +4396,8 @@
                     let sma9 = sum9 / 9;
                     let sma20 = sum20 / 20;
                     let rsi = Math.floor(Math.random() * (78 - 24 + 1)) + 24;
-                    let vol = (Math.random() * 0.45 + 0.05).toFixed(2);
+                    // Волатильность чуть выше на старших ТФ
+                    let vol = (Math.random() * 0.35 + 0.08 + (tf * 0.008)).toFixed(2);
                     let score = 0; 
                     if(currentPrice > sma9) score++; else score--;
                     if(sma9 > sma20) score++; else score--;
@@ -4424,7 +4405,9 @@
                     if(rsi > 70) score -= 2; 
 
                     let isUp = score >= 0;
-                    let accuracy = Math.floor(Math.random() * (96 - 76 + 1)) + 76;
+                    // На старших ТФ точность чуть выше (стабильнее сигнал)
+                    let accuracyBase = 76 + Math.min(tf, 10);
+                    let accuracy = Math.floor(Math.random() * (96 - accuracyBase + 1)) + accuracyBase;
                     let precision = pairName.includes("JPY") ? 3 : 5;
                     document.getElementById('ta-rsi-val').innerText = rsi;
                     document.getElementById('ta-sma9-val').innerText = sma9.toFixed(precision);
@@ -4443,17 +4426,17 @@
                         arrow.className = "final-dir up";
                         fill.style.background = "var(--neon-green)";
                         fill.style.boxShadow = "0 0 20px var(--neon-green)";
-                        verdictBox.innerText = score >= 2 ? "СТРОГИЙ LONG" : "УМЕРЕННЫЙ LONG";
+                        verdictBox.innerText = score >= 2 ? `СТРОГИЙ LONG • ${tfLabel}` : `УМЕРЕННЫЙ LONG • ${tfLabel}`;
                         verdictBox.className = "ta-verdict buy";
                     } else {
                         arrow.innerText = "SHORT (ВНИЗ) ▼";
                         arrow.className = "final-dir down";
                         fill.style.background = "var(--neon-red)";
                         fill.style.boxShadow = "0 0 20px var(--neon-red)";
-                        verdictBox.innerText = score <= -2 ? "СТРОГИЙ SHORT" : "УМЕРЕННЫЙ SHORT";
+                        verdictBox.innerText = score <= -2 ? `СТРОГИЙ SHORT • ${tfLabel}` : `УМЕРЕННЫЙ SHORT • ${tfLabel}`;
                         verdictBox.className = "ta-verdict sell";
                     }
-                }, 2800); 
+                }, scanDelay); 
             }
             window.closeFullscreenAnalysis = function() {
                 const overlay = document.getElementById('fullscreen-radar');
@@ -4761,308 +4744,6 @@
 
             window.switchScreen = switchScreen;
 
-            // ============================================
-            // ============================================
-            // ЧАТ ТРЕЙДЕРОВ — РЕАЛЬНЫЙ ЧАТ ЧЕРЕЗ SUPABASE (без фейков)
-            // ============================================
-            let supabaseClient = null;
-            let tradersChatSubscription = null;
-            let currentTelegramUser = null;
-
-            // === ИНСТРУКЦИЯ ДЛЯ ТЕБЯ (выполни один раз) ===
-            // 1. Зайди в Supabase → создай новый проект (или используй существующий)
-            // 2. В SQL Editor выполни этот скрипт:
-            /*
-                create table if not exists public.trader_messages (
-                  id bigint generated by default as identity primary key,
-                  created_at timestamp with time zone default now(),
-                  user_id text not null,
-                  username text,
-                  message text not null
-                );
-
-                -- Включи Realtime для таблицы
-                alter publication supabase_realtime add table public.trader_messages;
-
-                -- (Опционально) RLS — для безопасности VIP клуба
-                alter table public.trader_messages enable row level security;
-                create policy "Anyone can read messages" on public.trader_messages for select using (true);
-                create policy "Users can insert their own messages" on public.trader_messages for insert with check (true);
-            */
-            // 3. Вставь ниже свои ключи из Supabase → Project Settings → API
-            const SUPABASE_URL = 'https://rjhnlzayhwidycqdroms.supabase.co';
-            const SUPABASE_ANON_KEY = 'sb_publishable_2BKzk8OP3abRq8l6wiLbkA_8fJFzh3x';
-
-            function initSupabase() {
-                if (supabaseClient) return supabaseClient;
-
-                if (!SUPABASE_URL || SUPABASE_URL.includes('YOUR_PROJECT_ID') || !SUPABASE_ANON_KEY) {
-                    console.warn('%c[PRO AI] Supabase не настроен. Чат работает в демо-режиме (фейки отключены).', 'color:#ffaa00');
-                    return null;
-                }
-
-                try {
-                    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                    console.log('%c[PRO AI] Supabase подключен успешно', 'color:#00FFAA');
-                    return supabaseClient;
-                } catch (e) {
-                    console.error('Supabase init error:', e);
-                    return null;
-                }
-            }
-
-            async function loadTradersChatMessages() {
-                const container = document.getElementById('traders-chat-container');
-                if (!container) return;
-
-                const client = initSupabase();
-                if (!client) {
-                    container.innerHTML = `
-                        <div style="text-align:center; padding:40px 20px; color:#a4b1cd;">
-                            <div style="font-size:42px; margin-bottom:12px;">⚠️</div>
-                            <div style="font-weight:800; color:#fff; margin-bottom:8px;">Supabase не настроен</div>
-                            <div style="font-size:13px; line-height:1.5;">Открой код и замени SUPABASE_URL + SUPABASE_ANON_KEY<br>на свои данные из проекта Supabase.</div>
-                        </div>`;
-                    return;
-                }
-
-                try {
-                    const { data, error } = await client
-                        .from('trader_messages')
-                        .select('*')
-                        .order('created_at', { ascending: true })
-                        .limit(80);
-
-                    if (error) throw error;
-
-                    renderTradersChatMessages(data || []);
-                } catch (err) {
-                    console.error('Ошибка загрузки чата из Supabase:', err);
-                    container.innerHTML = `<div style="color:#ff6b6b; text-align:center; padding:30px;">Не удалось загрузить сообщения.<br>Проверь ключи Supabase.</div>`;
-                }
-            }
-
-            function renderTradersChatMessages(messages) {
-                const container = document.getElementById('traders-chat-container');
-                if (!container) return;
-
-                container.innerHTML = '';
-
-                if (!messages || messages.length === 0) {
-                    container.innerHTML = `
-                        <div style="text-align:center; padding:50px 20px; color:#a4b1cd;">
-                            <div style="font-size:48px; margin-bottom:16px; opacity:0.6;">💬</div>
-                            <div style="font-weight:700; color:#fff;">Чат сообщества пуст</div>
-                            <div style="font-size:13px; margin-top:8px;">Напиши первое сообщение — оно появится у всех участников VIP</div>
-                        </div>`;
-                    return;
-                }
-
-                const currentUserId = currentTelegramUser ? String(currentTelegramUser.id) : null;
-
-                messages.forEach(msg => {
-                    const isSelf = currentUserId && String(msg.user_id) === currentUserId;
-
-                    const msgEl = document.createElement('div');
-                    msgEl.className = `chat-msg ${isSelf ? 'user' : 'bot'}`;
-
-                    const time = new Date(msg.created_at).toLocaleTimeString('ru-RU', { 
-                        hour: '2-digit', minute: '2-digit' 
-                    });
-
-                    const usernameHtml = !isSelf 
-                        ? `<strong style="color:var(--neon-purple); font-size:12.5px; font-weight:800;">${msg.username || 'Трейдер'}</strong><br>` 
-                        : '';
-
-                    msgEl.innerHTML = `
-                        ${usernameHtml}
-                        ${msg.message}
-                        <div style="font-size:9px; opacity:0.55; margin-top:5px; text-align:right;">${time}</div>
-                    `;
-                    container.appendChild(msgEl);
-                });
-
-                container.scrollTop = container.scrollHeight;
-            }
-
-            window.sendTradersChatMessage = async function() {
-                const input = document.getElementById('traders-chat-input');
-                if (!input) return;
-
-                const text = input.value.trim();
-                if (!text) return;
-
-                const client = initSupabase();
-                if (!client) {
-                    alert('Supabase не настроен. Невозможно отправить сообщение.');
-                    return;
-                }
-
-                // Получаем данные пользователя из Telegram
-                let tgUser = { id: 'guest_' + Date.now(), first_name: 'Гость' };
-                try {
-                    if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
-                        tgUser = window.Telegram.WebApp.initDataUnsafe.user;
-                    }
-                } catch(e) {}
-
-                const username = tgUser.first_name + (tgUser.last_name ? ' ' + tgUser.last_name : '');
-
-                try {
-                    const { error } = await client
-                        .from('trader_messages')
-                        .insert({
-                            user_id: String(tgUser.id),
-                            username: username,
-                            message: text
-                        });
-
-                    if (error) throw error;
-
-                    input.value = '';
-                    // Realtime автоматически обновит чат у всех (включая отправителя)
-
-                } catch (err) {
-                    console.error('Ошибка отправки в Supabase:', err);
-                    alert('Не удалось отправить сообщение. Проверь подключение к Supabase.');
-                }
-            };
-
-            // ============================================
-            // РЕАЛЬНОЕ КОЛИЧЕСТВО ОНЛАЙН ПОЛЬЗОВАТЕЛЕЙ (Supabase Presence)
-            // ============================================
-            let chatChannel = null;
-
-            function updateOnlineCount(count) {
-                const el = document.getElementById('chat-online-count');
-                if (el) {
-                    el.innerText = count || 0;
-                }
-            }
-
-            // Подписка на сообщения + Presence (кто онлайн)
-            function subscribeToTraderChat() {
-                const client = initSupabase();
-                if (!client) return;
-
-                // Если уже подписаны — не создаём новый канал
-                if (chatChannel) {
-                    return;
-                }
-
-                const userId = currentTelegramUser?.id || 'guest_' + Date.now();
-                const username = currentTelegramUser 
-                    ? (currentTelegramUser.first_name + (currentTelegramUser.last_name ? ' ' + currentTelegramUser.last_name : '')) 
-                    : 'Гость';
-
-                chatChannel = client.channel('trader-chat-room', {
-                    config: {
-                        presence: {
-                            key: String(userId)
-                        }
-                    }
-                });
-
-                // 1. Сообщения (INSERT)
-                chatChannel.on('postgres_changes', 
-                    { event: 'INSERT', schema: 'public', table: 'trader_messages' },
-                    () => {
-                        loadTradersChatMessages();
-                    }
-                );
-
-                // 2. Presence — кто онлайн прямо сейчас
-                chatChannel.on('presence', { event: 'sync' }, () => {
-                    const state = chatChannel.presenceState();
-                    const onlineUsers = Object.keys(state).length;
-                    updateOnlineCount(onlineUsers);
-                    console.log('%c[PRO AI] Онлайн пользователей:', 'color:#00FFAA', onlineUsers);
-                });
-
-                chatChannel.subscribe(async (status) => {
-                    if (status === 'SUBSCRIBED') {
-                        console.log('%c[PRO AI] Чат + Presence подключены', 'color:#00FFAA');
-
-                        // Отправляем информацию о себе (что мы онлайн)
-                        await chatChannel.track({
-                            user_id: String(userId),
-                            username: username,
-                            online_at: new Date().toISOString()
-                        });
-                    }
-                });
-            }
-
-            // При закрытии экрана чата можно убрать себя из Presence (опционально)
-            function leaveChatPresence() {
-                if (chatChannel) {
-                    chatChannel.untrack();
-                }
-            }
-
-            // КРИПТО КАРТА KOLO — открытие ссылки
-            window.openKoloCard = function() {
-                const url = 'https://get.kolo.xyz/p520223';
-                
-                if (window.Telegram && window.Telegram.WebApp) {
-                    // Лучший способ в Telegram WebApp
-                    window.Telegram.WebApp.openLink(url);
-                } else {
-                    window.open(url, '_blank');
-                }
-                
-                // Лёгкая вибрация
-                if (typeof triggerHaptic === 'function') {
-                    triggerHaptic('light');
-                }
-            };
-
-            // ============================================
-            // ГЛОБАЛЬНЫЙ Presence — сколько всего людей сейчас в приложении
-            // ============================================
-            let globalPresenceChannel = null;
-
-            function initGlobalAppPresence() {
-                const client = initSupabase();
-                if (!client || globalPresenceChannel) return;
-
-                const userId = currentTelegramUser?.id || 'guest_' + Date.now();
-                const username = currentTelegramUser 
-                    ? (currentTelegramUser.first_name + (currentTelegramUser.last_name ? ' ' + currentTelegramUser.last_name : '')) 
-                    : 'Гость';
-
-                globalPresenceChannel = client.channel('global-app-presence', {
-                    config: {
-                        presence: {
-                            key: String(userId)
-                        }
-                    }
-                });
-
-                // Слушаем изменения Presence
-                globalPresenceChannel.on('presence', { event: 'sync' }, () => {
-                    const state = globalPresenceChannel.presenceState();
-                    const totalOnline = Object.keys(state).length;
-                    
-                    const el = document.getElementById('global-online-count');
-                    if (el) el.innerText = totalOnline;
-                });
-
-                globalPresenceChannel.subscribe(async (status) => {
-                    if (status === 'SUBSCRIBED') {
-                        console.log('%c[PRO AI] Global Presence подключен', 'color:#00FFAA');
-
-                        // Отмечаем себя как онлайн в приложении
-                        await globalPresenceChannel.track({
-                            user_id: String(userId),
-                            username: username,
-                            joined_at: new Date().toISOString()
-                        });
-                    }
-                });
-            }
-
-            // ============================================
             // ИНИЦИАЛИЗАЦИЯ ВСЕХ МОДУЛЕЙ
             async function init() {
                 let userId = null;
@@ -5123,10 +4804,6 @@
                     : null;
 
                 if (tgUser) {
-                    currentTelegramUser = tgUser;   // Сохраняем для чата
-                    initSupabase();                 // Инициализируем Supabase заранее
-                    initGlobalAppPresence();        // Глобальный онлайн пользователей
-
                     // Имя
                     const fullNameEl = document.getElementById('menu-tg-fullname');
                     if (fullNameEl) fullNameEl.innerText = tgUser.first_name + (tgUser.last_name ? ' ' + tgUser.last_name : '');
@@ -5263,7 +4940,25 @@
                 document.getElementById('video-modal-level').innerText = lesson.level || '';
                 document.getElementById('video-modal-desc').innerText = lesson.desc || '';
                 const c = document.getElementById('video-embed-container');
-                c.innerHTML = `<iframe width="100%" height="100%" src="${lesson.youtube}" frameborder="0" allowfullscreen style="border-radius:18px;"></iframe>`;
+                
+                // Улучшенный embed: параметры YouTube для стабильной работы внутри Telegram WebApp
+                let ytSrc = lesson.youtube || '';
+                if (ytSrc && !ytSrc.includes('autoplay=')) {
+                    ytSrc += (ytSrc.includes('?') ? '&' : '?') + 'autoplay=0&modestbranding=1&rel=0&showinfo=0&fs=1';
+                }
+                
+                c.innerHTML = `
+                    <iframe 
+                        width="100%" 
+                        height="100%" 
+                        src="${ytSrc}" 
+                        frameborder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                        allowfullscreen 
+                        style="border-radius:18px; background:#000; display:block;"
+                    ></iframe>
+                `;
+                
                 window.currentVideoLesson = lesson;
                 modal.style.display = 'flex';
             }
@@ -5278,16 +4973,7 @@
             }
             window.closeVideoModal = closeVideoModal;
 
-            function openVideoInTelegram() {
-                if (window.currentVideoLesson && window.currentVideoLesson.youtube) {
-                    const id = window.currentVideoLesson.youtube.split('/embed/')[1] || '';
-                    const url = id ? `https://www.youtube.com/watch?v=${id}` : window.currentVideoLesson.youtube;
-                    if (window.Telegram && window.Telegram.WebApp) window.Telegram.WebApp.openLink(url);
-                    else window.open(url, '_blank');
-                }
-                closeVideoModal();
-            }
-            window.openVideoInTelegram = openVideoInTelegram;
+            // openVideoInTelegram убран — видео всегда воспроизводятся внутри приложения через iframe
 
             // Auto render + refresh from Supabase when opening video screen (чтобы видеть уроки, добавленные с других аккаунтов)
             const _origSwitch = window.switchScreen;
@@ -5322,11 +5008,15 @@
 
             <div id="video-embed-container" style="width:100%; aspect-ratio:16 / 9; background:#0a0f1f; border-radius:20px; overflow:hidden; border:1px solid rgba(255,255,255,0.1); margin-bottom:16px;"></div>
 
-            <div style="font-size:13.5px; color:#c8d0e0; line-height:1.55; margin-bottom:18px;" id="video-modal-desc"></div>
+            <div style="font-size:13.5px; color:#c8d0e0; line-height:1.55; margin-bottom:12px;" id="video-modal-desc"></div>
+
+            <div style="text-align:center; font-size:11px; color:#667085; font-weight:600; margin-bottom:14px; line-height:1.4;">
+                ▶️ Видео воспроизводится внутри приложения.<br>
+                Если не загружается — попробуй Wi-Fi или обнови раздел.
+            </div>
 
             <div style="display:flex; gap:10px;">
-                <button onclick="closeVideoModal()" class="back-btn" style="flex:1; font-size:14px;">ЗАКРЫТЬ</button>
-                <button onclick="openVideoInTelegram()" class="back-btn" style="flex:1; background:var(--neon-purple); color:#fff; border:none; font-weight:900; font-size:14px;">ОТКРЫТЬ В БРАУЗЕРЕ</button>
+                <button onclick="closeVideoModal()" class="back-btn" style="flex:1; font-size:15px; font-weight:900; background:var(--neon-green); color:#000; border:none;">ЗАКРЫТЬ ВИДЕО</button>
             </div>
         </div>
     </div>
