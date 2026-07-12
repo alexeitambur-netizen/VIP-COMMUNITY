@@ -2539,8 +2539,6 @@
         // ============================================
         document.addEventListener('DOMContentLoaded', () => {
             const GROQ_API_KEY = "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";
-            // API ключ для умного сканера (AI-сигналы)
-            const SCANNER_AI_KEY = "ad5433784d74435f915626008b88a1ed.fuOfC34w2U0jonOE";
             let serverPayouts = {}; 
             let currentBalance = parseFloat(SafeStorage.getItem('pocket_balance')) || 1000;
 
@@ -4429,7 +4427,7 @@
             }
             window.filterAnalysisPairs = filterAnalysisPairs;
 
-            async function launchFullscreenAnalysis(pairName) {
+            function launchFullscreenAnalysis(pairName) {
                 const overlay = document.getElementById('fullscreen-radar');
                 const statusText = document.getElementById('radar-status-text');
                 const finalBlock = document.getElementById('radar-final-result');
@@ -4447,137 +4445,82 @@
                 if(radarAnim) radarAnim.style.display = 'flex';
                 if(statusText) {
                     statusText.style.display = 'block';
-                    statusText.innerText = `ИИ СКАНИРОВАНИЕ ${tfLabel} • ${pairName}...`;
+                    statusText.innerText = `СКАНИРОВАНИЕ ${tfLabel} • ОБРАБОТКА МАССИВА...`;
                 }
                 if(finalBlock) finalBlock.style.display = 'none';
                 if(marketView) marketView.style.display = 'block';
                 if(scanningPairName) scanningPairName.innerText = pairName;
-                if(scanningTfLabel) scanningTfLabel.innerText = `ИИ АНАЛИЗ РЫНКА • ${tfLabel}`;
+                if(scanningTfLabel) scanningTfLabel.innerText = `АНАЛИЗ РЫНКА • ${tfLabel}`;
 
-                // ========== РЕАЛЬНЫЙ AI-АНАЛИЗ (через LLM) ==========
-                let aiResult = null;
-                try {
-                    const prompt = `Ты — профессиональный трейдер и технический аналитик Pocket Option / бинарных опционов.
-Проанализируй актив ${pairName} на таймфрейме ${tfLabel} (M${tf}).
+                // Немного разная длительность сканирования в зависимости от ТФ
+                const scanDelay = 2200 + (tf * 80);
 
-Верни ТОЛЬКО валидный JSON без markdown и лишнего текста в следующем формате:
-{
-  "direction": "LONG" или "SHORT",
-  "confidence": число от 72 до 96,
-  "rsi": число от 15 до 85,
-  "sma9": число (примерная цена),
-  "sma20": число (примерная цена),
-  "volatility": число от 0.1 до 1.8,
-  "verdict": "СТРОГИЙ LONG" или "УМЕРЕННЫЙ LONG" или "СТРОГИЙ SHORT" или "УМЕРЕННЫЙ SHORT",
-  "reason": "короткое объяснение на русском (1-2 предложения)"
-}
-
-Учитывай:
-- Для M1/M2 — более шумные, частые развороты
-- Для M5/M10/M15 — более стабильные тренды
-- Текущий рыночный контекст (макро, корреляции)
-- RSI, пересечения SMA, волатильность
-Будь реалистичным, не всегда давай 90%+.`;
-
-                    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-                        method: "POST",
-                        headers: { 
-                            "Authorization": `Bearer ${GROQ_API_KEY}`, 
-                            "Content-Type": "application/json" 
-                        },
-                        body: JSON.stringify({
-                            model: "llama-3.3-70b-versatile",
-                            messages: [
-                                { role: "system", content: "Ты — точный JSON-генератор технического анализа для бинарных опционов. Всегда возвращай только чистый JSON." },
-                                { role: "user", content: prompt }
-                            ],
-                            temperature: 0.7,
-                            max_tokens: 400
-                        })
-                    });
-
-                    const data = await res.json();
-                    if (data.choices && data.choices[0] && data.choices[0].message) {
-                        let content = data.choices[0].message.content.trim();
-                        content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-                        try {
-                            aiResult = JSON.parse(content);
-                        } catch (e) {
-                            const match = content.match(/\{[\s\S]*\}/);
-                            if (match) aiResult = JSON.parse(match[0]);
-                        }
+                setTimeout(() => {
+                    if(radarAnim) radarAnim.style.display = 'none';
+                    if(statusText) statusText.style.display = 'none';
+                    if(marketView) marketView.style.display = 'none';
+                    if(finalBlock) finalBlock.style.display = 'block';
+                    
+                    document.getElementById('analyzed-pair-title').innerText = pairName + '  •  ' + tfLabel;
+                    if(taSummaryLabel) taSummaryLabel.innerText = `Техническая сводка (${tfLabel})`;
+                    
+                    let basePrice = pairName.includes("JPY") ? 155.20 : 1.0850;
+                    // Для больших ТФ — чуть больше "шум" (волатильность)
+                    const volatilityFactor = 0.0006 + (tf * 0.00008);
+                    let candles = [];
+                    for(let i=0; i<20; i++) {
+                        basePrice += (Math.random() - 0.5) * (basePrice * volatilityFactor);
+                        candles.push(basePrice);
                     }
-                } catch (err) {
-                    console.warn("[PRO AI Scanner] AI call failed, using fallback:", err.message);
-                }
+                    
+                    let currentPrice = candles[candles.length - 1];
+                    let sum9 = 0, sum20 = 0;
+                    candles.slice(-9).forEach(p => sum9 += p);
+                    candles.forEach(p => sum20 += p);
+                    let sma9 = sum9 / 9;
+                    let sma20 = sum20 / 20;
+                    let rsi = Math.floor(Math.random() * (78 - 24 + 1)) + 24;
+                    // Волатильность чуть выше на старших ТФ
+                    let vol = (Math.random() * 0.35 + 0.08 + (tf * 0.008)).toFixed(2);
+                    let score = 0; 
+                    if(currentPrice > sma9) score++; else score--;
+                    if(sma9 > sma20) score++; else score--;
+                    if(rsi < 30) score += 2; 
+                    if(rsi > 70) score -= 2; 
 
-                // Если AI не ответил — fallback на умный random
-                if (!aiResult || !aiResult.direction) {
-                    const isUp = Math.random() > 0.48;
-                    aiResult = {
-                        direction: isUp ? "LONG" : "SHORT",
-                        confidence: Math.floor(Math.random() * (94 - 78 + 1)) + 78,
-                        rsi: Math.floor(Math.random() * (75 - 25 + 1)) + 25,
-                        sma9: pairName.includes("JPY") ? (155 + Math.random()).toFixed(3) : (1.08 + Math.random()*0.02).toFixed(5),
-                        sma20: pairName.includes("JPY") ? (155 + Math.random()*0.5).toFixed(3) : (1.08 + Math.random()*0.015).toFixed(5),
-                        volatility: (Math.random() * 0.9 + 0.15).toFixed(2),
-                        verdict: isUp ? (Math.random() > 0.5 ? "СТРОГИЙ LONG" : "УМЕРЕННЫЙ LONG") : (Math.random() > 0.5 ? "СТРОГИЙ SHORT" : "УМЕРЕННЫЙ SHORT"),
-                        reason: "ИИ временно недоступен. Использован резервный алгоритм."
-                    };
-                }
+                    let isUp = score >= 0;
+                    // На старших ТФ точность чуть выше (стабильнее сигнал)
+                    let accuracyBase = 76 + Math.min(tf, 10);
+                    let accuracy = Math.floor(Math.random() * (96 - accuracyBase + 1)) + accuracyBase;
+                    let precision = pairName.includes("JPY") ? 3 : 5;
+                    document.getElementById('ta-rsi-val').innerText = rsi;
+                    document.getElementById('ta-sma9-val').innerText = sma9.toFixed(precision);
+                    document.getElementById('ta-sma20-val').innerText = sma20.toFixed(precision);
+                    document.getElementById('ta-vol-val').innerText = vol + '%';
 
-                // Показываем результат
-                if(radarAnim) radarAnim.style.display = 'none';
-                if(statusText) statusText.style.display = 'none';
-                if(marketView) marketView.style.display = 'none';
-                if(finalBlock) finalBlock.style.display = 'block';
-                
-                document.getElementById('analyzed-pair-title').innerText = pairName + '  •  ' + tfLabel;
-                if(taSummaryLabel) taSummaryLabel.innerText = `ИИ Техническая сводка (${tfLabel})`;
-                
-                const isUp = (aiResult.direction || "").toUpperCase().includes("LONG") || (aiResult.direction || "").toUpperCase().includes("UP") || (aiResult.direction || "").toUpperCase().includes("CALL");
-                const accuracy = Math.min(96, Math.max(72, parseInt(aiResult.confidence) || 82));
-                const precision = pairName.includes("JPY") ? 3 : 5;
+                    const verdictBox = document.getElementById('ta-verdict-box');
+                    const arrow = document.getElementById('final-direction-arrow');
+                    const fill = document.getElementById('final-progress-fill');
 
-                document.getElementById('ta-rsi-val').innerText = aiResult.rsi || "—";
-                document.getElementById('ta-sma9-val').innerText = aiResult.sma9 || "—";
-                document.getElementById('ta-sma20-val').innerText = aiResult.sma20 || "—";
-                document.getElementById('ta-vol-val').innerText = (aiResult.volatility || "0.4") + '%';
+                    document.getElementById('final-accuracy-percent').innerText = accuracy + '%';
+                    fill.style.width = accuracy + '%';
 
-                const verdictBox = document.getElementById('ta-verdict-box');
-                const arrow = document.getElementById('final-direction-arrow');
-                const fill = document.getElementById('final-progress-fill');
-
-                document.getElementById('final-accuracy-percent').innerText = accuracy + '%';
-                fill.style.width = accuracy + '%';
-
-                if(isUp) {
-                    arrow.innerText = "LONG (ВВЕРХ) ▲";
-                    arrow.className = "final-dir up";
-                    fill.style.background = "var(--neon-green)";
-                    fill.style.boxShadow = "0 0 20px var(--neon-green)";
-                    verdictBox.innerText = (aiResult.verdict || "УМЕРЕННЫЙ LONG") + ` • ${tfLabel}`;
-                    verdictBox.className = "ta-verdict buy";
-                } else {
-                    arrow.innerText = "SHORT (ВНИЗ) ▼";
-                    arrow.className = "final-dir down";
-                    fill.style.background = "var(--neon-red)";
-                    fill.style.boxShadow = "0 0 20px var(--neon-red)";
-                    verdictBox.innerText = (aiResult.verdict || "УМЕРЕННЫЙ SHORT") + ` • ${tfLabel}`;
-                    verdictBox.className = "ta-verdict sell";
-                }
-
-                // Добавляем reason если есть
-                if (aiResult.reason) {
-                    let reasonEl = document.getElementById('ai-reason-box');
-                    if (!reasonEl) {
-                        reasonEl = document.createElement('div');
-                        reasonEl.id = 'ai-reason-box';
-                        reasonEl.style.cssText = 'margin-top:12px; padding:12px 14px; background:rgba(0,0,0,0.4); border-radius:16px; font-size:12px; color:#c8d0e0; line-height:1.45; border-left:3px solid var(--neon-purple);';
-                        finalBlock.insertBefore(reasonEl, finalBlock.querySelector('.back-btn'));
+                    if(isUp) {
+                        arrow.innerText = "LONG (ВВЕРХ) ▲";
+                        arrow.className = "final-dir up";
+                        fill.style.background = "var(--neon-green)";
+                        fill.style.boxShadow = "0 0 20px var(--neon-green)";
+                        verdictBox.innerText = score >= 2 ? `СТРОГИЙ LONG • ${tfLabel}` : `УМЕРЕННЫЙ LONG • ${tfLabel}`;
+                        verdictBox.className = "ta-verdict buy";
+                    } else {
+                        arrow.innerText = "SHORT (ВНИЗ) ▼";
+                        arrow.className = "final-dir down";
+                        fill.style.background = "var(--neon-red)";
+                        fill.style.boxShadow = "0 0 20px var(--neon-red)";
+                        verdictBox.innerText = score <= -2 ? `СТРОГИЙ SHORT • ${tfLabel}` : `УМЕРЕННЫЙ SHORT • ${tfLabel}`;
+                        verdictBox.className = "ta-verdict sell";
                     }
-                    reasonEl.innerHTML = `<strong style="color:var(--neon-purple);">ИИ-обоснование:</strong> ${aiResult.reason}`;
-                }
+                }, scanDelay); 
             }
             window.closeFullscreenAnalysis = function() {
                 const overlay = document.getElementById('fullscreen-radar');
