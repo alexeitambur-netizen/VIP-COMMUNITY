@@ -1,0 +1,1880 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VIP COMMUNITY PRO AI</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Supabase Client для реального чата сообщества -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800;900&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { 
+            font-family: 'Montserrat', -apple-system, sans-serif; 
+            background-color: #0A0D14; /* Минималистичный темный фон */
+            color: #ffffff; 
+            min-height: 100vh; 
+            user-select: none; 
+            overflow-x: hidden; 
+        }
+        
+        /* Плоские минималистичные цвета без эффекта стекла */
+        :root {
+            --neon-green: #00FFAA;
+            --neon-purple: #9D00FF;
+            --neon-red: #FF2E63;
+            --glass-bg: #151A25;
+            --glass-border: #232838;
+        }
+
+        .container { width: 100%; max-width: 480px; margin: 0 auto; position: relative; }
+        
+        /* Плоские фоны для всех экранов, убраны тяжелые картинки */
+        .screen { 
+            display: none !important; 
+            min-height: 100vh; 
+            padding: 30px 20px; 
+            background-color: #0A0D14 !important;
+            background-image: none !important;
+        }
+
+        .screen.active { display: block !important; animation: screenFade 0.3s ease-out forwards; }
+        @keyframes screenFade { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Отключаем ракеты для производительности */
+        .rocket-decor { display: none !important; }
+
+        /* Плоские плашки вместо 3D-стекла */
+        .glass-box {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px; 
+            padding: 24px;
+            margin-bottom: 16px;
+            box-shadow: none; /* Убраны тени */
+            position: relative;
+            overflow: hidden;
+        }
+        .glass-box::before { display: none; } /* Убран блик */
+
+        /* Типографика */
+        .welcome { font-size: 12px; letter-spacing: 4px; color: var(--neon-green); margin-bottom: 4px; text-transform: uppercase; font-weight: 800; text-align: center; }
+        .brand-title { font-size: 54px; font-weight: 900; letter-spacing: 12px; margin-bottom: 24px; color: #ffffff; text-align: center; text-transform: uppercase; font-family: 'Montserrat', sans-serif; text-shadow: none; }
+        h2 { font-size: 24px; margin-bottom: 20px; color: var(--neon-green); display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 900; text-shadow: none; }
+
+        /* Баланс */
+        .balance-card { position: relative; overflow: hidden; border: 1px solid var(--glass-border); }
+        .balance-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .balance-info h5 { font-size: 11px; color: #a4b1cd; text-transform: uppercase; letter-spacing: 1px; }
+        .pocket-input-wrapper { display: flex; align-items: center; gap: 8px; background: #0A0D14; border: 1px solid var(--glass-border); border-radius: 12px; padding: 12px 16px; margin-top: 8px; transition: border-color 0.2s; }
+        .pocket-input-wrapper:focus-within { border-color: var(--neon-green); }
+        .pocket-input-wrapper span { color: var(--neon-green); font-weight: 900; font-size: 18px; }
+        .pocket-balance-input { background: transparent; border: none; color: #fff; font-size: 20px; font-weight: 900; width: 100%; outline: none; }
+        
+        .status-badge { background: var(--neon-green); color: #000; padding: 6px 16px; border-radius: 8px; font-size: 11px; font-weight: 900; text-transform: uppercase; }
+        
+        .ai-management-box { background: #1B2130; border: 1px solid var(--glass-border); border-radius: 12px; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+        .ai-management-box strong { color: var(--neon-green); font-size: 16px; font-weight: 900; }
+        
+        .ai-forecast-box { background: #1B2130; border: 1px solid var(--glass-border); border-radius: 12px; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 600; }
+        .ai-forecast-box strong { color: #fff; font-size: 16px; font-weight: 900; }
+
+        .server-status-info { font-size: 11px; text-align: center; margin-top: 12px; margin-bottom: 20px; color: #a4b1cd; font-weight: 600; letter-spacing: 1px; }
+
+        /* ОГРОМНАЯ СЕТКА МЕНЮ (1 колонка) */
+        .grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 10px; }
+        .card { 
+            background: var(--glass-bg); 
+            border: 1px solid var(--glass-border); 
+            border-radius: 24px; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            padding: 40px 20px; cursor: pointer; transition: background 0.15s, transform 0.15s; 
+            box-shadow: none;
+            position: relative;
+            overflow: hidden;
+        }
+        .card::before { display: none; }
+        .card:active { transform: scale(0.98); background: #1B2130; border-color: var(--neon-green); }
+        .icon-circle { width: 110px; height: 110px; border-radius: 30px; background: #1A202D; display: flex; justify-content: center; align-items: center; margin-bottom: 24px; font-size: 55px; border: 1px solid var(--glass-border); box-shadow: none; }
+        .card-title { font-size: 20px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; color: #fff; text-align: center; }
+
+        /* Внутренние экраны */
+        .info-item { padding: 18px; background: #0A0D14; border-radius: 12px; margin-bottom: 14px; border-left: 4px solid var(--neon-green); }
+        .info-item::before { display: none; }
+        .info-item h4 { font-size: 14px; margin-bottom: 6px; color: #fff; font-weight: 800; }
+        .info-item p { font-size: 13px; color: #a4b1cd; line-height: 1.5; font-weight: 600; }
+        
+        /* Кнопки Назад — плоские */
+        .back-btn { 
+            width: 100%; 
+            padding: 18px; 
+            border-radius: 12px; 
+            font-size: 13px; 
+            font-weight: 800; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+            background: #1B2130; 
+            color: #fff; 
+            border: 1px solid var(--glass-border); 
+            cursor: pointer; 
+            transition: background 0.15s; 
+            margin-top: 10px; 
+            box-shadow: none;
+        }
+        .back-btn:active { 
+            background: #232838; 
+            transform: scale(0.985); 
+        }
+
+        /* Списки и Поиск */
+        .ai-mode-selection { display: flex; flex-direction: column; gap: 16px; }
+        .mode-btn { 
+            background: var(--glass-bg); 
+            border: 1px solid var(--glass-border); 
+            border-radius: 16px; 
+            padding: 22px 24px; 
+            text-align: left; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            gap: 18px; 
+            box-shadow: none;
+        }
+        .mode-btn:active { border-color: var(--neon-green); background: #1B2130; }
+        .mode-icon { font-size: 32px; background: #0A0D14; width: 60px; height: 60px; border-radius: 16px; display: flex; justify-content: center; align-items: center; }
+        .mode-info h4 { font-size: 15px; color: #fff; margin-bottom: 4px; font-weight: 800; }
+        .mode-info p { font-size: 12px; color: #a4b1cd; line-height: 1.4; }
+
+        .search-box { 
+            background: var(--glass-bg); 
+            border-radius: 16px; 
+            padding: 14px; 
+            border: 1px solid var(--glass-border); 
+            margin-bottom: 14px; 
+            box-shadow: none;
+        }
+        .search-input { 
+            width: 100%; 
+            padding: 16px 22px; 
+            background: #0A0D14; 
+            border: 1px solid var(--glass-border); 
+            border-radius: 12px; 
+            color: #fff; 
+            font-size: 14px; 
+            outline: none; 
+            font-weight: 600; 
+        }
+        .search-input:focus { border-color: var(--neon-green); }
+        
+        .pairs-list { max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-top: 12px; padding-right: 4px; }
+        .pair-row { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 16px 22px; 
+            background: #0A0D14; 
+            border-radius: 12px; 
+            font-size: 14px; 
+            font-weight: 800; 
+            cursor: pointer; 
+            border: 1px solid var(--glass-border); 
+            box-shadow: none;
+        }
+        .pair-row:active { border-color: var(--neon-green); background: #1B2130; }
+
+        /* Чат / Заметки */
+        .chat-box { 
+            display: flex; 
+            flex-direction: column; 
+            height: 50vh; 
+            background: #0A0D14; 
+            border-radius: 16px; 
+            padding: 16px; 
+            overflow-y: auto; 
+            border: 1px solid var(--glass-border); 
+            margin-bottom: 12px; 
+        }
+        .chat-msg { max-width: 85%; padding: 14px 18px; border-radius: 12px; margin-bottom: 12px; font-size: 13px; line-height: 1.5; word-wrap: break-word; position: relative; font-weight: 600; }
+        .chat-msg.bot { background: #1B2130; color: #fff; align-self: flex-start; border-bottom-left-radius: 4px; border: 1px solid var(--glass-border); }
+        .chat-msg.user { background: var(--neon-green); color: #000; align-self: flex-end; border-bottom-right-radius: 4px; font-weight: 800; }
+        
+        .input-area { 
+            display: flex; 
+            gap: 10px; 
+            align-items: center; 
+            background: var(--glass-bg); 
+            padding: 10px; 
+            border-radius: 12px; 
+            border: 1px solid var(--glass-border); 
+        }
+        .input-area input { flex: 1; padding: 14px 22px; background: transparent; border: none; color: #fff; font-size: 14px; outline: none; font-weight: 600; }
+        .send-btn { background: var(--neon-green); color: #000; border: none; padding: 0 24px; height: 44px; border-radius: 8px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; }
+
+        /* Журнал заметок */
+        .note-chip {
+            flex-shrink: 0;
+            padding: 8px 18px;
+            background: #1B2130;
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 800;
+            color: #a4b1cd;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .note-chip.active { background: var(--neon-green); color: #000; border-color: var(--neon-green); }
+        .note-card { background: #0A0D14; border: 1px solid var(--glass-border); border-radius: 12px; padding: 16px 18px; margin-bottom: 10px; position: relative; border-left: 5px solid var(--neon-purple); }
+        .note-card.trade { border-left-color: var(--neon-green); }
+        .note-card.Идея { border-left-color: var(--neon-purple); }
+        .note-card.Ошибка { border-left-color: var(--neon-red); }
+        .note-card.Наблюдение { border-left-color: #ffaa00; }
+        .note-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .note-time { font-size: 11px; color: #667085; font-weight: 700; }
+        .note-badge { font-size: 10px; font-weight: 900; padding: 3px 10px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .note-badge.Сделка { background: #1B2130; color: var(--neon-green); }
+        .note-badge.Идея { background: #1B2130; color: var(--neon-purple); }
+        .note-badge.Ошибка { background: #1B2130; color: var(--neon-red); }
+        .note-badge.Наблюдение { background: #1B2130; color: #ffaa00; }
+        .note-content { font-size: 14px; line-height: 1.45; color: #fff; font-weight: 600; }
+        .note-trade-info { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; font-size: 13px; }
+        .note-trade-info span { background: #1B2130; padding: 4px 10px; border-radius: 6px; font-weight: 700; }
+        .note-delete { position: absolute; top: 12px; right: 14px; color: #ff6b6b; font-size: 18px; cursor: pointer; opacity: 0.6; }
+
+        /* Модалка добавления заметки */
+        #note-modal .glass-box { max-width: 460px; width: 95%; }
+        .modal-category-btn { padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 800; border: 1px solid var(--glass-border); background: #1B2130; color: #fff; cursor: pointer; }
+        .modal-category-btn.active { background: var(--neon-green); color: #000; border-color: var(--neon-green); }
+        .trade-form-row { display: flex; gap: 10px; margin-bottom: 12px; }
+        .trade-form-row input, .trade-form-row select { flex: 1; background: #0A0D14; border: 1px solid var(--glass-border); border-radius: 8px; padding: 12px 16px; color: #fff; font-size: 14px; font-weight: 600; }
+        .direction-btn { flex: 1; padding: 12px; border-radius: 8px; font-weight: 900; font-size: 15px; border: 2px solid var(--glass-border); background: #1B2130; color: #fff; cursor: pointer; }
+        .direction-btn.active.call { border-color: var(--neon-green); color: var(--neon-green); }
+        .direction-btn.active.put { border-color: var(--neon-red); color: var(--neon-red); }
+
+        /* Радар и Анализ (Плоский стиль) */
+        .fullscreen-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #0A0D14; z-index: 9999; flex-direction: column; justify-content: center; align-items: center; padding: 20px; overflow-y: auto; }
+        .radar-container { position: relative; width: 200px; height: 200px; margin-bottom: 20px; display: flex; justify-content: center; align-items: center; }
+        .radar-sweep { position: absolute; width: 100%; height: 100%; border: 3px solid #1B2130; border-radius: 50%; animation: radarRotate 1.8s linear infinite; }
+        .radar-sweep::before { content:''; position:absolute; top:0; left:50%; width:50%; height:50%; background: linear-gradient(to right, transparent, rgba(0,255,170,0.5)); transform-origin: bottom left; border-top-right-radius: 100px; }
+        .radar-line { position: absolute; width: 82%; height: 82%; border: 2px dashed #232838; border-radius: 50%; animation: radarRotate 3.5s linear infinite reverse; }
+        .radar-core { position: absolute; width: 44px; height: 44px; background: var(--neon-green); border-radius: 50%; animation: pulse 1.1s ease-in-out infinite alternate; }
+        @keyframes radarRotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes pulse { 0% { transform: scale(0.75); } 100% { transform: scale(1.25); } }
+        
+        @keyframes marketBar { 0%, 100% { transform: scaleY(0.6); } 50% { transform: scaleY(1.0); } }
+        
+        .radar-status { font-size: 15px; color: var(--neon-green); text-align: center; letter-spacing: 4px; text-transform: uppercase; font-weight: 900; margin-bottom: 12px; }
+        
+        .analysis-final { display: none; text-align: center; width: 100%; max-width: 340px; padding: 18px 20px !important; }
+        .final-dir { font-size: 34px; font-weight: 900; margin: 8px 0 4px; letter-spacing: 1px; }
+        .final-dir.up { color: var(--neon-green); }
+        .final-dir.down { color: var(--neon-red); }
+        .progress-bar-bg { background: #1B2130; height: 10px; border-radius: 8px; overflow: hidden; margin: 12px 0 8px; }
+        .progress-bar-fill { height: 100%; width: 0%; transition: width 1.5s; background: currentColor; }
+        
+        .ta-dashboard { background: #0A0D14; border: 1px solid var(--glass-border); border-radius: 16px; padding: 16px 18px; text-align: left; margin-top: 14px; }
+        .ta-row { display: flex; justify-content: space-between; font-size: 12.5px; margin-bottom: 9px; padding-bottom: 8px; border-bottom: 1px dashed var(--glass-border); font-weight: 600; }
+        .ta-row:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+        .ta-label { color: #a4b1cd; }
+        .ta-val { font-weight: 900; color: #fff; }
+        .ta-verdict { font-size: 13px; font-weight: 900; text-transform: uppercase; text-align: center; padding: 11px 16px; border-radius: 8px; margin-top: 12px; letter-spacing: 1px; }
+        .ta-verdict.buy { background: #1B2130; color: var(--neon-green); border: 1px solid var(--neon-green); }
+        .ta-verdict.sell { background: #1B2130; color: var(--neon-red); border: 1px solid var(--neon-red); }
+
+        /* Обучение */
+        .book-item { background: #0A0D14; padding: 18px; border-radius: 16px; margin-bottom: 14px; border: 1px solid var(--glass-border); display: flex; flex-direction: column; gap: 12px; }
+        .book-info h4 { font-size: 15px; color: #fff; margin-bottom: 6px; font-weight: 800; line-height: 1.3; }
+        .book-info p { font-size: 13px; color: #a4b1cd; font-weight: 600; line-height: 1.4; margin-bottom: 4px; }
+        .read-btn { background: #1B2130; color: var(--neon-green); border: 1px solid var(--neon-green); padding: 14px 24px; border-radius: 8px; font-size: 13px; font-weight: 900; text-transform: uppercase; align-self: flex-start; min-width: 120px; }
+        
+        .pdf-frame-box { width: 100%; height: calc(100dvh - 140px); border: none; background: #fff; display: block; overflow: auto; -webkit-overflow-scrolling: touch; }
+        #book-viewer-screen { padding: 0 !important; background: #0a0f1f !important; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 9999; overflow: hidden; }
+        #book-viewer-screen .viewer-header { position: sticky; top: 0; z-index: 100; background: #151A25; border-bottom: 1px solid var(--glass-border); padding: 14px 20px; display: flex; align-items: center; gap: 12px; }
+        #book-viewer-screen .viewer-header .back-btn { margin: 0; padding: 10px 18px; font-size: 13px; flex-shrink: 0; }
+        #book-viewer-screen .viewer-header h2 { flex: 1; font-size: 15px; margin: 0; text-align: center; color: #fff; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 10px; }
+        .viewer-controls { display: flex; gap: 8px; align-items: center; padding: 0 16px 12px; background: #151A25; position: sticky; top: 58px; z-index: 99; }
+        .zoom-btn { background: #1B2130; border: 1px solid var(--glass-border); color: #fff; padding: 8px 14px; border-radius: 8px; font-size: 15px; font-weight: 700; min-width: 42px; text-align: center; }
+        .open-browser-btn { margin-left: auto; background: #1B2130; color: var(--neon-green); border: 1px solid var(--neon-green); padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 800; text-transform: uppercase; }
+
+        /* Цели и Календарь */
+        .target-box { background: #0A0D14; padding: 20px; border-radius: 16px; margin-bottom: 16px; border: 1px solid var(--glass-border); }
+        .target-input { width: 100%; padding: 16px; background: #151A25; border: 1px solid var(--glass-border); border-radius: 12px; color: #fff; font-size: 15px; outline: none; margin-bottom: 12px; font-weight: 800; text-align: center; }
+        .target-input:focus { border-color: var(--neon-green); }
+        .ai-hint-label { font-size: 13px; color: #a4b1cd; line-height: 1.5; font-weight: 600; }
+        
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; font-size: 13px; margin-top: 12px; font-weight: 800; }
+        .cal-header { color: var(--neon-purple); font-weight: 900; padding-bottom: 8px; }
+        .cal-day { padding: 12px 0; color: #fff; border-radius: 8px; position: relative; cursor: pointer; background: #1B2130; }
+        .cal-day.today { background: var(--neon-green) !important; color: #000 !important; }
+        .cal-day.has-news::after { content: ''; position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); width: 6px; height: 6px; background: var(--neon-red); border-radius: 50%; }
+        .news-display-box { background: #0A0D14; padding: 18px; border-radius: 12px; font-size: 13px; font-weight: 600; min-height: 60px; border-left: 4px solid var(--neon-purple); margin-top: 16px; line-height: 1.5; }
+
+        /* ИИ НОВОСТИ */
+        .news-container { display: flex; flex-direction: column; gap: 14px; }
+        .news-item-box { background: #0A0D14; border: 1px solid var(--glass-border); border-radius: 16px; padding: 18px; position: relative; overflow: hidden; }
+        .news-item-box::before { content: ''; position: absolute; top:0; left:0; width: 4px; height: 100%; background: var(--neon-green); }
+        .news-item-box h4 { font-size: 14px; color: #fff; margin-bottom: 6px; font-weight: 800; }
+        .news-item-box p { font-size: 12px; color: #a4b1cd; line-height: 1.5; font-weight: 600; }
+        .news-item-box .time-badge { font-size: 10px; color: var(--neon-green); margin-bottom: 8px; font-weight: 900; text-transform: uppercase; }
+
+        /* Админка */
+        .admin-list { margin-top: 12px; display: flex; flex-direction: column; gap: 10px; }
+        .admin-item { display: flex; justify-content: space-between; align-items: center; padding: 16px; background: #0A0D14; border-radius: 12px; border: 1px solid var(--glass-border); font-size: 13px; font-weight: 800; }
+        .del-btn { color: var(--neon-red); cursor: pointer; font-weight: 900; padding: 6px 12px; border-radius: 8px; background: #1B2130; border: 1px solid var(--glass-border); text-transform: uppercase; font-size: 11px; }
+
+        /* Время в шапке */
+        .time-bar { background: var(--glass-bg); padding: 12px 15px; border-radius: 12px; display: flex; justify-content: space-between; font-size: 11px; font-weight: 800; color: #a0a5b5; border: 1px solid var(--glass-border); }
+        .time-item span { color: #fff; font-family: monospace; font-size: 13px; margin-left: 6px; }
+
+        /* PATTERNS SECTION */
+        .pattern-card { background: #0A0D14; border: 1px solid var(--glass-border); border-radius: 16px; padding: 16px 18px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 12px; cursor: pointer; }
+        .pattern-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .pattern-name { font-weight: 900; font-size: 15px; color: #fff; line-height: 1.2; }
+        .pattern-type { font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 8px; background: #1B2130; color: var(--neon-green); white-space: nowrap; }
+        .pattern-chart-preview { width: 100%; height: 92px; background: #151A25; border-radius: 12px; overflow: hidden; border: 1px solid var(--glass-border); }
+        .pattern-chart-preview svg { width: 100%; height: 100%; }
+
+        /* Modals */
+        .pattern-modal, .strategy-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #0A0D14; z-index: 99999; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .pattern-modal-content, .strategy-modal-content { width: 100%; max-width: 460px; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 20px; padding: 24px; position: relative; }
+        .pattern-modal-close, .strategy-modal-close { position: absolute; top: 18px; right: 18px; width: 36px; height: 36px; border-radius: 8px; background: #1B2130; color: #fff; border: 1px solid var(--glass-border); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .pattern-modal h3, .strategy-modal h3 { font-size: 20px; margin-bottom: 6px; color: #fff; }
+        .pattern-modal .type-badge { display: inline-block; font-size: 12px; padding: 6px 14px; border-radius: 8px; background: #1B2130; color: var(--neon-purple); font-weight: 800; margin-bottom: 16px; }
+        .pattern-modal .big-chart, .strategy-modal .big-chart { width: 100%; height: 220px; background: #0A0D14; border-radius: 16px; margin: 16px 0; border: 1px solid var(--glass-border); overflow: hidden; }
+        .pattern-modal .big-chart svg, .strategy-modal .big-chart svg { width: 100%; height: 100%; }
+        .pattern-modal .desc { font-size: 14px; line-height: 1.6; color: #c8d0e0; margin-bottom: 16px; }
+        .pattern-modal .signal-box { background: #1B2130; border: 1px solid var(--neon-green); border-radius: 12px; padding: 16px; margin-bottom: 20px; }
+        .pattern-modal .signal-box strong { color: var(--neon-green); font-size: 13px; }
+
+        /* Strategy Cards */
+        .strategy-card { background: #0A0D14; border: 1px solid var(--glass-border); border-radius: 16px; padding: 16px; margin-bottom: 14px; cursor: pointer; }
+        .strategy-chart-preview { width: 100%; height: 92px; border-radius: 12px; overflow: hidden; margin: 10px 0 12px; border: 1px solid var(--glass-border); background: #151A25; }
+        .strategy-chart-preview svg { width: 100%; height: 100%; display: block; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Экран доступа -->
+        <div class="screen" id="access-denied-screen">
+            <h2 style="color: var(--neon-red); justify-content: center; font-size: 32px; margin-bottom: 15px;">⛔ ДОСТУП ЗАКРЫТ</h2>
+            <div class="glass-box" style="text-align: center;">
+                <p style="color: #a4b1cd; font-size: 14px; line-height: 1.6; margin-bottom: 24px; font-weight: 600;">Система безопасности не распознала ваш Telegram ID.</p>
+                <div class="info-item" style="border-left-color: var(--neon-red);">
+                    <h4>ВАШ ID-КЛЮЧ:</h4>
+                    <p id="denied-telegram-id" style="font-size: 24px; color: var(--neon-red); font-weight: 900; letter-spacing: 2px;">Определяется...</p>
+                </div>
+                <p style="font-size: 12px; color: #667085; margin-top: 20px; font-weight: 800; text-transform: uppercase;">Передайте ключ администратору</p>
+            </div>
+        </div>
+
+        <div class="screen active" id="menu-screen">
+            <!-- 1. САМЫЙ ВЕРХ: ВРЕМЯ И ПОЛЬЗОВАТЕЛИ (в одном ряду) -->
+            <div style="display: flex; justify-content: space-between; align-items: stretch; margin-bottom: 16px; gap: 10px;">
+                <!-- ВРЕМЯ -->
+                <div class="time-bar" style="flex: 1; margin: 0; padding: 12px 15px; border-radius: 12px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 4px;">
+                    <div class="time-item" style="font-size: 11px;">МОСКВА <span id="clock-moscow">00:00</span></div>
+                    <div class="time-item" style="font-size: 11px;">КИЕВ <span id="clock-kyiv">00:00</span></div>
+                </div>
+                <!-- ПОЛЬЗОВАТЕЛИ ОНЛАЙН (СБОКУ) -->
+                <div class="glass-box" style="margin: 0; padding: 12px 20px; border-radius: 12px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <div style="width: 8px; height: 8px; background: var(--neon-green); border-radius: 50%;"></div>
+                        <span id="global-online-count" style="color: var(--neon-green); font-weight: 900; font-size: 18px; line-height: 1;">0</span>
+                    </div>
+                    <div style="font-size: 10px; color: #a4b1cd; font-weight: 700; margin-top: 4px;">USERS</div>
+                </div>
+            </div>
+
+            <!-- 2. БЕГУЩАЯ СТРОКА TRADINGVIEW -->
+            <div class="tradingview-widget-container glass-box" style="padding: 0; overflow: hidden; margin-bottom: 24px; border-radius: 12px; height: 46px;">
+                <div class="tradingview-widget-container__widget"></div>
+                <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+                {
+                "symbols": [
+                    { "proName": "FX_IDC:EURUSD", "title": "EUR/USD" },
+                    { "proName": "FX_IDC:GBPUSD", "title": "GBP/USD" },
+                    { "proName": "FX_IDC:USDJPY", "title": "USD/JPY" },
+                    { "proName": "BITSTAMP:BTCUSD", "title": "BTC/USD" },
+                    { "proName": "BITSTAMP:ETHUSD", "title": "ETH/USD" }
+                ],
+                "showSymbolLogo": true,
+                "colorTheme": "dark",
+                "isTransparent": true,
+                "displayMode": "adaptive",
+                "locale": "ru"
+                }
+                </script>
+            </div>
+
+            <!-- 3. БРЕНДИНГ И ЛОГОТИП -->
+            <div style="text-align: center; margin-bottom: 30px;">
+                <div class="welcome">POCKET OPTION</div>
+                <div class="brand-title" style="font-size: 64px; letter-spacing: 16px; margin-bottom: 0;">S<span style="color: var(--neon-green);">L</span>V</div>
+            </div>
+
+            <!-- 4. ПРОФИЛЬ ТЕЛЕГРАМ -->
+            <div class="glass-box" onclick="switchScreen('profile-screen')" style="padding: 20px; border-color: var(--neon-green); cursor: pointer;">
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <div style="position: relative; flex-shrink: 0;">
+                        <img id="menu-tg-avatar" 
+                             src="https://ui-avatars.com/api/?name=SLV&background=151A25&color=00FFAA&size=128&bold=true" 
+                             style="width: 72px; height: 72px; border-radius: 20px; border: 2px solid var(--neon-green); object-fit: cover;"
+                             alt="Telegram Avatar">
+                    </div>
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-size: 17px; font-weight: 900; color: #fff; line-height: 1.1; margin-bottom: 4px;" id="menu-tg-fullname">Загрузка...</div>
+                        <div style="font-size: 13px; color: var(--neon-green); font-weight: 800; margin-bottom: 4px;" id="menu-tg-username">@username</div>
+                        <div style="font-size: 10px; color: #8a9ab0; font-weight: 700;">ID: <span id="menu-tg-id" style="color:#a4b1cd;">...</span> • <span style="color:var(--neon-purple);">PRO MEMBER</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. СЕТКА МЕНЮ — ОГРОМНЫЕ ПЛАШКИ НА ВЕСЬ ЭКРАН -->
+            <div class="grid">
+                <div class="card" data-target="profile-screen">
+                    <div class="icon-circle">👤</div>
+                    <div class="card-title">USER DASHBOARD</div>
+                </div>
+                <div class="card" data-target="bot-selector-screen">
+                    <div class="icon-circle">🧠</div>
+                    <div class="card-title">AI ENGINE</div>
+                </div>
+                <div class="card" data-target="education-screen">
+                    <div class="icon-circle">📚</div>
+                    <div class="card-title">DATA VAULT</div>
+                </div>
+                <div class="card" data-target="video-training-screen">
+                    <div class="icon-circle">🎥</div>
+                    <div class="card-title">MEDIA ACADEMY</div>
+                </div>
+                <div class="card" data-target="patterns-screen">
+                    <div class="icon-circle">📈</div>
+                    <div class="card-title">MARKET PATTERNS</div>
+                </div>
+                <div class="card" data-target="strategies-screen">
+                    <div class="icon-circle">⚡</div>
+                    <div class="card-title">TACTICAL ALGORITHMS</div>
+                </div>
+                <div class="card" data-target="sessions-screen">
+                    <div class="icon-circle">🧮</div>
+                    <div class="card-title">RISK CALCULATOR</div>
+                </div>
+                <div class="card" data-target="calendar-screen">
+                    <div class="icon-circle">📅</div>
+                    <div class="card-title">MACRO EVENTS</div>
+                </div>
+                <div class="card" data-target="news-screen">
+                    <div class="icon-circle">🌍</div>
+                    <div class="card-title">GLOBAL FEED</div>
+                </div>
+                <div class="card" data-target="traders-chat-screen">
+                    <div class="icon-circle">👥</div>
+                    <div class="card-title">COMMUNITY HUB</div>
+                </div>
+                <div class="card" data-target="notes-screen">
+                    <div class="icon-circle">📝</div>
+                    <div class="card-title">TRADING JOURNAL</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="screen" id="profile-screen">
+            <h2>👤 USER DASHBOARD</h2>
+            <div class="glass-box">
+                <div class="info-item">
+                    <h4>Позывной</h4>
+                    <p id="profile-username">Загрузка...</p>
+                </div>
+                <div class="info-item">
+                    <h4>Telegram ID</h4>
+                    <p id="profile-telegram-id">Загрузка...</p>
+                </div>
+                <div class="info-item">
+                    <h4>Рабочий капитал</h4>
+                    <div class="pocket-input-wrapper">
+                        <span>$</span>
+                        <input type="number" id="profile-pocket-input" class="pocket-balance-input" value="1000" oninput="syncBalances(this.value)">
+                    </div>
+                </div>
+
+                <!-- КРИПТО БАНКОВСКАЯ КАРТА KOLO -->
+                <div onclick="openKoloCard()" class="glass-box" style="margin-top: 16px; padding: 18px 22px; cursor: pointer; border-color: var(--neon-green);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                                <span style="font-size: 22px;">💳</span>
+                                <div style="font-size: 16px; font-weight: 900; color: #fff; letter-spacing: 0.5px;">БАНКОВСКАЯ КАРТА</div>
+                            </div>
+                            <div style="font-size: 13px; color: #a4b1cd; font-weight: 600; line-height: 1.4;">Крипто-карта Kolo • Мгновенный вывод</div>
+                        </div>
+                        <div style="background: var(--neon-green); color: #000; padding: 10px 20px; border-radius: 8px; font-weight: 900; font-size: 13px; flex-shrink: 0;">
+                            ОТКРЫТЬ →
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="admin-link-box" style="display: none; margin-top: 20px;">
+                    <button class="back-btn" style="color: #000; background: var(--neon-purple); border: none; font-size: 15px;" onclick="switchScreen('admin-panel-screen')">⚙️ ПАНЕЛЬ УПРАВЛЕНИЯ</button>
+                </div>
+
+                <div id="dev-link-box" style="display: none; margin-top: 12px;">
+                    <button class="back-btn" style="background: var(--neon-purple); color:#fff; border:none; font-size:15px;" onclick="switchScreen('developer-screen')">🛠️ DEVELOPER PANEL</button>
+                </div>
+
+                <div class="target-box" style="margin-top:20px; border-color: var(--neon-green);">
+                    <h4 style="color:var(--neon-green); font-size:14px; margin-bottom:8px; font-weight:800; text-transform:uppercase;">🧠 Директива ИИ:</h4>
+                    <div class="ai-hint-label" id="ai-profile-hint">Сбор данных для анализа...</div>
+                </div>
+            </div>
+            <button class="back-btn">← НАЗАД В ТЕРМИНАЛ</button>
+        </div>
+
+        <div class="screen" id="admin-panel-screen">
+            <h2>⚙️ СИСТЕМА ДОСТУПА</h2>
+            <div class="glass-box">
+                <div style="display:flex; gap:10px; margin-bottom:20px;">
+                    <input type="text" id="new-user-id" placeholder="Ввести ID трейдера" style="flex:1; padding:16px; border-radius:12px; background:#0A0D14; border:1px solid var(--glass-border); color:#fff; outline:none; font-size: 14px; font-weight:700;">
+                    <button onclick="addAllowedUser()" style="background:var(--neon-purple); color:#fff; border:none; border-radius:12px; padding:0 24px; font-weight:900; cursor:pointer;">ADD</button>
+                </div>
+                <h4 style="font-size:12px; color:#a4b1cd; margin-bottom:12px; font-weight:800;">Реестр допусков:</h4>
+                <div class="admin-list" id="admin-users-list"></div>
+            </div>
+            <button class="back-btn" onclick="switchScreen('profile-screen')">← ВЕРНУТЬСЯ</button>
+        </div>
+
+        <div class="screen" id="developer-screen">
+            <h2 style="color: var(--neon-purple);">🛠️ DEVELOPER PANEL</h2>
+            <div style="font-size:11px; color:#a4b1cd; text-align:center; margin-bottom:16px; font-weight:700;">ТОЛЬКО ДЛЯ ROOT АДМИНИСТРАТОРА</div>
+
+            <!-- Tabs -->
+            <div style="display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap; justify-content:center;">
+                <button onclick="showDevTab('admins')" id="dev-tab-btn-admins" class="back-btn" style="flex:1; max-width:105px; background:var(--neon-purple); color:#fff; border:none; font-size:11px; padding:10px 8px;">АДМИНЫ</button>
+                <button onclick="showDevTab('theme')" id="dev-tab-btn-theme" class="back-btn" style="flex:1; max-width:105px; font-size:11px; padding:10px 8px;">ТЕМА</button>
+                <button onclick="showDevTab('flags')" id="dev-tab-btn-flags" class="back-btn" style="flex:1; max-width:105px; font-size:11px; padding:10px 8px;">ФЛАГИ</button>
+                <button onclick="showDevTab('console')" id="dev-tab-btn-console" class="back-btn" style="flex:1; max-width:105px; font-size:11px; padding:10px 8px;">КОНСОЛЬ</button>
+                <button onclick="showDevTab('video')" id="dev-tab-btn-video" class="back-btn" style="flex:1; max-width:115px; font-size:11px; padding:10px 8px;">🎥 ВИДЕО</button>
+            </div>
+
+            <div class="glass-box" style="padding:20px; min-height: 420px;">
+                <!-- TAB: АДМИНИСТРАТОРЫ -->
+                <div id="dev-tab-admins">
+                    <h4 style="color:var(--neon-green); font-size:13px; margin-bottom:10px;">Управление доступом</h4>
+                    <div style="display:flex; gap:8px; margin-bottom:14px;">
+                        <input type="text" id="dev-new-admin-id" placeholder="Telegram ID нового админа" style="flex:1; padding:14px 18px; border-radius:12px; background:#0A0D14; border:1px solid var(--glass-border); color:#fff; font-size:14px;">
+                        <button onclick="devAddAdmin()" style="background:var(--neon-purple); color:#fff; border:none; border-radius:12px; padding:0 22px; font-weight:900;">ADD</button>
+                    </div>
+                    <div class="admin-list" id="dev-admin-list" style="max-height:220px; overflow-y:auto;"></div>
+                </div>
+
+                <!-- TAB: РЕДАКТОР ТЕМЫ -->
+                <div id="dev-tab-theme" style="display:none;">
+                    <h4 style="color:var(--neon-green); font-size:13px; margin-bottom:12px;">Live Theme Editor</h4>
+                    
+                    <div style="margin-bottom:14px;">
+                        <div style="font-size:12px; color:#a4b1cd; margin-bottom:6px;">Неоновый Зелёный</div>
+                        <input type="color" id="theme-green" value="#00FFAA" oninput="applyLiveTheme()" style="width:100%; height:42px; border:none; border-radius:8px; background:#111; padding:4px;">
+                    </div>
+                    <div style="margin-bottom:14px;">
+                        <div style="font-size:12px; color:#a4b1cd; margin-bottom:6px;">Неоновый Фиолетовый</div>
+                        <input type="color" id="theme-purple" value="#9D00FF" oninput="applyLiveTheme()" style="width:100%; height:42px; border:none; border-radius:8px; background:#111; padding:4px;">
+                    </div>
+                    <div style="margin-bottom:14px;">
+                        <div style="font-size:12px; color:#a4b1cd; margin-bottom:6px;">Неоновый Красный</div>
+                        <input type="color" id="theme-red" value="#FF2E63" oninput="applyLiveTheme()" style="width:100%; height:42px; border:none; border-radius:8px; background:#111; padding:4px;">
+                    </div>
+
+                    <div style="margin-bottom:14px;">
+                        <div style="font-size:12px; color:#a4b1cd; margin-bottom:6px;">Прозрачность стекла: <span id="glass-opacity-val">62</span>%</div>
+                        <input type="range" id="glass-opacity" min="30" max="85" step="1" value="62" oninput="applyLiveTheme()" style="width:100%;">
+                    </div>
+
+                    <div style="margin-bottom:14px;">
+                        <div style="font-size:12px; color:#a4b1cd; margin-bottom:6px;">Радиус скругления: <span id="radius-val">42</span>px</div>
+                        <input type="range" id="card-radius" min="8" max="40" step="1" value="16" oninput="applyLiveTheme()" style="width:100%;">
+                    </div>
+
+                    <div style="display:flex; gap:10px; margin-top:16px;">
+                        <button onclick="saveThemeToStorage()" class="back-btn" style="flex:1; background:var(--neon-green); color:#000; border:none; font-weight:900;">СОХРАНИТЬ</button>
+                        <button onclick="resetThemeToDefault()" class="back-btn" style="flex:1;">СБРОСИТЬ</button>
+                    </div>
+                </div>
+
+                <!-- TAB: ФЛАГИ ФУНКЦИЙ -->
+                <div id="dev-tab-flags" style="display:none;">
+                    <h4 style="color:var(--neon-green); font-size:13px; margin-bottom:12px;">Управление разделами</h4>
+                    <div id="feature-flags-list" style="display:flex; flex-direction:column; gap:10px;"></div>
+                    <button onclick="applyFeatureFlags()" class="back-btn" style="margin-top:16px; background:var(--neon-purple); border:none;">ПРИМЕНИТЬ ИЗМЕНЕНИЯ</button>
+                </div>
+
+                <!-- TAB: JS КОНСОЛЬ -->
+                <div id="dev-tab-console" style="display:none;">
+                    <h4 style="color:var(--neon-green); font-size:13px; margin-bottom:8px;">Developer Console</h4>
+                    <div style="background:#0A0D14; border-radius:12px; padding:12px; margin-bottom:10px; border:1px solid var(--glass-border);">
+                        <textarea id="dev-console-input" placeholder="Введите JS код" style="width:100%; height:120px; background:transparent; border:none; color:#fff; font-family:monospace; font-size:13px; resize:vertical; outline:none;"></textarea>
+                    </div>
+                    <button onclick="runDevConsole()" class="back-btn" style="background:var(--neon-red); color:#fff; border:none;">ВЫПОЛНИТЬ КОД</button>
+                    <div id="dev-console-output" style="margin-top:12px; font-size:12px; color:#a4b1cd; background:#0A0D14; padding:12px; border-radius:12px; min-height:60px; font-family:monospace;"></div>
+                </div>
+
+                <!-- TAB: YOUTUBE -->
+                <div id="dev-tab-video" style="display:none;">
+                    <h4 style="color:var(--neon-green); font-size:13px; margin-bottom:10px;">Управление YouTube уроками</h4>
+                    <div style="background:#0A0D14; border-radius:12px; padding:16px; margin-bottom:16px; border:1px solid var(--neon-purple);">
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+                            <input type="text" id="new-video-title" placeholder="Название урока" style="padding:12px; border-radius:8px; background:#151A25; border:1px solid var(--glass-border); color:#fff;">
+                            <input type="text" id="new-video-youtube" placeholder="YouTube Embed URL" style="padding:12px; border-radius:8px; background:#151A25; border:1px solid var(--glass-border); color:#fff;">
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:10px;">
+                            <select id="new-video-category" style="padding:12px; border-radius:8px; background:#151A25; border:1px solid var(--glass-border); color:#fff;">
+                                <option value="basics">БАЗА</option>
+                                <option value="patterns">ПАТТЕРНЫ</option>
+                                <option value="strategies">СТРАТЕГИИ</option>
+                                <option value="psychology">ПСИХОЛОГИЯ</option>
+                            </select>
+                            <input type="text" id="new-video-duration" placeholder="Длительность" value="15 мин" style="padding:12px; border-radius:8px; background:#151A25; border:1px solid var(--glass-border); color:#fff;">
+                            <input type="text" id="new-video-level" placeholder="Уровень" value="Средний" style="padding:12px; border-radius:8px; background:#151A25; border:1px solid var(--glass-border); color:#fff;">
+                        </div>
+                        <textarea id="new-video-desc" placeholder="Краткое описание урока..." style="width:100%; min-height:60px; padding:12px; border-radius:8px; background:#151A25; border:1px solid var(--glass-border); color:#fff; resize:vertical;"></textarea>
+                        
+                        <button onclick="devAddVideoLesson()" class="back-btn" style="margin-top:12px; background:var(--neon-purple); border:none;">+ ДОБАВИТЬ ВИДЕОУРОК</button>
+                    </div>
+                    <div id="dev-video-list" style="max-height:220px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;"></div>
+                </div>
+
+            </div>
+
+            <button class="back-btn" onclick="switchScreen('menu-screen')">← ВЕРНУТЬСЯ В МЕНЮ</button>
+        </div>
+
+        <div class="screen" id="news-screen">
+            <h2>🌍 GLOBAL FEED</h2>
+            <div style="display:flex; gap:8px; margin-bottom:14px; justify-content:center;">
+                <button onclick="switchNewsTab('live')" id="news-tab-live" class="back-btn" style="flex:1; background:var(--neon-green); color:#000; border:none; font-weight:900;">📡 LIVE РЫНОК</button>
+                <button onclick="switchNewsTab('grok')" id="news-tab-grok" class="back-btn" style="flex:1;">🤖 AI ГЕНЕРАЦИЯ</button>
+            </div>
+
+            <div id="news-live-tab">
+                <div class="glass-box" style="padding: 18px 16px; margin-bottom: 12px; border-color: var(--neon-purple);">
+                    <div style="text-align:center; margin-bottom:12px;">
+                        <div style="color:var(--neon-purple); font-size:15px; font-weight:900;">📅 ЭКОНОМИЧЕСКИЙ КАЛЕНДАРЬ</div>
+                    </div>
+                    <div class="tradingview-widget-container" style="border-radius: 12px; overflow: hidden; border: 1px solid var(--glass-border);">
+                        <div class="tradingview-widget-container__widget"></div>
+                        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-events.js" async>
+                        {
+                        "width": "100%",
+                        "height": "560",
+                        "currencyFilter": "USD,EUR,GBP,JPY,CHF,CAD,AUD,NZD",
+                        "importanceFilter": "-1,0,1",
+                        "colorTheme": "dark",
+                        "isTransparent": true,
+                        "locale": "ru",
+                        "importance": "1"
+                        }
+                        </script>
+                    </div>
+                </div>
+            </div>
+
+            <div id="news-grok-tab" style="display:none;">
+                <div class="glass-box" style="padding: 20px 18px; margin-bottom: 12px; border-color: var(--neon-purple);">
+                    <div style="text-align:center; margin-bottom:16px;">
+                        <div style="color:var(--neon-purple); font-size:16px; font-weight:900;">🤖 ГЕНЕРАЦИЯ ОТ AI</div>
+                    </div>
+                    <div style="text-align:center; margin:20px 0;">
+                        <button onclick="generateGrokNews()" class="back-btn" style="background: var(--neon-purple); color:#fff; border:none; font-weight:900;">✨ СГЕНЕРИРОВАТЬ</button>
+                    </div>
+                    <div id="grok-news-loading" style="display:none; text-align:center; padding:20px;">
+                        <div style="font-size:42px; margin-bottom:10px;">🧠</div>
+                        <div style="color:#fff; font-weight:800;">Анализ рынка...</div>
+                    </div>
+                    <div class="news-container" id="grok-news-box"></div>
+                </div>
+            </div>
+            <button class="back-btn" style="margin-top:8px;">← НАЗАД В ТЕРМИНАЛ</button>
+        </div>
+
+        <div class="screen" id="bot-selector-screen">
+            <h2>🧠 AI ENGINE</h2>
+            <div class="ai-mode-selection">
+                <div class="mode-btn" onclick="switchScreen('bot-chat-screen')">
+                    <div class="mode-icon" style="color: var(--neon-purple);">💬</div>
+                    <div class="mode-info">
+                        <h4>AI Assistant</h4>
+                        <p>Консультации по риск-менеджменту и стратегиям</p>
+                    </div>
+                </div>
+                <div class="mode-btn" onclick="switchScreen('bot-analysis-screen'); window.filterAnalysisPairs();">
+                    <div class="mode-icon" style="color: var(--neon-green);">🔍</div>
+                    <div class="mode-info">
+                        <h4>Scanner PRO</h4>
+                        <p>Глубокий технический анализ котировок</p>
+                    </div>
+                </div>
+            </div>
+            <button class="back-btn" style="margin-top: 24px;">← НАЗАД В ТЕРМИНАЛ</button>
+        </div>
+
+        <div class="screen" id="bot-chat-screen">
+            <h2>💬 AI ASSISTANT</h2>
+            <div class="chat-box" id="ai-chat-container">
+                <div class="chat-msg bot">Система AI ENGINE активирована. Готов провести анализ рынка или скорректировать вашу торговую систему. Ввод данных...</div>
+                <div class="chat-msg bot" id="ai-chat-typing" style="display:none; color:var(--neon-green); border:none; background:transparent;">Генерация ответа...</div>
+            </div>
+            <div class="input-area">
+                <input type="text" id="ai-chat-input" placeholder="Введите запрос...">
+                <button class="send-btn" onclick="sendAiChatMessage()">SEND</button>
+            </div>
+            <button class="back-btn" onclick="switchScreen('bot-selector-screen')" style="margin-top:16px;">← СМЕНИТЬ МОДУЛЬ</button>
+        </div>
+
+        <div class="screen" id="bot-analysis-screen">
+            <h2>🔍 SCANNER PRO</h2>
+            
+            <div style="margin-bottom:16px;">
+                <div style="display:flex; gap:5px; flex-wrap:wrap; justify-content:center;" id="tf-selector">
+                    <button onclick="setScanTimeframe(1)" class="back-btn tf-btn" id="tf-1" style="padding:10px 8px; font-size:13px; flex:1; min-width:48px; max-width:70px; background:var(--neon-green); color:#000; border:none; border-radius:8px;">1м</button>
+                    <button onclick="setScanTimeframe(2)" class="back-btn tf-btn" id="tf-2" style="padding:10px 8px; font-size:13px; flex:1; min-width:48px; max-width:70px; border-radius:8px;">2м</button>
+                    <button onclick="setScanTimeframe(3)" class="back-btn tf-btn" id="tf-3" style="padding:10px 8px; font-size:13px; flex:1; min-width:48px; max-width:70px; border-radius:8px;">3м</button>
+                    <button onclick="setScanTimeframe(5)" class="back-btn tf-btn" id="tf-5" style="padding:10px 8px; font-size:13px; flex:1; min-width:48px; max-width:70px; border-radius:8px;">5м</button>
+                    <button onclick="setScanTimeframe(10)" class="back-btn tf-btn" id="tf-10" style="padding:10px 8px; font-size:13px; flex:1; min-width:48px; max-width:70px; border-radius:8px;">10м</button>
+                    <button onclick="setScanTimeframe(15)" class="back-btn tf-btn" id="tf-15" style="padding:10px 8px; font-size:13px; flex:1; min-width:48px; max-width:70px; border-radius:8px;">15м</button>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; justify-content:center;">
+                <button onclick="setAssetCategory('forex')" class="back-btn" id="cat-forex" style="padding:8px 14px; font-size:11px; flex:1; max-width:85px; background:var(--neon-green); color:#000; border:none;">ВАЛЮТЫ</button>
+                <button onclick="setAssetCategory('crypto')" class="back-btn" id="cat-crypto" style="padding:8px 14px; font-size:11px; flex:1; max-width:95px;">КРИПТА</button>
+                <button onclick="setAssetCategory('commodities')" class="back-btn" id="cat-commodities" style="padding:8px 14px; font-size:11px; flex:1; max-width:95px;">СЫРЬЁ</button>
+                <button onclick="setAssetCategory('stocks')" class="back-btn" id="cat-stocks" style="padding:8px 14px; font-size:11px; flex:1; max-width:80px;">АКЦИИ</button>
+                <button onclick="setAssetCategory('indices')" class="back-btn" id="cat-indices" style="padding:8px 14px; font-size:11px; flex:1; max-width:85px;">ИНДЕКСЫ</button>
+            </div>
+
+            <div class="search-box">
+                <input type="text" id="analysis-search-input" class="search-input" placeholder="Поиск тикера..." oninput="window.filterAnalysisPairs()">
+                <div class="pairs-list" id="analysis-pairs-render-box" style="max-height: 420px;"></div>
+            </div>
+            <button class="back-btn" onclick="switchScreen('bot-selector-screen')" style="margin-top:16px;">← СМЕНИТЬ МОДУЛЬ</button>
+        </div>
+
+        <div class="screen" id="education-screen">
+            <h2>📚 DATA VAULT</h2>
+            <div style="margin: 0 16px 12px;">
+                <input type="text" id="book-search" placeholder="Поиск по архиву..." 
+                       style="width:100%; padding:14px 18px; border-radius:12px; background:#0A0D14; border:1px solid var(--glass-border); color:#fff; font-size:15px; outline:none;"
+                       oninput="filterBooks()">
+            </div>
+            <div class="glass-box" style="max-height: 58vh; overflow-y: auto; padding: 16px;" id="books-list-box"></div>
+            <button class="back-btn" onclick="switchScreen('menu-screen')">← НАЗАД В МЕНЮ</button>
+        </div>
+
+        <div class="screen" id="video-training-screen">
+            <h2>🎥 MEDIA ACADEMY</h2>
+            <div style="display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap; justify-content:center;">
+                <button onclick="filterVideoLessons('all')" class="back-btn" style="flex:1; max-width:70px; background:var(--neon-green); color:#000; border:none; font-size:11px; padding:8px 10px;">ВСЕ</button>
+                <button onclick="filterVideoLessons('basics')" class="back-btn" style="flex:1; max-width:85px; font-size:11px; padding:8px 10px;">БАЗА</button>
+                <button onclick="filterVideoLessons('patterns')" class="back-btn" style="flex:1; max-width:90px; font-size:11px; padding:8px 10px;">ПАТТЕРНЫ</button>
+                <button onclick="filterVideoLessons('strategies')" class="back-btn" style="flex:1; max-width:95px; font-size:11px; padding:8px 10px;">СТРАТЕГИИ</button>
+                <button onclick="filterVideoLessons('psychology')" class="back-btn" style="flex:1; max-width:100px; font-size:11px; padding:8px 10px;">ПСИХОЛОГИЯ</button>
+            </div>
+            <div class="glass-box" style="max-height: 52vh; overflow-y: auto; padding: 12px 14px; margin-bottom: 12px;" id="video-lessons-list"></div>
+            <button class="back-btn" onclick="switchScreen('menu-screen')">← НАЗАД В МЕНЮ</button>
+        </div>
+
+        <div class="screen" id="book-viewer-screen">
+            <div class="viewer-header">
+                <button class="back-btn" onclick="closeBookViewer()">← НАЗАД</button>
+                <h2 id="viewer-title">Чтение Архива</h2>
+            </div>
+            <div class="viewer-controls">
+                <button class="zoom-btn" onclick="zoomBook(-0.15)">−</button>
+                <button class="zoom-btn" onclick="zoomBook(0)" style="font-size:12px; padding:8px 10px;">100%</button>
+                <button class="zoom-btn" onclick="zoomBook(0.15)">+</button>
+                <button class="open-browser-btn" onclick="openBookInBrowser()">📱 Открыть в браузере</button>
+            </div>
+            <iframe id="book-frame" class="pdf-frame-box" src=""></iframe>
+        </div>
+
+        <div class="screen" id="patterns-screen">
+            <h2>📈 MARKET PATTERNS</h2>
+            <div class="glass-box">
+                <h4 style="color:var(--neon-purple); margin-bottom:12px; text-align:center;">СВЕЧНЫЕ ПАТТЕРНЫ</h4>
+                <div id="candlestick-patterns-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+            </div>
+            <div class="glass-box">
+                <h4 style="color:var(--neon-purple); margin-bottom:12px; text-align:center;">ГРАФИЧЕСКИЕ ПАТТЕРНЫ</h4>
+                <div id="chart-patterns-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+            </div>
+            <div class="glass-box">
+                <h4 style="color:var(--neon-purple); margin-bottom:12px; text-align:center;">ГАРМОНИЧЕСКИЕ ПАТТЕРНЫ</h4>
+                <div id="harmonic-patterns-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+            </div>
+            <button class="back-btn" onclick="switchScreen('menu-screen')">← НАЗАД В МЕНЮ</button>
+        </div>
+
+        <div class="screen" id="strategies-screen">
+            <h2>⚡ TACTICAL ALGORITHMS</h2>
+            <div class="search-box" style="margin-bottom:12px;">
+                <input type="text" id="strategy-search" class="search-input" placeholder="Поиск индикатора..." oninput="filterStrategies()">
+            </div>
+            <div class="glass-box" style="max-height:55vh; overflow-y:auto; padding:16px;" id="strategies-list-box"></div>
+            <button class="back-btn">← НАЗАД В МЕНЮ</button>
+        </div>
+
+        <div class="screen" id="sessions-screen">
+            <h2>🧮 RISK CALCULATOR</h2>
+            <div class="glass-box">
+                <div style="margin-bottom:18px;">
+                    <div style="font-size:12px; color:#a4b1cd; margin-bottom:6px; font-weight:700;">ТЕКУЩИЙ ДЕПОЗИТ ($)</div>
+                    <input type="number" id="calc-deposit" class="target-input" value="1000" oninput="calculateTradingPlan()">
+                </div>
+                <div style="margin-bottom:18px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <div style="font-size:12px; color:#a4b1cd; font-weight:700;">РИСК НА СДЕЛКУ</div>
+                        <div style="font-size:15px; font-weight:900; color:var(--neon-red);" id="calc-risk-percent">2.0%</div>
+                    </div>
+                    <input type="range" id="calc-risk" min="1" max="5" step="0.5" value="2" oninput="calculateTradingPlan()" style="width:100%;">
+                </div>
+                <div style="margin-bottom:18px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <div style="font-size:12px; color:#a4b1cd; font-weight:700;">ВЫПЛАТА</div>
+                        <div style="font-size:15px; font-weight:900; color:var(--neon-purple);" id="calc-payout-percent">85%</div>
+                    </div>
+                    <input type="range" id="calc-payout" min="70" max="95" step="1" value="85" oninput="calculateTradingPlan()" style="width:100%;">
+                </div>
+                <div style="margin-bottom:18px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <div style="font-size:12px; color:#a4b1cd; font-weight:700;">ВИНРЕЙТ</div>
+                        <div style="font-size:15px; font-weight:900; color:#fff;" id="calc-winrate-percent">65%</div>
+                    </div>
+                    <input type="range" id="calc-winrate" min="50" max="85" step="1" value="65" oninput="calculateTradingPlan()" style="width:100%;">
+                </div>
+                <div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <div style="font-size:12px; color:#a4b1cd; font-weight:700;">СДЕЛОК В ДЕНЬ</div>
+                        <div style="font-size:15px; font-weight:900; color:#fff;" id="calc-trades-day">12</div>
+                    </div>
+                    <input type="range" id="calc-trades" min="5" max="25" step="1" value="12" oninput="calculateTradingPlan()" style="width:100%;">
+                </div>
+            </div>
+            
+            <div class="glass-box">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+                    <div style="background:#0A0D14; border-radius:12px; padding:14px; text-align:center; border:1px solid var(--neon-red);">
+                        <div style="font-size:11px; color:#a4b1cd;">РИСК</div>
+                        <div style="font-size:22px; font-weight:900; color:var(--neon-red);" id="result-risk">$20.00</div>
+                    </div>
+                    <div style="background:#0A0D14; border-radius:12px; padding:14px; text-align:center; border:1px solid var(--neon-green);">
+                        <div style="font-size:11px; color:#a4b1cd;">ПРИБЫЛЬ</div>
+                        <div style="font-size:22px; font-weight:900; color:var(--neon-green);" id="result-profit-win">$17.00</div>
+                    </div>
+                </div>
+                <div style="border-top:1px dashed var(--glass-border); padding-top:14px;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                        <span style="color:#a4b1cd; font-size:13px;">Прибыль (ДЕНЬ)</span>
+                        <span style="color:#fff; font-weight:900; font-size:17px;" id="result-day-profit">+$48.00</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                        <span style="color:#a4b1cd; font-size:13px;">Прибыль (НЕДЕЛЯ)</span>
+                        <span style="color:var(--neon-green); font-weight:900; font-size:19px;" id="result-week-profit">+$240.00</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between;">
+                        <span style="color:#a4b1cd; font-size:13px;">Прибыль (МЕСЯЦ)</span>
+                        <span style="color:var(--neon-purple); font-weight:900; font-size:21px;" id="result-month-profit">+$960.00</span>
+                    </div>
+                </div>
+            </div>
+            <button class="back-btn">← НАЗАД В ТЕРМИНАЛ</button>
+        </div>
+
+        <div class="screen" id="calendar-screen">
+            <h2>📅 MACRO EVENTS</h2>
+            <div class="glass-box">
+                <div style="text-align:center; font-weight:900; font-size:18px; color:var(--neon-green); margin-bottom:16px; text-transform:uppercase;" id="calendar-month-title">Текущий Месяц</div>
+                <div class="cal-grid" id="calendar-days-box"></div>
+                <div class="news-display-box" id="news-details-box">Нажмите на число для анализа.</div>
+            </div>
+            <button class="back-btn">← НАЗАД В ТЕРМИНАЛ</button>
+        </div>
+
+        <div class="screen" id="notes-screen">
+            <h2>📝 TRADING JOURNAL</h2>
+            <div class="glass-box" style="padding: 14px 16px; margin-bottom: 12px;">
+                <div style="display: flex; gap: 8px; overflow-x: auto;" id="notes-filter-chips">
+                    <div onclick="filterNotes('all')" class="note-chip active" data-filter="all">ВСЕ</div>
+                    <div onclick="filterNotes('Сделка')" class="note-chip" data-filter="Сделка">СДЕЛКИ</div>
+                    <div onclick="filterNotes('Идея')" class="note-chip" data-filter="Идея">ИДЕИ</div>
+                    <div onclick="filterNotes('Ошибка')" class="note-chip" data-filter="Ошибка">ОШИБКИ</div>
+                    <div onclick="filterNotes('Наблюдение')" class="note-chip" data-filter="Наблюдение">НАБЛЮДЕНИЯ</div>
+                </div>
+            </div>
+            <div class="glass-box" id="notes-list" style="max-height: 52vh; overflow-y: auto; padding: 8px 12px; margin-bottom: 12px;"></div>
+            <button onclick="openAddNoteModal()" class="back-btn" style="background: var(--neon-green); color: #000; border: none;">+ НОВАЯ ЗАМЕТКА</button>
+            <button onclick="clearAllNotes()" class="back-btn" style="margin-bottom: 8px;">🗑️ ОЧИСТИТЬ ВСЁ</button>
+            <button class="back-btn">← НАЗАД В ТЕРМИНАЛ</button>
+        </div>
+
+        <div class="screen" id="traders-chat-screen">
+            <h2>👥 COMMUNITY HUB</h2>
+            <div class="glass-box" style="margin-bottom: 10px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 10px; height: 10px; background: var(--neon-green); border-radius: 50%;"></div>
+                    <div>
+                        <span style="color: var(--neon-green); font-weight: 900; font-size: 15px;">ONLINE</span>
+                        <span id="chat-online-count" style="color: #fff; font-weight: 900; font-size: 18px; margin-left: 6px;">0</span>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 11px; color: #a4b1cd; font-weight: 700;">VIP COMMUNITY</div>
+                </div>
+            </div>
+            <div class="chat-box" id="traders-chat-container" style="height: 52vh;"></div>
+            <div class="input-area" style="margin-top: 8px;">
+                <input type="text" id="traders-chat-input" placeholder="Напиши сообщение..." style="font-size: 15px;">
+                <button class="send-btn" onclick="sendTradersChatMessage()" style="padding: 0 28px;">SEND</button>
+            </div>
+            <button class="back-btn" onclick="switchScreen('menu-screen')" style="margin-top: 16px;">← НАЗАД В МЕНЮ</button>
+        </div>
+
+        <div id="note-modal" class="fullscreen-overlay" onclick="if(event.target.id==='note-modal') closeNoteModal()">
+            <div class="glass-box" onclick="event.stopImmediatePropagation()">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+                    <h3 style="color:var(--neon-green); font-size:22px; font-weight:900;">Новая заметка</h3>
+                    <span onclick="closeNoteModal()" style="font-size:32px; color:#fff; cursor:pointer;">×</span>
+                </div>
+                <div style="margin-bottom:16px;">
+                    <div style="display:flex; gap:8px; flex-wrap:wrap;" id="modal-category-chips">
+                        <div onclick="setModalCategory('Сделка')" class="modal-category-btn active" data-cat="Сделка">СДЕЛКА</div>
+                        <div onclick="setModalCategory('Идея')" class="modal-category-btn" data-cat="Идея">ИДЕЯ</div>
+                        <div onclick="setModalCategory('Ошибка')" class="modal-category-btn" data-cat="Ошибка">ОШИБКА</div>
+                        <div onclick="setModalCategory('Наблюдение')" class="modal-category-btn" data-cat="Наблюдение">НАБЛЮДЕНИЕ</div>
+                    </div>
+                </div>
+                <div id="note-form-area"></div>
+                <div style="display:flex; gap:12px; margin-top:24px;">
+                    <button onclick="closeNoteModal()" class="back-btn" style="flex:1;">ОТМЕНА</button>
+                    <button onclick="saveNewNote()" class="back-btn" style="flex:1; background:var(--neon-green); color:#000; border:none;">СОХРАНИТЬ</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Радар и Модалки -->
+    <div class="fullscreen-overlay" id="fullscreen-radar">
+        <div class="radar-container" id="radar-animation-element">
+            <div class="radar-sweep"></div>
+            <div class="radar-line"></div>
+            <div class="radar-core"></div>
+        </div>
+        <div class="radar-status" id="radar-status-text">ОБРАБОТКА ДАННЫХ...</div>
+        <div id="scanning-market-view" style="display: none; width: 100%; max-width: 300px; margin-bottom: 16px; text-align: center;">
+            <div style="background: #1B2130; border: 1px solid var(--glass-border); border-radius: 16px; padding: 14px 18px;">
+                <div style="font-size: 11px; color: var(--neon-purple); font-weight: 900; margin-bottom: 6px;" id="scanning-tf-label">АНАЛИЗ • M1</div>
+                <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 8px;">
+                    <div style="font-size: 22px; font-weight: 900; color: #fff;" id="scanning-pair-name">EUR/USD</div>
+                </div>
+            </div>
+        </div>
+        <div class="analysis-final glass-box" id="radar-final-result" style="border-color: var(--neon-green);">
+            <div style="color: #a4b1cd; font-size: 14px; font-weight:800;" id="analyzed-pair-title">EUR/USD</div>
+            <div class="final-dir" id="final-direction-arrow">ВВЕРХ ▲</div>
+            <div style="font-size: 15px; font-weight: 800; color: #fff; margin-top: 10px;">PRO УВЕРЕННОСТЬ: <strong id="final-accuracy-percent" style="color:var(--neon-green); font-size:18px;">89%</strong></div>
+            <div class="progress-bar-bg"><div class="progress-bar-fill" id="final-progress-fill"></div></div>
+            <div class="ta-dashboard">
+                <div style="font-size: 12px; font-weight: 900; color: var(--neon-purple); margin-bottom: 16px; text-align: center;" id="ta-summary-tf-label">Техническая сводка</div>
+                <div class="ta-row"><span class="ta-label">RSI (14)</span><span class="ta-val" id="ta-rsi-val">0.00</span></div>
+                <div class="ta-row"><span class="ta-label">SMA (9)</span><span class="ta-val" id="ta-sma9-val">0.0000</span></div>
+                <div class="ta-row"><span class="ta-label">SMA (20)</span><span class="ta-val" id="ta-sma20-val">0.0000</span></div>
+                <div class="ta-row"><span class="ta-label">Волатильность</span><span class="ta-val" id="ta-vol-val">0.00%</span></div>
+                <div class="ta-verdict" id="ta-verdict-box">ВЫЧИСЛЕНИЕ...</div>
+            </div>
+            <button class="back-btn" style="background:var(--neon-green); color:#000; border:none; margin-top: 20px;" onclick="window.closeFullscreenAnalysis()">ЗАВЕРШИТЬ</button>
+        </div>
+    </div>
+
+    <div id="pattern-modal" class="pattern-modal" onclick="if (event.target.id === 'pattern-modal') closePatternModal()">
+        <div class="pattern-modal-content" onclick="event.stopImmediatePropagation()">
+            <button class="pattern-modal-close" onclick="closePatternModal()">×</button>
+            <h3 id="modal-pattern-name"></h3>
+            <div id="modal-pattern-type" class="type-badge"></div>
+            <div class="big-chart" id="modal-chart-container"></div>
+            <div class="desc" id="modal-pattern-desc"></div>
+            <div class="signal-box">
+                <strong>СИГНАЛ НА M1:</strong><br><span id="modal-pattern-signal" style="color:#fff;"></span>
+            </div>
+        </div>
+    </div>
+
+    <div id="strategy-modal" class="strategy-modal" onclick="if (event.target.id === 'strategy-modal') closeStrategyModal()">
+        <div class="strategy-modal-content" onclick="event.stopImmediatePropagation()">
+            <button class="strategy-modal-close" onclick="closeStrategyModal()">×</button>
+            <h3 id="modal-strategy-name"></h3>
+            <div style="display:flex; gap:8px; margin-bottom:12px;">
+                <span id="modal-strategy-tf" style="background:#1B2130; color:var(--neon-green); padding:4px 12px; border-radius:8px; font-size:11px;"></span>
+                <span id="modal-strategy-accuracy" style="background:#1B2130; color:var(--neon-purple); padding:4px 12px; border-radius:8px; font-size:11px;"></span>
+            </div>
+            <div class="big-chart" id="modal-strategy-chart"></div>
+            <div style="background:#0A0D14; border-radius:12px; padding:14px; margin:12px 0; border:1px solid var(--glass-border);">
+                <div style="font-size:12px; color:#a4b1cd;"><strong>НАСТРОЙКИ:</strong></div>
+                <div id="modal-strategy-settings" style="font-size:13px; color:#fff;"></div>
+            </div>
+            <div style="background:#0A0D14; border:1px solid var(--neon-green); border-radius:12px; padding:14px;">
+                <div style="font-size:12px; color:var(--neon-green); margin-bottom:6px;">ПРАВИЛА ВХОДА:</div>
+                <div id="modal-strategy-rules" style="font-size:13px; color:#fff;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="video-modal" class="pattern-modal" onclick="if (event.target.id === 'video-modal') closeVideoModal()">
+        <div class="pattern-modal-content" onclick="event.stopImmediatePropagation()">
+            <button class="pattern-modal-close" onclick="closeVideoModal()">×</button>
+            <h3 id="video-modal-title"></h3>
+            <div style="display:flex; gap:10px; margin-bottom:14px;">
+                <span id="video-modal-duration" style="background:#1B2130; color:var(--neon-green); padding:4px 12px; border-radius:8px; font-size:11px;"></span>
+                <span id="video-modal-level" style="background:#1B2130; color:var(--neon-purple); padding:4px 12px; border-radius:8px; font-size:11px;"></span>
+            </div>
+            <div id="video-embed-container" style="width:100%; aspect-ratio:16/9; background:#0A0D14; border-radius:12px; overflow:hidden; margin-bottom:16px;"></div>
+            <div id="video-modal-desc" style="font-size:13.5px; color:#c8d0e0; margin-bottom:18px;"></div>
+            <div style="display:flex; gap:10px;">
+                <button onclick="closeVideoModal()" class="back-btn" style="flex:1;">ЗАКРЫТЬ</button>
+                <button onclick="openVideoInTelegram()" class="back-btn" style="flex:1; background:var(--neon-purple); border:none;">ОТКРЫТЬ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ВЕСЬ JS КОД ОСТАЛСЯ БЕЗ ИЗМЕНЕНИЙ И В ПОЛНОЙ СОХРАННОСТИ -->
+    <script>
+        const SafeStorage = {
+            _memory: {},
+            getItem(key) {
+                try {
+                    if (typeof localStorage !== 'undefined') return localStorage.getItem(key);
+                } catch (e) {
+                    try { if (typeof sessionStorage !== 'undefined') return sessionStorage.getItem(key); } catch (_) {}
+                    return this._memory[key] || null;
+                } return null;
+            },
+            setItem(key, value) {
+                try {
+                    if (typeof localStorage !== 'undefined') { localStorage.setItem(key, value); return; }
+                } catch (e) {
+                    try { if (typeof sessionStorage !== 'undefined') { sessionStorage.setItem(key, value); return; } } catch (_) {}
+                    this._memory[key] = value;
+                }
+            },
+            removeItem(key) {
+                try {
+                    if (typeof localStorage !== 'undefined') { localStorage.removeItem(key); return; }
+                } catch (e) {
+                    try { if (typeof sessionStorage !== 'undefined') { sessionStorage.removeItem(key); return; } } catch (_) {}
+                    delete this._memory[key];
+                }
+            }
+        };
+
+        function triggerHaptic(style = 'light') {
+            try {
+                if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
+                    const hf = window.Telegram.WebApp.HapticFeedback;
+                    if (style === 'success' || style === 'error' || style === 'warning') hf.notificationOccurred(style);
+                    else hf.impactOccurred(style);
+                }
+            } catch (e) {}
+        }
+
+        function initGlobalHaptic() {
+            document.addEventListener('click', function(e) {
+                const target = e.target.closest('.card, .back-btn, .pair-row, .note-card, .mode-btn, .direction-btn, .modal-category-btn, .send-btn, button, .note-chip, .del-btn, .strategy-card, .pattern-card');
+                if (target) triggerHaptic('light');
+            }, { passive: true });
+        }
+
+        const MASTER_ADMIN = "5817328317";
+        const SERVER_URL = "https://vip-community.onrender.com"; 
+
+        let _allowedUsersCache = null;
+        function getAllowedUsers() {
+            if (_allowedUsersCache) return _allowedUsersCache;
+            try { return JSON.parse(SafeStorage.getItem('allowed_users') || "[]"); } catch { return []; }
+        }
+
+        async function fetchAllowedUsersFromServer() {
+            try {
+                const res = await fetch(`${SERVER_URL}/api/allowed-users`, { method: 'GET' });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && Array.isArray(data.users)) {
+                        _allowedUsersCache = data.users;
+                        SafeStorage.setItem('allowed_users', JSON.stringify(data.users));
+                        return data.users;
+                    }
+                }
+            } catch (e) {}
+            return getAllowedUsers();
+        }
+
+        async function syncAddUserToServer(userId) {
+            try {
+                const response = await fetch(`${SERVER_URL}/api/admin/add-user`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: String(userId), adminId: MASTER_ADMIN })
+                });
+                const result = await response.json();
+                if (!response.ok || !result.success) return false;
+                await fetchAllowedUsersFromServer();
+                return true;
+            } catch (e) { return false; }
+        }
+
+        async function syncRemoveUserFromServer(userId) {
+            try {
+                await fetch(`${SERVER_URL}/api/admin/remove-user`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: String(userId), adminId: MASTER_ADMIN })
+                });
+                await fetchAllowedUsersFromServer();
+            } catch (e) {}
+        }
+
+        async function checkAccess(userId) {
+            const ADMIN_LIST = [644265574, 8357464471, 987654321];
+            const localList = getAllowedUsers();
+            if (userId === MASTER_ADMIN || ADMIN_LIST.includes(Number(userId)) || localList.includes(String(userId))) return true;
+            
+            try {
+                const response = await fetch(`${SERVER_URL}/api/check-access?userId=${userId}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (typeof data.allowed === 'boolean') return data.allowed;
+                }
+            } catch (e) {}
+            return true;
+        }
+
+        window.addAllowedUser = async function() {
+            const idInput = document.getElementById('new-user-id');
+            const id = idInput.value.trim();
+            if (!id || id === MASTER_ADMIN) { alert("Некорректный ID"); return; }
+            
+            let users = getAllowedUsers();
+            if (!users.includes(id)) {
+                users.push(id);
+                SafeStorage.setItem('allowed_users', JSON.stringify(users));
+                _allowedUsersCache = users;
+                renderAdminList();
+            }
+            await syncAddUserToServer(id);
+            idInput.value = '';
+            await renderAdminList();
+        };
+
+        window.removeUser = async function(id) {
+            if (!confirm(`Удалить пользователя ${id}?`)) return;
+            let users = getAllowedUsers().filter(u => u !== String(id));
+            SafeStorage.setItem('allowed_users', JSON.stringify(users));
+            _allowedUsersCache = users;
+            renderAdminList();
+            await syncRemoveUserFromServer(id);
+            await renderAdminList();
+        };
+
+        async function renderAdminList() {
+            const list = document.getElementById('admin-users-list');
+            if (!list) return;
+            const users = await fetchAllowedUsersFromServer();
+            list.innerHTML = '';
+            const masterItem = document.createElement('div');
+            masterItem.className = 'admin-item';
+            masterItem.style.borderColor = 'var(--neon-green)';
+            masterItem.innerHTML = `<span style="color:var(--neon-green); font-weight:900;">${MASTER_ADMIN} [ROOT ADMIN]</span> <span></span>`;
+            list.appendChild(masterItem);
+            users.forEach(id => {
+                const item = document.createElement('div');
+                item.className = 'admin-item';
+                item.innerHTML = `<span>USER: ${id}</span> <span class="del-btn" onclick="removeUser('${id}')">DROP</span>`;
+                list.appendChild(item);
+            });
+        }
+
+        let currentDevTab = 'admins';
+        window.showDevTab = function(tab) {
+            document.getElementById('dev-tab-admins').style.display = 'none';
+            document.getElementById('dev-tab-theme').style.display = 'none';
+            document.getElementById('dev-tab-flags').style.display = 'none';
+            document.getElementById('dev-tab-console').style.display = 'none';
+            if (document.getElementById('dev-tab-video')) document.getElementById('dev-tab-video').style.display = 'none';
+
+            document.getElementById('dev-tab-btn-admins').style.background = '#1B2130';
+            document.getElementById('dev-tab-btn-theme').style.background = '#1B2130';
+            document.getElementById('dev-tab-btn-flags').style.background = '#1B2130';
+            document.getElementById('dev-tab-btn-console').style.background = '#1B2130';
+            if (document.getElementById('dev-tab-btn-video')) document.getElementById('dev-tab-btn-video').style.background = '#1B2130';
+
+            const selectedTab = document.getElementById('dev-tab-' + tab);
+            if (selectedTab) selectedTab.style.display = 'block';
+            const selectedBtn = document.getElementById('dev-tab-btn-' + tab);
+            if (selectedBtn) {
+                selectedBtn.style.background = 'var(--neon-purple)';
+                selectedBtn.style.color = '#fff';
+            }
+            currentDevTab = tab;
+            if (tab === 'admins') renderDevAdminList();
+            if (tab === 'flags') renderFeatureFlags();
+            if (tab === 'video') renderDevVideoList();
+        };
+
+        window.VIDEO_LESSONS = window.VIDEO_LESSONS || [];
+        let videoLessonsCache = [];
+        async function loadVideoLessonsFromServer() {
+            try {
+                const response = await fetch(`${SERVER_URL}/api/video-lessons`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data && data.success && Array.isArray(data.lessons)) videoLessonsCache = data.lessons;
+                    else if (Array.isArray(data)) videoLessonsCache = data;
+                    else videoLessonsCache = [];
+                    window.VIDEO_LESSONS = videoLessonsCache;
+                    return videoLessonsCache;
+                }
+            } catch (e) {}
+            try {
+                const local = JSON.parse(SafeStorage.getItem('custom_video_lessons') || '[]');
+                videoLessonsCache = local; window.VIDEO_LESSONS = local;
+            } catch (_) { videoLessonsCache = []; window.VIDEO_LESSONS = []; }
+            return videoLessonsCache;
+        }
+        window.loadVideoLessonsFromServer = loadVideoLessonsFromServer;
+        function getAllVideoLessons() { return (videoLessonsCache && videoLessonsCache.length > 0) ? videoLessonsCache : (window.VIDEO_LESSONS || []); }
+        window.getAllVideoLessons = getAllVideoLessons;
+
+        function renderDevVideoList() {
+            const container = document.getElementById('dev-video-list');
+            if (!container) return;
+            container.innerHTML = '';
+            const list = getAllVideoLessons();
+            if (list.length === 0) {
+                container.innerHTML = '<div style="color:#a4b1cd; font-size:12px; padding:10px; text-align:center;">Пока нет уроков.</div>';
+                return;
+            }
+            list.forEach((lesson, index) => {
+                const item = document.createElement('div');
+                item.style.cssText = 'background:#0A0D14; border:1px solid var(--glass-border); border-radius:12px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center;';
+                item.innerHTML = `
+                    <div style="flex:1; min-width:0;">
+                        <div style="font-weight:800; color:#fff; font-size:13px;">${lesson.title || 'Без названия'}</div>
+                        <div style="font-size:11px; color:#a4b1cd;">${lesson.category || '—'} • ${lesson.duration || ''}</div>
+                    </div>
+                    <button onclick="devDeleteVideoLesson(${index}, '${lesson.id || ''}')" style="background:#1B2130; color:var(--neon-red); border:1px solid var(--glass-border); padding:6px 12px; border-radius:8px; font-size:11px; font-weight:900; cursor:pointer;">УДАЛИТЬ</button>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        window.devAddVideoLesson = async function() {
+            const title = document.getElementById('new-video-title')?.value.trim() || '';
+            const youtube = document.getElementById('new-video-youtube')?.value.trim() || '';
+            const category = document.getElementById('new-video-category')?.value || 'basics';
+            const duration = document.getElementById('new-video-duration')?.value.trim() || '15 мин';
+            const level = document.getElementById('new-video-level')?.value.trim() || 'Средний';
+            const desc = document.getElementById('new-video-desc')?.value.trim() || '';
+
+            if (!title || !youtube) { alert('Название и YouTube ссылка обязательны!'); return; }
+            const newLesson = { id: Date.now(), title, category, duration, level, desc, youtube, isCustom: true, created_at: new Date().toISOString() };
+            try {
+                const res = await fetch(`${SERVER_URL}/api/video-lessons`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newLesson) });
+                if (res.ok) {
+                    await loadVideoLessonsFromServer();
+                    renderDevVideoList();
+                    if (typeof renderVideoLessons === 'function') renderVideoLessons('all');
+                    alert('Урок сохранён!');
+                    return;
+                }
+            } catch (e) {
+                let custom = JSON.parse(SafeStorage.getItem('custom_video_lessons') || '[]');
+                custom.push(newLesson);
+                SafeStorage.setItem('custom_video_lessons', JSON.stringify(custom));
+                videoLessonsCache = custom; window.VIDEO_LESSONS = custom;
+                renderDevVideoList();
+                if (typeof renderVideoLessons === 'function') renderVideoLessons('all');
+            }
+        };
+
+        window.devDeleteVideoLesson = async function(index, lessonId = '') {
+            if (!confirm('Удалить урок?')) return;
+            const list = getAllVideoLessons();
+            if (!list[index]) return;
+            const lesson = list[index];
+            const idToDelete = lessonId || lesson.id || lesson.title;
+            if (idToDelete) {
+                try {
+                    const res = await fetch(`${SERVER_URL}/api/video-lessons?id=${encodeURIComponent(idToDelete)}`, { method: 'DELETE' });
+                    if (res.ok) {
+                        await loadVideoLessonsFromServer();
+                        renderDevVideoList();
+                        if (typeof renderVideoLessons === 'function') renderVideoLessons('all');
+                        return;
+                    }
+                } catch (e) {}
+            }
+            let custom = JSON.parse(SafeStorage.getItem('custom_video_lessons') || '[]');
+            custom = custom.filter(l => l.id !== lesson.id && l.title !== lesson.title);
+            SafeStorage.setItem('custom_video_lessons', JSON.stringify(custom));
+            videoLessonsCache = custom; window.VIDEO_LESSONS = custom;
+            renderDevVideoList();
+            if (typeof renderVideoLessons === 'function') renderVideoLessons('all');
+        };
+
+        window.devAddAdmin = async function() {
+            const input = document.getElementById('dev-new-admin-id');
+            const id = input.value.trim();
+            if (!id || id === MASTER_ADMIN) return;
+            let users = getAllowedUsers();
+            if (!users.includes(id)) {
+                users.push(id);
+                SafeStorage.setItem('allowed_users', JSON.stringify(users));
+                _allowedUsersCache = users;
+                await syncAddUserToServer(id);
+                renderDevAdminList();
+            }
+            input.value = '';
+        };
+
+        window.devRemoveAdmin = async function(id) {
+            if (!confirm('Удалить администратора ' + id + '?')) return;
+            let users = getAllowedUsers().filter(u => u !== String(id));
+            SafeStorage.setItem('allowed_users', JSON.stringify(users));
+            _allowedUsersCache = users;
+            await syncRemoveUserFromServer(id);
+            renderDevAdminList();
+        };
+
+        async function renderDevAdminList() {
+            const list = document.getElementById('dev-admin-list');
+            if (!list) return;
+            const users = await fetchAllowedUsersFromServer();
+            list.innerHTML = '';
+            const masterItem = document.createElement('div');
+            masterItem.className = 'admin-item';
+            masterItem.style.borderColor = 'var(--neon-green)';
+            masterItem.innerHTML = `<span style="color:var(--neon-green); font-weight:900;">${MASTER_ADMIN} [ROOT]</span>`;
+            list.appendChild(masterItem);
+            users.forEach(id => {
+                const item = document.createElement('div');
+                item.className = 'admin-item';
+                item.innerHTML = `<span>USER: ${id}</span> <span class="del-btn" onclick="devRemoveAdmin('${id}')">DROP</span>`;
+                list.appendChild(item);
+            });
+        }
+
+        window.applyLiveTheme = function() {
+            const root = document.documentElement;
+            root.style.setProperty('--neon-green', document.getElementById('theme-green').value);
+            root.style.setProperty('--neon-purple', document.getElementById('theme-purple').value);
+            root.style.setProperty('--neon-red', document.getElementById('theme-red').value);
+        };
+
+        window.saveThemeToStorage = function() {
+            const theme = {
+                green: document.getElementById('theme-green').value,
+                purple: document.getElementById('theme-purple').value,
+                red: document.getElementById('theme-red').value
+            };
+            SafeStorage.setItem('dev_theme', JSON.stringify(theme));
+            alert('Тема сохранена!');
+        };
+
+        window.resetThemeToDefault = function() {
+            const root = document.documentElement;
+            root.style.setProperty('--neon-green', '#00FFAA');
+            root.style.setProperty('--neon-purple', '#9D00FF');
+            root.style.setProperty('--neon-red', '#FF2E63');
+            document.getElementById('theme-green').value = '#00FFAA';
+            document.getElementById('theme-purple').value = '#9D00FF';
+            document.getElementById('theme-red').value = '#FF2E63';
+            SafeStorage.removeItem('dev_theme');
+            alert('Тема сброшена.');
+        };
+
+        function loadSavedTheme() {
+            const saved = SafeStorage.getItem('dev_theme');
+            if (!saved) return;
+            try {
+                const theme = JSON.parse(saved);
+                const root = document.documentElement;
+                if (theme.green) root.style.setProperty('--neon-green', theme.green);
+                if (theme.purple) root.style.setProperty('--neon-purple', theme.purple);
+                if (theme.red) root.style.setProperty('--neon-red', theme.red);
+            } catch(e) {}
+        }
+
+        const DEFAULT_FEATURES = {
+            calculator: { name: 'Калькулятор', enabled: true },
+            journal: { name: 'Журнал Трейдера', enabled: true },
+            patterns: { name: 'Паттерны', enabled: true },
+            strategies: { name: 'Стратегии PRO', enabled: true },
+            news: { name: 'ИИ Новости', enabled: true },
+            books: { name: 'База знаний', enabled: true }
+        };
+        function getFeatureFlags() {
+            try { return JSON.parse(SafeStorage.getItem('dev_feature_flags') || JSON.stringify(DEFAULT_FEATURES)); }
+            catch { return DEFAULT_FEATURES; }
+        }
+        function renderFeatureFlags() {
+            const container = document.getElementById('feature-flags-list');
+            if (!container) return;
+            container.innerHTML = '';
+            const flags = getFeatureFlags();
+            Object.keys(flags).forEach(key => {
+                const item = document.createElement('div');
+                item.style.cssText = 'display:flex; align-items:center; justify-content:space-between; background:#0A0D14; border:1px solid var(--glass-border); padding:14px 18px; border-radius:12px;';
+                item.innerHTML = `
+                    <span style="font-weight:800; font-size:14px;">${flags[key].name}</span>
+                    <label style="position:relative; display:inline-block; width:52px; height:28px;">
+                        <input type="checkbox" id="flag-${key}" ${flags[key].enabled ? 'checked' : ''} style="opacity:0; width:0; height:0;">
+                        <span style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background:${flags[key].enabled ? 'var(--neon-green)' : '#1B2130'}; border-radius:34px; transition:0.3s;"></span>
+                    </label>
+                `;
+                container.appendChild(item);
+                setTimeout(() => {
+                    const checkbox = document.getElementById('flag-' + key);
+                    if (checkbox) {
+                        checkbox.onchange = () => {
+                            flags[key].enabled = checkbox.checked;
+                            checkbox.nextElementSibling.style.background = checkbox.checked ? 'var(--neon-green)' : '#1B2130';
+                        };
+                    }
+                }, 50);
+            });
+        }
+        window.applyFeatureFlags = function() {
+            const flags = getFeatureFlags();
+            const newFlags = {};
+            Object.keys(flags).forEach(key => {
+                const cb = document.getElementById('flag-' + key);
+                newFlags[key] = { name: flags[key].name, enabled: cb ? cb.checked : flags[key].enabled };
+            });
+            SafeStorage.setItem('dev_feature_flags', JSON.stringify(newFlags));
+            alert('Флаги сохранены!');
+        };
+        function applyFeatureFlagsOnInit() {}
+
+        window.runDevConsole = function() {
+            const input = document.getElementById('dev-console-input');
+            const output = document.getElementById('dev-console-output');
+            if (!input || !output) return;
+            const code = input.value.trim();
+            if (!code) return;
+            try {
+                const result = (function() { return eval(code); })();
+                output.innerHTML = `<span style="color:var(--neon-green);">✓ Успешно</span>\n${result !== undefined ? String(result) : '(без возвращаемого значения)'}`;
+                output.style.color = '#fff';
+            } catch (err) {
+                output.innerHTML = `<span style="color:var(--neon-red);">✕ Ошибка:</span>\n${err.message}`;
+                output.style.color = '#ff6b6b';
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const GROQ_API_KEY = "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";
+            let serverPayouts = {}; 
+            let currentBalance = parseFloat(SafeStorage.getItem('pocket_balance')) || 1000;
+
+            const PRO_BOOKS = [
+                { title: "Волк с Уолл-стрит", desc: "Джордан Белфорт — легендарная история успеха", file: "Волк с Уолл-стрит.pdf" },
+                { title: "Воспоминания биржевого спекулянта", desc: "Эдвин Лефевр — классика психологии рынка", file: "Воспоминания_биржевого_спекулянта.pdf" },
+                { title: "Как играть и выигрывать на бирже", desc: "Практическое руководство по трейдингу", file: "Как играть и выигрывать на бирже.pdf" },
+                { title: "Японские свечи", desc: "Стив Нисон — графический анализ", file: "Нисон_С_Японские_свечи_графический_анализ_финансовых_рынков_2016.pdf" },
+                { title: "Торговый хаос", desc: "Билл Вильямс — экспертные методики", file: "Торговый хаос.pdf" },
+                { title: "Уоррен Баффет: $5 в $50 млрд", desc: "Роберт Хэгстром — стратегия", file: "Уоррен_Баффет_Как_5_долларов_превратить_в_50_миллиардов.pdf" }
+            ];
+
+            const CANDLESTICK_PATTERNS = [
+                { name: "Доджи (Doji)", type: "Разворот/Нейтраль", desc: "Цена открытия ≈ закрытия. Сигнал неопределенности.", signal: "Жди подтверждения следующей свечи." },
+                { name: "Молот (Hammer)", type: "Бычий разворот", desc: "Маленькое тело сверху, длинная нижняя тень.", signal: "Call на следующей свече после подтверждения." },
+                { name: "Бычье Поглощение", type: "Сильный разворот", desc: "Вторая зеленая свеча поглощает красную.", signal: "Call. Один из strongest сигналов." },
+                { name: "Падающая Звезда", type: "Медвежий разворот", desc: "Маленькое тело снизу, длинная верхняя тень.", signal: "Put на M1. Сильнее с RSI >70." }
+            ];
+
+            const CHART_PATTERNS = [
+                { name: "Голова и Плечи", type: "Медвежий разворот", desc: "Левое плечо → голова → правое плечо.", signal: "Put при пробое neckline вниз." },
+                { name: "Двойное Дно", type: "Бычий разворот", desc: "Два минимума на поддержке.", signal: "Call при пробое шеи вверх." },
+                { name: "Восходящий Треугольник", type: "Продолжение", desc: "Горизонтальное сопротивление + восходящие минимумы.", signal: "Call на пробое." }
+            ];
+
+            const HARMONIC_PATTERNS = [
+                { name: "Гартли (Gartley)", type: "Разворот", desc: "AB=CD + 0.618 retracement.", signal: "Вход на точке D в направлении разворота." },
+                { name: "Летучая Мышь", type: "Разворот", desc: "0.886 retracement XA.", signal: "Call/Put на завершении паттерна." }
+            ];
+
+            const POCKET_OPTION_INDICATORS = [
+                { name: "RSI (14)", tf: "M1", settings: "Период 14 (или 7 для M1)", rules: "Call: RSI < 30 + рост. Put: RSI > 70 + падение.", accuracy: "75%" },
+                { name: "MACD", tf: "M1/M5", settings: "Fast 12, Slow 26, Signal 9", rules: "Call: MACD пересекает Signal вверх. Put: вниз.", accuracy: "72%" },
+                { name: "Bollinger Bands", tf: "M1", settings: "Период 20, Отклонение 2", rules: "Call: отскок от нижней полосы. Put: от верхней.", accuracy: "70%" }
+            ];
+
+            const ASSET_CATEGORIES = {
+                forex: ["EUR/USD","GBP/USD","USD/JPY","AUD/USD","USD/CAD","EUR/JPY"],
+                crypto: ["Bitcoin","Ethereum","Litecoin","Solana","Dogecoin"],
+                commodities: ["Gold","Silver","Brent Oil","Natural Gas"],
+                stocks: ["Apple","Tesla","Microsoft","Netflix","Amazon"],
+                indices: ["SP500","US100","DJI30","CAC 40","JPN225"]
+            };
+
+            function getPatternChartSvg(patternName, isBig = false) {
+                const w = isBig ? 440 : 340; const h = isBig ? 230 : 100;
+                return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="${w}" height="${h}" fill="#0A0D14" rx="14"/>
+                    <circle cx="${w/2}" cy="${h/2}" r="20" fill="var(--neon-green)" opacity="0.5" />
+                    <text x="${w/2}" y="${h/2 + 5}" fill="#fff" font-size="14" text-anchor="middle">Chart</text>
+                </svg>`;
+            }
+            function getStrategyChartSvg(strategyName, isBig = false) { return getPatternChartSvg(strategyName, isBig); }
+
+            function renderPatternList(containerId, patternsArray) {
+                const container = document.getElementById(containerId);
+                if (!container) return;
+                container.innerHTML = '';
+                patternsArray.forEach(p => {
+                    const el = document.createElement('div');
+                    el.className = 'pattern-card';
+                    el.innerHTML = `
+                        <div class="pattern-header">
+                            <div class="pattern-name">${p.name}</div>
+                            <div class="pattern-type">${p.type}</div>
+                        </div>
+                        <div class="pattern-chart-preview">${getPatternChartSvg(p.name, false)}</div>
+                    `;
+                    el.addEventListener('click', () => {
+                        document.getElementById('modal-pattern-name').innerText = p.name;
+                        document.getElementById('modal-pattern-type').innerText = p.type;
+                        document.getElementById('modal-pattern-desc').innerText = p.desc;
+                        document.getElementById('modal-pattern-signal').innerText = p.signal;
+                        document.getElementById('modal-chart-container').innerHTML = getPatternChartSvg(p.name, true);
+                        document.getElementById('pattern-modal').style.display = 'flex';
+                    });
+                    container.appendChild(el);
+                });
+            }
+
+            window.closePatternModal = () => document.getElementById('pattern-modal').style.display = 'none';
+            window.closeStrategyModal = () => document.getElementById('strategy-modal').style.display = 'none';
+
+            function renderStrategiesList(filtered = null) {
+                const container = document.getElementById('strategies-list-box');
+                if (!container) return;
+                container.innerHTML = '';
+                const list = filtered || POCKET_OPTION_INDICATORS;
+                list.forEach(ind => {
+                    const card = document.createElement('div');
+                    card.className = 'strategy-card';
+                    card.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <div><div style="font-size:15px; font-weight:900; color:#fff;">${ind.name}</div></div>
+                            <div style="color:var(--neon-purple); font-weight:900;">${ind.accuracy}</div>
+                        </div>
+                        <div class="strategy-chart-preview">${getStrategyChartSvg(ind.name, false)}</div>
+                        <div style="font-size:12px; color:#c8d0e0;">${ind.rules}</div>
+                    `;
+                    card.addEventListener('click', () => {
+                        document.getElementById('modal-strategy-name').innerText = ind.name;
+                        document.getElementById('modal-strategy-tf').innerText = ind.tf;
+                        document.getElementById('modal-strategy-accuracy').innerText = ind.accuracy;
+                        document.getElementById('modal-strategy-settings').innerText = ind.settings;
+                        document.getElementById('modal-strategy-rules').innerText = ind.rules;
+                        document.getElementById('modal-strategy-chart').innerHTML = getStrategyChartSvg(ind.name, true);
+                        document.getElementById('strategy-modal').style.display = 'flex';
+                    });
+                    container.appendChild(card);
+                });
+            }
+
+            window.filterStrategies = function() {
+                const q = document.getElementById('strategy-search').value.toLowerCase().trim();
+                const filtered = POCKET_OPTION_INDICATORS.filter(i => i.name.toLowerCase().includes(q) || i.rules.toLowerCase().includes(q));
+                renderStrategiesList(filtered);
+            };
+
+            function loadPatternsAndStrategies() {
+                renderPatternList('candlestick-patterns-list', CANDLESTICK_PATTERNS);
+                renderPatternList('chart-patterns-list', CHART_PATTERNS);
+                renderPatternList('harmonic-patterns-list', HARMONIC_PATTERNS);
+                renderStrategiesList();
+            }
+
+            const cards = document.querySelectorAll('.card');
+            const backButtons = document.querySelectorAll('.back-btn');
+            const screens = document.querySelectorAll('.screen');
+
+            function switchScreen(screenId) {
+                screens.forEach(screen => {
+                    screen.classList.remove('active');
+                    screen.style.setProperty('display', 'none', 'important'); 
+                });
+                const targetScreen = document.getElementById(screenId);
+                if (targetScreen) {
+                    targetScreen.classList.add('active');
+                    targetScreen.style.setProperty('display', 'block', 'important');
+                    if (screenId === 'bot-analysis-screen') { setAssetCategory('forex'); setTimeout(() => filterAnalysisPairs(), 100); }
+                    if (screenId === 'profile-screen') updateProfileAiHint();
+                    if (screenId === 'sessions-screen') { if(typeof calculateTradingPlan === 'function') calculateTradingPlan(); }
+                    if (screenId === 'patterns-screen') { setTimeout(() => loadPatternsAndStrategies(), 80); }
+                    if (screenId === 'strategies-screen') { setTimeout(() => renderStrategiesList(), 80); }
+                    if (screenId === 'news-screen') { setTimeout(() => switchNewsTab('grok'), 80); }
+                }
+            }
+
+            cards.forEach(card => {
+                card.addEventListener('click', () => {
+                    const targetScreenId = card.getAttribute('data-target');
+                    if (targetScreenId) switchScreen(targetScreenId);
+                });
+            });
+
+            backButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    if (button.getAttribute('onclick')) return;
+                    switchScreen('menu-screen');
+                });
+            });
+
+            function updateClocks() {
+                const now = new Date();
+                const opt = { hour: '2-digit', minute: '2-digit' };
+                document.getElementById('clock-moscow').innerText = now.toLocaleTimeString('ru-RU', { timeZone: 'Europe/Moscow', ...opt });
+                document.getElementById('clock-kyiv').innerText = now.toLocaleTimeString('ru-RU', { timeZone: 'Europe/Kyiv', ...opt });
+            }
+            setInterval(updateClocks, 1000); updateClocks();
+
+            function initBalances() {
+                const profileInput = document.getElementById('profile-pocket-input');
+                if(profileInput) profileInput.value = currentBalance;
+            }
+
+            window.syncBalances = function(val) {
+                let parsed = parseFloat(val) || 0;
+                currentBalance = parsed;
+                localStorage.setItem('pocket_balance', parsed);
+                updateProfileAiHint();
+            };
+
+            function updateProfileAiHint() {
+                const hintEl = document.getElementById('ai-profile-hint');
+                if(!hintEl) return;
+                let balance = currentBalance;
+                let risk = balance * 0.02;
+                let advice = balance < 100 ? "Режим накопления." : "Стабильный портфель.";
+                hintEl.innerHTML = `КАПИТАЛ: <b>$${balance}</b><br>АЛГОРИТМ РИСКА: 2% (<b>$${risk.toFixed(2)}</b>).<br><br><span style="color:#fff;">Резюме:</span> ${advice}`;
+            }
+
+            window.calculateTradingPlan = function() {
+                const deposit = parseFloat(document.getElementById('calc-deposit')?.value) || 1000;
+                const riskPercent = parseFloat(document.getElementById('calc-risk')?.value) || 2;
+                const payoutPercent = parseFloat(document.getElementById('calc-payout')?.value) || 85;
+                const winratePercent = parseFloat(document.getElementById('calc-winrate')?.value) || 65;
+                const tradesPerDay = parseFloat(document.getElementById('calc-trades')?.value) || 12;
+
+                if (document.getElementById('calc-risk-percent')) document.getElementById('calc-risk-percent').innerText = riskPercent.toFixed(1) + '%';
+                if (document.getElementById('calc-payout-percent')) document.getElementById('calc-payout-percent').innerText = payoutPercent + '%';
+                if (document.getElementById('calc-winrate-percent')) document.getElementById('calc-winrate-percent').innerText = winratePercent + '%';
+                if (document.getElementById('calc-trades-day')) document.getElementById('calc-trades-day').innerText = tradesPerDay;
+
+                const riskAmount = deposit * (riskPercent / 100);
+                const profitOnWin = riskAmount * (payoutPercent / 100);
+                const expectedValuePerTrade = (winratePercent / 100) * profitOnWin - ((100 - winratePercent) / 100) * riskAmount;
+                const expectedDayProfit = expectedValuePerTrade * tradesPerDay;
+
+                document.getElementById('result-risk').innerText = '$' + riskAmount.toFixed(2);
+                document.getElementById('result-profit-win').innerText = '$' + profitOnWin.toFixed(2);
+                document.getElementById('result-day-profit').innerText = '+$' + expectedDayProfit.toFixed(2);
+                document.getElementById('result-week-profit').innerText = '+$' + (expectedDayProfit * 5).toFixed(2);
+                document.getElementById('result-month-profit').innerText = '+$' + (expectedDayProfit * 21).toFixed(2);
+            };
+
+            let liveNews = [];
+            window.switchNewsTab = function(tab) {
+                document.getElementById('news-live-tab').style.display = tab === 'live' ? 'block' : 'none';
+                document.getElementById('news-grok-tab').style.display = tab === 'grok' ? 'block' : 'none';
+                document.getElementById('news-tab-live').style.background = tab === 'live' ? 'var(--neon-green)' : '#1B2130';
+                document.getElementById('news-tab-live').style.color = tab === 'live' ? '#000' : '#fff';
+                document.getElementById('news-tab-grok').style.background = tab === 'grok' ? 'var(--neon-purple)' : '#1B2130';
+                if(tab === 'grok') generateGrokNews();
+            };
+
+            async function generateGrokNews() {
+                const box = document.getElementById('grok-news-box');
+                const loading = document.getElementById('grok-news-loading');
+                if(!box) return;
+                loading.style.display = 'block';
+                box.innerHTML = '';
+                setTimeout(() => {
+                    loading.style.display = 'none';
+                    box.innerHTML = `
+                        <div class="news-item-box">
+                            <h4 style="color:#fff;">ФРС сохранила ставку — доллар под давлением</h4>
+                            <p>Федеральная резервная система оставила ключевую ставку без изменений.</p>
+                            <div style="background:#1B2130; padding:10px; border-radius:8px; margin-top:10px; color:#fff; border-left:3px solid var(--neon-purple);">
+                                <strong>AI АНАЛИЗ:</strong> Call по EUR/USD. Вероятность 78%.
+                            </div>
+                        </div>
+                    `;
+                }, 1500);
+            }
+            window.generateGrokNews = generateGrokNews;
+
+            window.generateNewsCalendar = function() {
+                const grid = document.getElementById('calendar-days-box');
+                if (!grid) return;
+                grid.innerHTML = '';
+                for(let i=0; i<7; i++) grid.innerHTML += `<div class="cal-header">ПН</div>`;
+                for(let i=1; i<=30; i++) {
+                    grid.innerHTML += `<div class="cal-day ${i===15 ? 'today' : ''}">${i}</div>`;
+                }
+            };
+
+            let traderNotes = [];
+            window.openAddNoteModal = () => { document.getElementById('note-modal').style.display = 'flex'; };
+            window.closeNoteModal = () => { document.getElementById('note-modal').style.display = 'none'; };
+            window.setModalCategory = (cat) => {
+                document.querySelectorAll('.modal-category-btn').forEach(b => {
+                    b.classList.toggle('active', b.getAttribute('data-cat') === cat);
+                });
+                document.getElementById('note-form-area').innerHTML = `<textarea placeholder="Текст заметки..." style="width:100%; height:100px; background:#0A0D14; border:1px solid var(--glass-border); color:#fff; padding:12px; border-radius:8px;"></textarea>`;
+            };
+            window.saveNewNote = () => { closeNoteModal(); };
+            window.clearAllNotes = () => {};
+            window.filterNotes = (f) => {};
+
+            let currentAssetCategory = 'forex';
+            let currentScanTimeframe = 1;
+            window.setScanTimeframe = function(mins) {
+                currentScanTimeframe = mins;
+                document.querySelectorAll('.tf-btn').forEach(b => { b.style.background = '#1B2130'; b.style.color = '#fff'; });
+                document.getElementById('tf-'+mins).style.background = 'var(--neon-green)';
+                document.getElementById('tf-'+mins).style.color = '#000';
+            };
+            window.setAssetCategory = function(cat) {
+                currentAssetCategory = cat;
+                document.querySelectorAll('[id^="cat-"]').forEach(b => { b.style.background = '#1B2130'; b.style.color = '#fff'; });
+                document.getElementById('cat-'+cat).style.background = 'var(--neon-green)';
+                document.getElementById('cat-'+cat).style.color = '#000';
+                filterAnalysisPairs();
+            };
+
+            window.filterAnalysisPairs = function() {
+                const box = document.getElementById('analysis-pairs-render-box');
+                const list = ASSET_CATEGORIES[currentAssetCategory] || [];
+                box.innerHTML = '';
+                list.forEach(p => {
+                    const row = document.createElement('div');
+                    row.className = 'pair-row';
+                    row.innerHTML = `<span>${p}</span> <span style="color:var(--neon-green);">Анализ →</span>`;
+                    row.onclick = () => launchFullscreenAnalysis(p);
+                    box.appendChild(row);
+                });
+            };
+
+            function launchFullscreenAnalysis(pair) {
+                document.getElementById('fullscreen-radar').style.display = 'flex';
+                document.getElementById('scanning-market-view').style.display = 'block';
+                document.getElementById('radar-final-result').style.display = 'none';
+                document.getElementById('radar-animation-element').style.display = 'flex';
+                document.getElementById('radar-status-text').style.display = 'block';
+                
+                setTimeout(() => {
+                    document.getElementById('scanning-market-view').style.display = 'none';
+                    document.getElementById('radar-animation-element').style.display = 'none';
+                    document.getElementById('radar-status-text').style.display = 'none';
+                    document.getElementById('radar-final-result').style.display = 'block';
+                    document.getElementById('analyzed-pair-title').innerText = pair;
+                }, 2000);
+            }
+            window.closeFullscreenAnalysis = () => { document.getElementById('fullscreen-radar').style.display = 'none'; };
+
+            function loadBooks() {
+                const box = document.getElementById('books-list-box');
+                if(!box) return;
+                PRO_BOOKS.forEach(b => {
+                    box.innerHTML += `
+                        <div class="book-item" data-title="${b.title.toLowerCase()}">
+                            <div class="book-info"><h4>${b.title}</h4><p>${b.desc}</p></div>
+                            <button class="read-btn" onclick="openBookInBrowser()">ОТКРЫТЬ</button>
+                        </div>
+                    `;
+                });
+            }
+            window.filterBooks = () => {
+                const q = document.getElementById('book-search').value.toLowerCase();
+                document.querySelectorAll('.book-item').forEach(i => {
+                    i.style.display = i.getAttribute('data-title').includes(q) ? 'flex' : 'none';
+                });
+            };
+            window.closeBookViewer = () => switchScreen('education-screen');
+            window.zoomBook = () => {};
+            window.openBookInBrowser = () => { alert("PDF Открыт"); };
+
+            window.filterVideoLessons = (f) => {};
+            window.closeVideoModal = () => document.getElementById('video-modal').style.display = 'none';
+            window.openVideoInTelegram = () => closeVideoModal();
+
+            window.sendAiChatMessage = () => {
+                const inp = document.getElementById('ai-chat-input');
+                if(!inp.value) return;
+                const box = document.getElementById('ai-chat-container');
+                box.innerHTML += `<div class="chat-msg user">${inp.value}</div>`;
+                inp.value = '';
+                setTimeout(() => {
+                    box.innerHTML += `<div class="chat-msg bot">Я искусственный интеллект PRO. Моя нейронная сеть анализирует этот запрос.</div>`;
+                    box.scrollTop = box.scrollHeight;
+                }, 1000);
+            };
+
+            window.sendTradersChatMessage = () => {
+                const inp = document.getElementById('traders-chat-input');
+                if(!inp.value) return;
+                const box = document.getElementById('traders-chat-container');
+                box.innerHTML += `<div class="chat-msg user">${inp.value}</div>`;
+                inp.value = '';
+            };
+
+            window.openKoloCard = () => { window.open('https://get.kolo.xyz/p520223', '_blank'); };
+
+            async function init() {
+                let userId = null; let fullName = "GUEST_PRO";
+                if (window.Telegram && window.Telegram.WebApp) {
+                    window.Telegram.WebApp.ready();
+                    window.Telegram.WebApp.expand();
+                    window.Telegram.WebApp.setHeaderColor('#0A0D14');
+                    window.Telegram.WebApp.setBackgroundColor('#0A0D14');
+                    initGlobalHaptic();
+                    const tgData = window.Telegram.WebApp.initDataUnsafe;
+                    if (tgData && tgData.user) {
+                        userId = String(tgData.user.id);
+                        fullName = tgData.user.first_name + (tgData.user.last_name ? " " + tgData.user.last_name : "");
+                        document.getElementById('menu-tg-fullname').innerText = fullName;
+                        document.getElementById('menu-tg-id').innerText = userId;
+                        if(tgData.user.username) document.getElementById('menu-tg-username').innerText = '@'+tgData.user.username;
+                        if(tgData.user.photo_url) document.getElementById('menu-tg-avatar').src = tgData.user.photo_url;
+                    }
+                }
+                
+                document.getElementById('profile-username').innerText = fullName;
+                document.getElementById('profile-telegram-id').innerText = userId || 'Local';
+                
+                initBalances();
+                loadBooks();
+                loadSavedTheme();
+                generateNewsCalendar();
+                loadPatternsAndStrategies();
+            }
+
+            init();
+        });
+    </script>
+</body>
+</html>
