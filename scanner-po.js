@@ -145,6 +145,34 @@
     return window.VipMarket.minuteCall(fib, rows, ticks);
   }
 
+  function presentSignal(pair, tf, analysis) {
+    var ms = Math.max(1, Number(tf) || 1) * 60000;
+    var bucket = Math.floor(Date.now() / ms);
+    var key = String(pair || '') + ':' + String(tf || 1) + ':' + bucket;
+    if (!presentSignal.hold || presentSignal.hold.key !== key || (presentSignal.hold.analysis.wait && !analysis.wait)) {
+      presentSignal.hold = { key: key, analysis: analysis };
+    }
+    var fixed = presentSignal.hold.analysis;
+    return {
+      isUp: fixed.isUp,
+      wait: fixed.wait,
+      entry: fixed.entry,
+      last: analysis.last,
+      sma9: fixed.sma9,
+      sma20: fixed.sma20,
+      rsi: fixed.rsi,
+      vol: fixed.vol,
+      levels: fixed.levels,
+      accuracy: fixed.accuracy,
+      score: fixed.score,
+      pattern: fixed.pattern,
+      fib: fixed.fib,
+      pointsText: fixed.pointsText,
+      reasons: fixed.reasons,
+      closes: fixed.closes
+    };
+  }
+
   function analyzeMarket(candles, ticks) {
     var series = sanitizeCandles(candles).slice(-160);
     if (!series.length) {
@@ -713,8 +741,9 @@
       try {
         var pack = await fetchPocketCandles(pairName, tf);
         var fromPocket = isPocketHistory(pack.candles, pack.source);
-        var analysis = analyzeMarket(pack.candles, pack.ticks);
-        if (!fromPocket) analysis.wait = true;
+        var raw = analyzeMarket(pack.candles, pack.ticks);
+        if (!fromPocket) raw.wait = true;
+        var analysis = presentSignal(pairName, tf, raw);
         drawPocketChart(pack.candles, analysis);
         setTimeout(function () {
           setScanOverlay(false);
@@ -732,8 +761,9 @@
           try {
             var fresh = await fetchPocketCandles(pairName, tf);
             var liveOk = isPocketHistory(fresh.candles, fresh.source);
-            var live = analyzeMarket(fresh.candles, fresh.ticks);
-            if (!liveOk) live.wait = true;
+            var rawLive = analyzeMarket(fresh.candles, fresh.ticks);
+            if (!liveOk) rawLive.wait = true;
+            var live = presentSignal(pairName, tf, rawLive);
             drawPocketChart(fresh.candles, live);
             paintVerdict(pairName, tfLabel, live);
             if (statusText) statusText.textContent = liveOk ? ('POCKET OPTION • ' + tfLabel) : 'НЕТ СЕССИИ POCKET OPTION';
