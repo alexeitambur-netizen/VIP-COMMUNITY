@@ -833,6 +833,108 @@
     };
   }
 
+  function aggregateCandles(rows, bucketMs) {
+    var out = [];
+    var cur = null;
+    (rows || []).forEach(function (c) {
+      var stamp = Number(c.t);
+      if (!isFinite(stamp) || !(c.close > 0)) return;
+      var bucket = Math.floor(stamp / bucketMs) * bucketMs;
+      if (!cur || cur.t !== bucket) {
+        if (cur) out.push(cur);
+        cur = { t: bucket, open: c.open, high: c.high, low: c.low, close: c.close };
+      } else {
+        cur.high = Math.max(cur.high, c.high);
+        cur.low = Math.min(cur.low, c.low);
+        cur.close = c.close;
+      }
+    });
+    if (cur) out.push(cur);
+    return out;
+  }
+
+  function legSide(rows) {
+    var slice = (rows || []).slice(-8);
+    if (slice.length < 4) return null;
+    var up = 0;
+    var down = 0;
+    for (var i = 1; i < slice.length; i++) {
+      if (slice[i].close > slice[i - 1].close) up += 1;
+      else if (slice[i].close < slice[i - 1].close) down += 1;
+    }
+    var net = slice[slice.length - 1].close - slice[0].close;
+    if (up >= down + 2 && net > 0) return 'UP';
+    if (down >= up + 2 && net < 0) return 'DOWN';
+    return null;
+  }
+
+  function bounceFrom(rows) {
+    var slice = (rows || []).slice(-20);
+    if (slice.length < 8) return null;
+    var hi = 0;
+    var lo = 0;
+    for (var i = 1; i < slice.length; i++) {
+      if (slice[i].high >= slice[hi].high) hi = i;
+      if (slice[i].low <= slice[lo].low) lo = i;
+    }
+    var last = slice[slice.length - 1];
+    var prev = slice[slice.length - 2];
+    var high = slice[hi].high;
+    var low = slice[lo].low;
+    var span = high - low;
+    if (!(span > 0)) return null;
+    var pos = (last.close - low) / span;
+    if (lo > hi && pos <= 0.35 && last.close >= prev.close) return { from: 'low', price: low, side: 'UP' };
+    if (hi > lo && pos >= 0.65 && last.close <= prev.close) return { from: 'high', price: high, side: 'DOWN' };
+    return { from: pos < 0.5 ? 'low' : 'high', price: pos < 0.5 ? low : high, side: null };
+  }
+
+  var STACK = [
+    { id: '5с', weight: 2 },
+    { id: '15с', weight: 2 },
+    { id: '30с', weight: 2 },
+    { id: '1м', weight: 3 },
+    { id: '5м', weight: 2 },
+    { id: '10м', weight: 1 },
+    { id: '15м', weight: 1 }
+  ];
+
+  function timeframeStack(frames) {
+    frames = frames || {};
+    var votes = [];
+    var up = 0;
+    var down = 0;
+    var shortUp = 0;
+    var shortDown = 0;
+    STACK.forEach(function (tf) {
+      var side = legSide(frames[tf.id]);
+      votes.push({ id: tf.id, side: side });
+      if (side === 'UP') up += tf.weight;
+      else if (side === 'DOWN') down += tf.weight;
+      if (tf.weight >= 2 && tf.id !== '5м') {
+        if (side === 'UP') shortUp += 1;
+        else if (side === 'DOWN') shortDown += 1;
+      }
+    });
+    var bounce = bounceFrom(frames['1м'] || frames['5м'] || []);
+    var shortSide = null;
+    if (shortUp >= 3 && shortDown === 0) shortSide = 'UP';
+    else if (shortDown >= 3 && shortUp === 0) shortSide = 'DOWN';
+    var side = shortSide;
+    if (!side && up >= down + 3) side = 'UP';
+    else if (!side && down >= up + 3) side = 'DOWN';
+    else if (!side && bounce && bounce.side) side = bounce.side;
+    var parts = votes.map(function (vote) {
+      return vote.id + ' ' + (vote.side === 'UP' ? 'вверх' : (vote.side === 'DOWN' ? 'вниз' : '—'));
+    });
+    var line = parts.join(', ') + '.';
+    if (bounce && bounce.price) {
+      line += ' Отталкивается от ' + (bounce.from === 'low' ? 'низа ' : 'верха ') + fmt(bounce.price) + '.';
+    }
+    if (side) line += ' Ближайшая минута ' + (side === 'UP' ? 'вверх.' : 'вниз.');
+    return { votes: votes, up: up, down: down, side: side, shortSide: shortSide, bounce: bounce, line: line };
+  }
+
   function gradeSignal(row, candles) {
     if (!row || row.result || !candles || !candles.length) return row;
     var bar = null;
@@ -860,6 +962,8 @@
     sideUp: sideUp,
     scoreBoard: scoreBoard,
     scoreSide: scoreSide,
-    gradeSignal: gradeSignal
+    gradeSignal: gradeSignal,
+    aggregateCandles: aggregateCandles,
+    timeframeStack: timeframeStack
   };
 });

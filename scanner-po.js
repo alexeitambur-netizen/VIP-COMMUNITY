@@ -182,7 +182,7 @@
     };
   }
 
-  function analyzeMarket(candles, ticks, higher) {
+  function analyzeMarket(candles, ticks, higher, frames) {
     var series = sanitizeCandles(candles).slice(-400);
     if (!series.length) {
       return { wait: true, isUp: false, last: 0, entry: 0, accuracy: 50, rsi: 50, sma9: 0, sma20: 0, vol: 0, reasons: ['Нет котировок'], levels: { support: 0, resistance: 0 }, pattern: { name: '', bias: 0 } };
@@ -209,6 +209,15 @@
     var fib = fibRetracement(settledBars(series.slice(-160)));
     var higherRows = higher ? settledBars(sanitizeCandles(higher).slice(-400)) : null;
     var board = window.VipMarket && window.VipMarket.scoreBoard ? window.VipMarket.scoreBoard(settled, higherRows, series) : null;
+    var stack = window.VipMarket && window.VipMarket.timeframeStack && frames ? window.VipMarket.timeframeStack(frames) : null;
+    if (board && stack && stack.side) {
+      board.isUp = stack.side === 'UP';
+      board.wait = false;
+      board.reclaimSide = stack.side;
+      board.reasons = [stack.line].concat(board.reasons || []);
+    } else if (board && stack && stack.line) {
+      board.reasons = [stack.line].concat(board.reasons || []);
+    }
     var fibCall = board ? null : minuteCall(fib, settled.slice(-160), ticks);
     var wait = board ? board.wait : false;
     var drift = lastClosed.close - (use.length > 3 ? use[use.length - 4].close : lastClosed.open);
@@ -510,8 +519,8 @@
     return poLink.ok;
   }
 
-  async function fetchPocketCandles(pairName, tf) {
-    var period = Math.max(60, Number(tf || 1) * 60);
+  async function fetchPocketCandles(pairName, tf, periodSeconds) {
+    var period = periodSeconds || Math.max(60, Number(tf || 1) * 60);
     var pocketLive = await pocketConnected();
     var res = await fetch(apiBase() + '/api/candles?pair=' + encodeURIComponent(pairName) + '&period=' + period, { cache: 'no-store' });
     if (!res.ok) throw new Error('candles ' + res.status);
@@ -536,25 +545,49 @@
     };
   }
 
+  async function cachedCandles(pairName, seconds, ttl) {
+    if (!cachedCandles.box) cachedCandles.box = {};
+    var key = String(pairName || '') + ':' + seconds;
+    var hit = cachedCandles.box[key];
+    if (hit && Date.now() - hit.at < ttl && hit.candles) return hit.candles;
+    try {
+      var pack = await fetchPocketCandles(pairName, 1, seconds);
+      cachedCandles.box[key] = { at: Date.now(), candles: pack.candles };
+      return pack.candles;
+    } catch (e) {
+      return hit ? hit.candles : null;
+    }
+  }
+
+  function buildFrames(s5, m1, m15) {
+    var agg = window.VipMarket && window.VipMarket.aggregateCandles;
+    var frames = {};
+    if (!agg) return frames;
+    if (s5 && s5.length) {
+      frames['5с'] = s5;
+      frames['15с'] = agg(s5, 15000);
+      frames['30с'] = agg(s5, 30000);
+    }
+    if (m1 && m1.length) {
+      frames['1м'] = m1;
+      frames['5м'] = agg(m1, 300000);
+      frames['10м'] = agg(m1, 600000);
+      if (!m15) frames['15м'] = agg(m1, 900000);
+    }
+    if (m15 && m15.length) frames['15м'] = m15;
+    return frames;
+  }
+
   async function loadScan(pairName, tf) {
     var pack = await fetchPocketCandles(pairName, tf);
-    var m5 = null;
+    var s5 = null;
+    var m15 = null;
     if (Number(tf) === 1) {
-      var bucket = Math.floor(Date.now() / 60000);
-      var key = String(pairName || '') + ':' + bucket;
-      if (!loadScan.cache) loadScan.cache = {};
-      if (loadScan.cache.key === key && loadScan.cache.candles) m5 = loadScan.cache.candles;
-      else {
-        try {
-          var slow = await fetchPocketCandles(pairName, 5);
-          m5 = slow.candles;
-          loadScan.cache = { key: key, candles: m5 };
-        } catch (e) {
-          m5 = loadScan.cache.candles || null;
-        }
-      }
+      s5 = await cachedCandles(pairName, 5, 15000);
+      m15 = await cachedCandles(pairName, 900, 180000);
     }
-    return { pack: pack, m5: m5 };
+    var frames = buildFrames(s5, pack.candles, m15);
+    return { pack: pack, m5: frames['5м'] || null, frames: frames };
   }
 
   function unlockScanScroll(overlay) {
@@ -848,7 +881,7 @@
         var loaded = await loadScan(pairName, tf);
         var pack = loaded.pack;
         var fromPocket = isPocketHistory(pack.candles, pack.source);
-        var raw = analyzeMarket(pack.candles, pack.ticks, loaded.m5);
+        var raw = analyzeMarket(pack.candles, pack.ticks, loaded.m5, loaded.frames);
         if (!fromPocket) raw.wait = true;
         var analysis = presentSignal(pairName, tf, raw);
         if (fromPocket) {
@@ -873,7 +906,7 @@
             var freshLoad = await loadScan(pairName, tf);
             var fresh = freshLoad.pack;
             var liveOk = isPocketHistory(fresh.candles, fresh.source);
-            var rawLive = analyzeMarket(fresh.candles, fresh.ticks, freshLoad.m5);
+            var rawLive = analyzeMarket(fresh.candles, fresh.ticks, freshLoad.m5, freshLoad.frames);
             if (!liveOk) rawLive.wait = true;
             var live = presentSignal(pairName, tf, rawLive);
             if (liveOk) {

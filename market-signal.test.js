@@ -272,6 +272,50 @@ graded.expiryAt = Date.now() - 1000;
 market.gradeSignal(graded, [{ t: 60000, open: 1.1, high: 1.2, low: 1.1, close: 1.15 }]);
 assert.strictEqual(graded.result, 'WIN');
 
+function stamped(start, step, count, every) {
+  var rows = [];
+  var price = start;
+  for (var i = 0; i < count; i++) {
+    var open = price;
+    price = Number((price + step).toFixed(5));
+    rows.push({
+      t: i * every,
+      open: open,
+      high: Math.max(open, price) + Math.abs(step) * 0.2,
+      low: Math.min(open, price) - Math.abs(step) * 0.1,
+      close: price
+    });
+  }
+  return rows;
+}
+var s5 = stamped(1.1, 0.0001, 40, 5000);
+var s15 = market.aggregateCandles(s5, 15000);
+assert.ok(s15.length >= 10 && s15.length < s5.length, '15s bars should be grouped from 5s');
+assert.strictEqual(s15[0].open, s5[0].open);
+assert.strictEqual(s15[s15.length - 1].close, s5[s5.length - 1].close);
+
+var rising = {
+  '5с': stamped(1.1, 0.0001, 20, 5000),
+  '15с': stamped(1.1, 0.0002, 20, 15000),
+  '30с': stamped(1.1, 0.0003, 20, 30000),
+  '1м': stamped(1.1, 0.0004, 20, 60000),
+  '15м': stamped(1.2, -0.001, 20, 900000)
+};
+var stackUp = market.timeframeStack(rising);
+assert.strictEqual(stackUp.side, 'UP', stackUp.line);
+
+var falling = {
+  '5с': stamped(1.3, -0.0001, 20, 5000),
+  '15с': stamped(1.3, -0.0002, 20, 15000),
+  '30с': stamped(1.3, -0.0003, 20, 30000),
+  '1м': stamped(1.3, -0.0004, 20, 60000),
+  '5м': stamped(1.3, -0.001, 20, 300000),
+  '15м': stamped(1.3, -0.002, 20, 900000)
+};
+var stackDown = market.timeframeStack(falling);
+assert.strictEqual(stackDown.side, 'DOWN', stackDown.line);
+assert.ok(stackDown.line.indexOf('Ближайшая минута вниз') >= 0, stackDown.line);
+
 console.log('score up', upBoard.up, upBoard.down, upBoard.reason.split('.').slice(0, 2).join('.'));
 console.log('score down', downBoard.up, downBoard.down);
 console.log('score flat', flatBoard.reason);
