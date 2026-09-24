@@ -440,25 +440,50 @@
   }
 
   function candleMomentum(rows) {
-    var slice = (rows || []).slice(-3);
-    if (slice.length < 3) return { up: 0, down: 0, note: 'мало свечей' };
-    var net = 0;
-    var upBodies = 0;
-    var downBodies = 0;
-    var body = 0;
-    var range = 0;
-    slice.forEach(function (c) {
-      var step = c.close - c.open;
-      net += step;
-      body += Math.abs(step);
-      range += Math.max(c.high - c.low, Math.abs(step));
-      if (step > 0) upBodies += 1;
-      else if (step < 0) downBodies += 1;
+    var slice = (rows || []).slice(-6);
+    if (slice.length < 4) return { up: 0, down: 0, note: 'мало свечей' };
+    var up = 0;
+    var down = 0;
+    for (var i = 1; i < slice.length; i++) {
+      if (slice[i].close > slice[i - 1].close) up += 1;
+      else if (slice[i].close < slice[i - 1].close) down += 1;
+    }
+    var net = slice[slice.length - 1].close - slice[0].close;
+    if (down >= 3 && down > up && net < 0) return { up: 0, down: 1, note: 'последние закрытия ниже' };
+    if (up >= 3 && up > down && net > 0) return { up: 1, down: 0, note: 'последние закрытия выше' };
+    return { up: 0, down: 0, note: 'закрытия без перевеса' };
+  }
+
+  function recentTape(rows) {
+    var slice = (rows || []).slice(-8);
+    if (slice.length < 6) return { side: null, note: '' };
+    var up = 0;
+    var down = 0;
+    var bar = 0;
+    for (var i = 0; i < slice.length; i++) bar = Math.max(bar, slice[i].high - slice[i].low);
+    for (var j = 1; j < slice.length; j++) {
+      if (slice[j].close > slice[j - 1].close) up += 1;
+      else if (slice[j].close < slice[j - 1].close) down += 1;
+    }
+    var net = slice[slice.length - 1].close - slice[0].close;
+    var minMove = Math.max(bar * 1.2, Math.abs(slice[slice.length - 1].close) * 0.00008);
+    if (down >= 4 && down > up + 1 && net < -minMove) {
+      return { side: 'DOWN', note: 'Последние минуты закрываются вниз: ' + down + ' из ' + (slice.length - 1) + '.' };
+    }
+    if (up >= 4 && up > down + 1 && net > minMove) {
+      return { side: 'UP', note: 'Последние минуты закрываются вверх: ' + up + ' из ' + (slice.length - 1) + '.' };
+    }
+    return { side: null, note: '' };
+  }
+
+  function sumFactors(factors) {
+    var up = 0;
+    var down = 0;
+    (factors || []).forEach(function (factor) {
+      up += factor.up || 0;
+      down += factor.down || 0;
     });
-    var solid = range > 0 && body / range >= 0.35;
-    if (solid && upBodies >= 2 && net > 0) return { up: 1, down: 0, note: 'тела последних свечей вверх' };
-    if (solid && downBodies >= 2 && net < 0) return { up: 0, down: 1, note: 'тела последних свечей вниз' };
-    return { up: 0, down: 0, note: 'тела свечей без перевеса' };
+    return { up: up, down: down };
   }
 
   function roundNum(value, digits) {
@@ -630,13 +655,40 @@
     }
     var slowSide = slow ? (slow.up === slow.down ? 'FLAT' : (slow.up > slow.down ? 'UP' : 'DOWN')) : null;
     var mainSide = main.up === main.down ? 'FLAT' : (main.up > main.down ? 'UP' : 'DOWN');
-    if (slow && !slow.veto && slowSide && slowSide !== 'FLAT' && mainSide !== 'FLAT' && slowSide !== mainSide && Math.max(slow.up, slow.down) >= 5) {
+    var tape = recentTape(m1);
+    var reversal = tape.side && tape.side !== mainSide;
+    if (reversal) {
+      var late = { EMA: 1, RSI: 1, MACD: 1, ADX: 1, Bollinger: 1 };
+      main.factors.forEach(function (factor) {
+        if (!late[factor.name]) return;
+        if (tape.side === 'DOWN' && factor.up) {
+          factor.up = 0;
+          factor.note += ' Это ещё прошлый рост, следующую минуту не решает.';
+        }
+        if (tape.side === 'UP' && factor.down) {
+          factor.down = 0;
+          factor.note += ' Это ещё прошлое падение, следующую минуту не решает.';
+        }
+      });
+      main.factors.push({
+        name: 'Минуты',
+        up: tape.side === 'UP' ? 4 : 0,
+        down: tape.side === 'DOWN' ? 4 : 0,
+        note: tape.note
+      });
+      var turned = sumFactors(main.factors);
+      main.up = turned.up;
+      main.down = turned.down;
+      mainSide = tape.side;
+      wait = false;
+      notes = [];
+    } else if (slow && !slow.veto && slowSide && slowSide !== 'FLAT' && mainSide !== 'FLAT' && slowSide !== mainSide && Math.max(slow.up, slow.down) >= 5 && !tape.side) {
       wait = true;
-      notes.push('M5 ' + (slowSide === 'UP' ? 'вверх' : 'вниз') + ', M1 ' + (mainSide === 'UP' ? 'вверх' : 'вниз') + '. Пока стороны не совпадут, сделки нет.');
+      notes.push('M5 ' + (slowSide === 'UP' ? 'вверх' : 'вниз') + ', M1 ' + (mainSide === 'UP' ? 'вверх' : 'вниз') + '. Последние минуты без явного хода, сделки нет.');
     }
     var lead = Math.max(main.up, main.down);
     var gap = Math.abs(main.up - main.down);
-    if (!wait && (lead < 6 || gap < 3)) {
+    if (!wait && !tape.side && (lead < 6 || gap < 3)) {
       wait = true;
       notes.push('Подтверждений мало: вверх ' + main.up + '/10, вниз ' + main.down + '/10.');
     }

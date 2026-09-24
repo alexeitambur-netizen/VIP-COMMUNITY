@@ -169,7 +169,52 @@ var flatBoard = market.scoreBoard(flatBars(160), null);
 assert.strictEqual(flatBoard.wait, true, 'flat market must wait, got ' + flatBoard.reason);
 
 var conflict = market.scoreBoard(trendBars(160, 1.1, 0.00012), trendBars(80, 1.2, -0.0005));
-assert.strictEqual(conflict.wait, true, 'M5 down and M1 up must wait, got ' + conflict.reason);
+assert.strictEqual(conflict.isUp, true, 'clear M1 rise follows the minute even if M5 is still down, got ' + conflict.reason);
+assert.strictEqual(conflict.wait, false, conflict.reason);
+
+function rallyThenDump() {
+  var rows = trendBars(120, 2.0, 0.00008);
+  var last = rows[rows.length - 1].close;
+  var spike = rows[rows.length - 1].high + 0.00025;
+  for (var i = 0; i < 8; i++) {
+    var open = last;
+    var close = Number((open - 0.00022).toFixed(5));
+    rows.push({
+      t: rows.length * 60000,
+      open: open,
+      high: i === 0 ? spike : Math.max(open, close) + 0.00003,
+      low: close - 0.00003,
+      close: close
+    });
+    last = close;
+  }
+  return rows;
+}
+var dumped = market.scoreBoard(rallyThenDump(), trendBars(80, 2.0, 0.0003));
+assert.strictEqual(dumped.wait, false, dumped.reason);
+assert.strictEqual(dumped.isUp, false, 'fall after a rally must be PUT, got ' + dumped.reason);
+assert.ok(dumped.down > dumped.up, dumped.reason);
+
+function lateAveragesStillUp() {
+  var rows = trendBars(160, 2.0, 0.00005);
+  var last = rows[rows.length - 1].close;
+  for (var i = 0; i < 6; i++) {
+    var open = last;
+    var close = Number((open - 0.00009).toFixed(5));
+    rows.push({
+      t: rows.length * 60000,
+      open: open,
+      high: Math.max(open, close) + 0.00002,
+      low: close - 0.00002,
+      close: close
+    });
+    last = close;
+  }
+  return rows;
+}
+var late = market.scoreBoard(lateAveragesStillUp(), trendBars(80, 2.0, 0.0002));
+assert.strictEqual(late.isUp, false, 'lagging EMA must not call UP while minutes close down, got ' + late.reason);
+assert.strictEqual(late.wait, false, late.reason);
 
 var graded = market.gradeSignal({
   signal: 'UP',
