@@ -119,6 +119,72 @@ assert.strictEqual(again.last, 1.2, 'live price still updates');
 var nextMinute = freeze(again.state, 'EUR:2', flipped);
 assert.strictEqual(nextMinute.isUp, false, 'a new minute gets a new direction');
 
+function trendBars(count, start, step) {
+  var rows = [];
+  var price = start;
+  for (var i = 0; i < count; i++) {
+    var open = price;
+    price = Number((price + step).toFixed(5));
+    rows.push({
+      t: i * 60000,
+      open: open,
+      high: Math.max(open, price) + Math.abs(step) * 0.35,
+      low: Math.min(open, price) - Math.abs(step) * 0.15,
+      close: price
+    });
+  }
+  return rows;
+}
+
+function flatBars(count) {
+  var rows = [];
+  var price = 1.2;
+  for (var i = 0; i < count; i++) {
+    var open = price;
+    var close = Number((1.2 + Math.sin(i / 2) * 0.00004).toFixed(5));
+    price = close;
+    rows.push({
+      t: i * 60000,
+      open: open,
+      high: Math.max(open, close) + 0.00001,
+      low: Math.min(open, close) - 0.00001,
+      close: close
+    });
+  }
+  return rows;
+}
+
+var upBoard = market.scoreBoard(trendBars(160, 1.1, 0.00012), trendBars(80, 1.1, 0.0004));
+assert.strictEqual(upBoard.wait, false, 'clear uptrend should signal, got ' + upBoard.reason);
+assert.strictEqual(upBoard.isUp, true, upBoard.reason);
+assert.ok(upBoard.up >= 6 && upBoard.up - upBoard.down >= 3, JSON.stringify({ up: upBoard.up, down: upBoard.down, reason: upBoard.reason }));
+assert.strictEqual(upBoard.confidence, Math.round(Math.max(upBoard.up, upBoard.down) / 10 * 100));
+assert.ok(upBoard.reason.indexOf('не вероятность') >= 0, upBoard.reason);
+
+var downBoard = market.scoreBoard(trendBars(160, 1.3, -0.00012), trendBars(80, 1.3, -0.0004));
+assert.strictEqual(downBoard.wait, false, downBoard.reason);
+assert.strictEqual(downBoard.isUp, false, downBoard.reason);
+
+var flatBoard = market.scoreBoard(flatBars(160), null);
+assert.strictEqual(flatBoard.wait, true, 'flat market must wait, got ' + flatBoard.reason);
+
+var conflict = market.scoreBoard(trendBars(160, 1.1, 0.00012), trendBars(80, 1.2, -0.0005));
+assert.strictEqual(conflict.wait, true, 'M5 down and M1 up must wait, got ' + conflict.reason);
+
+var graded = market.gradeSignal({
+  signal: 'UP',
+  entryAt: 60000,
+  expiryAt: 120000,
+  entry: null,
+  result: null
+}, [{ t: 60000, open: 1.1, high: 1.2, low: 1.1, close: 1.15 }]);
+graded.expiryAt = Date.now() - 1000;
+market.gradeSignal(graded, [{ t: 60000, open: 1.1, high: 1.2, low: 1.1, close: 1.15 }]);
+assert.strictEqual(graded.result, 'WIN');
+
+console.log('score up', upBoard.up, upBoard.down, upBoard.reason.split('.').slice(0, 2).join('.'));
+console.log('score down', downBoard.up, downBoard.down);
+console.log('score flat', flatBoard.reason);
 console.log('market-signal tests passed');
 console.log('rally', rallyCall.isUp, rallyCall.reason);
 console.log('one red at high', holdCall.isUp, holdCall.reason);
