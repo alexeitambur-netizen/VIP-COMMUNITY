@@ -177,7 +177,8 @@
       confidence: fixed.confidence,
       indicators: fixed.indicators,
       factors: fixed.factors,
-      reclaimSide: fixed.reclaimSide || ''
+      reclaimSide: fixed.reclaimSide || '',
+      lastBar: analysis.lastBar || fixed.lastBar
     };
   }
 
@@ -231,7 +232,8 @@
       factors: board ? board.factors : null,
       reclaimSide: board ? (board.reclaimSide || '') : '',
       reasons: board ? board.reasons : [reason, pattern.name + ' · RSI ' + r.toFixed(1)],
-      closes: series.slice(-12).map(function (c) { return Number(c.close); })
+      closes: series.slice(-12).map(function (c) { return Number(c.close); }),
+      lastBar: series.length ? series[series.length - 1] : null
     };
   }
 
@@ -725,9 +727,9 @@
     }
     var banner = $('scan-pattern-banner');
     if (banner) {
-      var extra = (window.__slvForecast && window.__slvForecast.pair === pair) ? window.__slvForecast.text : '';
       var journal = journalLine();
-      banner.innerHTML = (analysis.reasons || []).join('<br>') + (journal ? '<br>' + journal : '') + (extra ? '<br><br>' + extra : '');
+      var barLine = lastBarLine(analysis.lastBar);
+      banner.innerHTML = (barLine ? barLine + '<br>' : '') + (analysis.reasons || []).join('<br>') + (journal ? '<br>' + journal : '');
     }
     var call = $('scan-call-side');
     var put = $('scan-put-side');
@@ -758,28 +760,20 @@
   }
 
   var forecastToken = 0;
-  function askScannerForecast(pair, analysis) {
-    if (!analysis || analysis.wait) return;
-    var token = ++forecastToken;
-    var banner = $('scan-pattern-banner');
-    if (banner) banner.innerHTML = (analysis.reasons || []).join('<br>') + '<br><span style="color:#9aa8b8;">Считаю прогноз на следующую минуту…</span>';
-    var base = apiBase();
-    fetch(base + '/api/ai-chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        mode: 'forecast',
-        messages: [{ role: 'user', content: 'Прогноз на следующую минуту по ' + pair }],
-        context: window.__slvChatContext || {}
-      })
-    }).then(function (res) { return res.json(); }).then(function (data) {
-      if (token !== forecastToken) return;
-      var text = (data && (data.answer || data.error)) || '';
-      if (!text) return;
-      window.__slvForecast = { pair: pair, text: String(text).replace(/\n/g, '<br>') };
-      if (!banner) return;
-      banner.innerHTML = (analysis.reasons || []).join('<br>') + (journalLine() ? '<br>' + journalLine() : '') + '<br><br>' + window.__slvForecast.text;
-    }).catch(function () {});
+  function lastBarLine(bar) {
+    if (!bar || !(bar.close > 0)) return '';
+    var stamp = '';
+    if (bar.t) {
+      try {
+        stamp = new Date(bar.t).toLocaleTimeString('ru-RU', { timeZone: 'Europe/Moscow', hour: '2-digit', minute: '2-digit' });
+      } catch (e) { stamp = ''; }
+    }
+    var d = digitsFor(bar.close);
+    return 'Свеча M1 ' + (stamp ? stamp + ' МСК' : '') + ' O ' + bar.open.toFixed(d) + ' H ' + bar.high.toFixed(d) + ' L ' + bar.low.toFixed(d) + ' C ' + bar.close.toFixed(d) + '. RSI считается по этим же свечам.';
+  }
+
+  function askScannerForecast() {
+    window.__slvForecast = null;
   }
 
   function stopScanTimers() {

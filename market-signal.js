@@ -513,7 +513,12 @@
 
     if (ema20 != null && ema50 != null) {
       var gap = Math.abs(ema20 - ema50);
-      var tangled = atr.ready && atr.atr > 0 && gap < atr.atr * 0.25;
+      var ranges = [];
+      for (var n = Math.max(1, rows.length - 21); n < rows.length; n++) ranges.push(rows[n].high - rows[n].low);
+      ranges.sort(function (a, b) { return a - b; });
+      if (ranges.length > 4) ranges.pop();
+      var usual = ranges.length ? ranges[Math.floor(ranges.length / 2)] : 0;
+      var tangled = usual > 0 && gap < usual * 0.35 && gap < Math.abs(price) * 0.0002;
       if (tangled) {
         veto = true;
         vetoReason = 'EMA20 и EMA50 переплетены, рынок во флэте.';
@@ -758,6 +763,10 @@
       notes.push('Подтверждений мало: вверх ' + main.up + '/10, вниз ' + main.down + '/10.');
     }
     var isUp = reclaimSide === 'UP' ? true : (reclaimSide === 'DOWN' ? false : main.up > main.down);
+    if (liveRows && liveRows.length > 20 && main.indicators) {
+      var liveRsi = rsiWilder(liveRows.map(function (c) { return c.close; }), 14);
+      if (liveRsi != null) main.indicators.rsi = roundNum(liveRsi, 2);
+    }
     var confidence = Math.round((lead / 10) * 100);
     var lines = main.factors.map(function (factor) {
       var points = factor.up ? '+' + factor.up + ' вверх' : (factor.down ? '+' + factor.down + ' вниз' : '0');
