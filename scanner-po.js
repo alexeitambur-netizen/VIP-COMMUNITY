@@ -125,43 +125,9 @@
     return { name: 'Без явного паттерна', bias: 0 };
   }
 
-  var FIB_LEVELS = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1, 1.236, 1.272, 1.382, 1.5, 1.618, 1.786, 2.618];
-
   function fibRetracement(rows) {
-    if (!rows || rows.length < 12) return null;
-    var hi = 0;
-    var lo = 0;
-    for (var i = 0; i < rows.length; i++) {
-      if (rows[i].high > rows[hi].high) hi = i;
-      if (rows[i].low < rows[lo].low) lo = i;
-    }
-    if (hi === lo) return null;
-    var start;
-    var end;
-    var up;
-    if (lo < hi) {
-      start = { index: lo, price: rows[lo].low };
-      end = { index: hi, price: rows[hi].high };
-      up = true;
-    } else {
-      start = { index: hi, price: rows[hi].high };
-      end = { index: lo, price: rows[lo].low };
-      up = false;
-    }
-    var span = start.price - end.price;
-    if (!isFinite(span) || Math.abs(span) < Math.abs(end.price) * 0.00005) return null;
-    var last = rows[rows.length - 1].close;
-    var ratio = (last - end.price) / span;
-    return {
-      up: up,
-      start: start,
-      end: end,
-      span: span,
-      ratio: ratio,
-      levels: FIB_LEVELS.map(function (lv) {
-        return { level: lv, price: end.price + span * lv };
-      })
-    };
+    if (!window.VipMarket) return null;
+    return window.VipMarket.fibRetracement(rows);
   }
 
   function settledBars(rows) {
@@ -174,58 +140,12 @@
     return rows;
   }
 
-  function minuteCall(fib, rows) {
-    var last = rows[rows.length - 1];
-    var prev = rows.length > 1 ? rows[rows.length - 2] : last;
-    var closes = rows.slice(-6).map(function (c) { return c.close; });
-    var slope = 0;
-    for (var i = 1; i < closes.length; i++) slope += closes[i] - closes[i - 1];
-    var micro = last.close - prev.close;
-    var ratio = fib ? fib.ratio : 0.5;
-    var place = (Math.round(ratio * 1000) / 10).toFixed(1);
-    var when = ' Вход на открытии следующей M1, экспирация — её закрытие.';
-    var isUp;
-    var accuracy;
-    var reason;
-    if (!fib) {
-      isUp = slope >= 0;
-      accuracy = 58;
-      reason = (isUp ? 'Закрытые минуты вверх. CALL.' : 'Закрытые минуты вниз. PUT.') + when;
-    } else if (fib.up && ratio >= 0.5) {
-      isUp = true;
-      accuracy = 68;
-      reason = 'Фибо ' + place + '% под серединой импульса вверх. CALL.' + when;
-    } else if (!fib.up && ratio >= 0.5) {
-      isUp = false;
-      accuracy = 68;
-      reason = 'Фибо ' + place + '% под серединой импульса вниз. PUT.' + when;
-    } else if (ratio <= 0.382 && micro <= 0) {
-      isUp = false;
-      accuracy = 64;
-      reason = 'Фибо ' + place + '% у уровня 0, последняя закрытая минута вниз. PUT.' + when;
-    } else if (ratio <= 0.382 && micro > 0) {
-      isUp = true;
-      accuracy = 62;
-      reason = 'Фибо ' + place + '% у уровня 0, последняя закрытая минута вверх. CALL.' + when;
-    } else if (slope >= 0) {
-      isUp = true;
-      accuracy = 60;
-      reason = 'Фибо ' + place + '%, закрытые минуты вверх. CALL.' + when;
-    } else {
-      isUp = false;
-      accuracy = 60;
-      reason = 'Фибо ' + place + '%, закрытые минуты вниз. PUT.' + when;
-    }
-    var nextOpen = Math.floor(Date.now() / 60000) + 1;
-    var lock = (fib ? Math.round(fib.start.price * 100000) : 0) + ':' + nextOpen;
-    if (!minuteCall.cache) minuteCall.cache = null;
-    if (minuteCall.cache && minuteCall.cache.lock === lock) return minuteCall.cache.call;
-    var call = { wait: false, isUp: isUp, accuracy: accuracy, reason: reason };
-    minuteCall.cache = { lock: lock, call: call };
-    return call;
+  function minuteCall(fib, rows, ticks) {
+    if (!window.VipMarket || !rows || !rows.length) return null;
+    return window.VipMarket.minuteCall(fib, rows, ticks);
   }
 
-  function analyzeMarket(candles) {
+  function analyzeMarket(candles, ticks) {
     var series = sanitizeCandles(candles).slice(-160);
     if (!series.length) {
       return { wait: true, isUp: false, last: 0, entry: 0, accuracy: 50, rsi: 50, sma9: 0, sma20: 0, vol: 0, reasons: ['Нет котировок'], levels: { support: 0, resistance: 0 }, pattern: { name: '', bias: 0 } };
@@ -241,7 +161,6 @@
     var levels = swingLevels(use);
     var pattern = detectPattern(use);
     var range = Math.max((levels.resistance - levels.support) || 0, last * 0.00015);
-    var pos = range ? (lastClosed.close - levels.support) / range : 0.5;
     var score = 0;
     if (lastClosed.close > sma9) score += 1; else score -= 1;
     if (sma9 > sma20) score += 1; else score -= 1;
@@ -251,15 +170,14 @@
     if (lastClosed.close >= levels.resistance - range * 0.16 && pattern.bias <= 0) score -= 2;
     var settled = settledBars(series);
     var fib = fibRetracement(settled);
-    var fibCall = minuteCall(fib, settled);
+    var fibCall = minuteCall(fib, settled, ticks);
     var wait = false;
-    var isUp = fibCall ? fibCall.isUp : score > 0;
-    var accuracy = fibCall ? fibCall.accuracy : (wait ? 52 : Math.max(60, Math.min(72, 58 + Math.min(3, Math.abs(score)) * 4 + (pattern.bias ? 2 : 0))));
-    var reason = fibCall ? fibCall.reason : (wait
-      ? 'Нет чистой точки входа: цена в середине диапазона.'
-      : (isUp
-        ? (pos <= 0.35 ? 'Цена у поддержки — CALL на открытии следующей минуты.' : 'Импульс вверх — CALL на следующей M1.')
-        : (pos >= 0.65 ? 'Цена у сопротивления — PUT на открытии следующей минуты.' : 'Импульс вниз — PUT на следующей M1.')));
+    var drift = lastClosed.close - (use.length > 3 ? use[use.length - 4].close : lastClosed.open);
+    var isUp = fibCall ? fibCall.isUp : drift >= 0;
+    var accuracy = fibCall ? fibCall.accuracy : 56;
+    var reason = fibCall ? fibCall.reason : (isUp
+      ? 'Последние закрытые минуты вверх. CALL на открытии следующей минуты.'
+      : 'Последние закрытые минуты вниз. PUT на открытии следующей минуты.');
     var slice = use.slice(-20);
     var vol = 0;
     slice.forEach(function (c) { vol += (c.high - c.low) / (c.close || 1); });
@@ -267,7 +185,8 @@
     return {
       isUp: isUp, wait: wait, last: last, entry: last, sma9: sma9, sma20: sma20, rsi: r, vol: vol,
       levels: levels, accuracy: accuracy, score: score, pattern: pattern, fib: fib,
-      reasons: [reason, 'Фибо 0 / 0.5 / 0.618 / 0.786 / 1', pattern.name + ' · RSI ' + r.toFixed(1)],
+      pointsText: fibCall && fibCall.tape ? fibCall.tape.pointsText : '',
+      reasons: [reason, pattern.name + ' · RSI ' + r.toFixed(1)],
       closes: series.slice(-12).map(function (c) { return Number(c.close); })
     };
   }
@@ -566,6 +485,7 @@
         list.__source = src;
         return list;
       })(),
+      ticks: Array.isArray(data.ticks) ? data.ticks : [],
       source: /pocketoption-demo/i.test(data.source || '') ? 'pocketoption-demo' : ((data.source && /pocketoption-api/i.test(data.source)) ? data.source : (pocketLive ? 'pocketoption-api' : (data.source || 'fallback-market')))
     };
   }
@@ -690,7 +610,10 @@
       price: analysis.last,
       reason: (analysis.reasons && analysis.reasons[0]) || '',
       rsi: analysis.rsi,
-      closes: analysis.closes || []
+      closes: analysis.closes || [],
+      direction: analysis.wait ? 'WAIT' : (analysis.isUp ? 'CALL' : 'PUT'),
+      level: analysis.fib ? analysis.fib.nearest : null,
+      points: analysis.pointsText || ''
     };
   }
 
@@ -790,7 +713,7 @@
       try {
         var pack = await fetchPocketCandles(pairName, tf);
         var fromPocket = isPocketHistory(pack.candles, pack.source);
-        var analysis = analyzeMarket(pack.candles);
+        var analysis = analyzeMarket(pack.candles, pack.ticks);
         if (!fromPocket) analysis.wait = true;
         drawPocketChart(pack.candles, analysis);
         setTimeout(function () {
@@ -809,7 +732,7 @@
           try {
             var fresh = await fetchPocketCandles(pairName, tf);
             var liveOk = isPocketHistory(fresh.candles, fresh.source);
-            var live = analyzeMarket(fresh.candles);
+            var live = analyzeMarket(fresh.candles, fresh.ticks);
             if (!liveOk) live.wait = true;
             drawPocketChart(fresh.candles, live);
             paintVerdict(pairName, tfLabel, live);
