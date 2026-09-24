@@ -216,6 +216,27 @@ var late = market.scoreBoard(lateAveragesStillUp(), trendBars(80, 2.0, 0.0002));
 assert.strictEqual(late.isUp, false, 'lagging EMA must not call UP while minutes close down, got ' + late.reason);
 assert.strictEqual(late.wait, false, late.reason);
 
+function dumpThenReclaim() {
+  var rows = trendBars(90, 1.08, -0.00015);
+  var last = rows[rows.length - 1].close;
+  for (var i = 0; i < 2; i++) {
+    var open = last;
+    var close = Number((open + 0.0045).toFixed(5));
+    rows.push({
+      t: rows.length * 60000,
+      open: open,
+      high: close + 0.0002,
+      low: open - 0.00005,
+      close: close
+    });
+    last = close;
+  }
+  return rows;
+}
+var bounced = market.scoreBoard(dumpThenReclaim(), trendBars(80, 1.08, -0.0004));
+assert.strictEqual(bounced.wait, false, bounced.reason);
+assert.strictEqual(bounced.isUp, true, 'price back above both averages must not stay PUT, got ' + bounced.reason);
+
 var graded = market.gradeSignal({
   signal: 'UP',
   entryAt: 60000,
