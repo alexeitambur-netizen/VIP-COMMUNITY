@@ -54,6 +54,20 @@ function asCandles(rows) {
   }).sort(function (a, b) { return a.time - b.time; });
 }
 
+function asTicks(history) {
+  return (history || []).map(function (row) {
+    if (!Array.isArray(row) || row.length < 2) return null;
+    var time = Number(row[0]);
+    var price = Number(row[1]);
+    if (!(price > 0)) {
+      time = Number(row[1]);
+      price = Number(row[2]);
+    }
+    if (!(price > 0) || !isFinite(time)) return null;
+    return { t: time < 10000000000 ? time * 1000 : time, price: price };
+  }).filter(Boolean).sort(function (a, b) { return a.t - b.t; }).slice(-80);
+}
+
 function applyLiveTick(candles, history) {
   if (!candles.length || !history || !history.length) return candles[candles.length - 1] ? candles[candles.length - 1].close : null;
   var tick = history.slice().sort(function (a, b) { return Number(a[0]) - Number(b[0]); }).pop();
@@ -197,7 +211,7 @@ class DemoFeed {
       period: Number(data.period || job.period),
       last: last,
       candles: candles,
-      ticks: [],
+      ticks: asTicks(data.history),
       source: 'pocketoption-demo'
     });
     this.pump();
