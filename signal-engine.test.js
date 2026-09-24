@@ -74,6 +74,18 @@ var putRow = { signal: 'DOWN', entry: 1.1, expirationTimestamp: expiry, result: 
 engine.resolveOutcome(putRow, { now: expiry + 1, ticks: [{ t: 119500, price: 1.05 }] });
 assert.strictEqual(putRow.result, 'WIN');
 
+var downTrend = trend(120, 1.2, -0.00012);
+var upTicks = [];
+for (var n = 0; n < 24; n++) upTicks.push({ t: downTrend[downTrend.length - 1].t + n * 1000, price: 1.05 + n * 0.0002 });
+var shifted = engine.decide({
+  pair: 'CAD/JPY',
+  m1: downTrend,
+  now: upTicks[upTicks.length - 1].t,
+  lastTickAt: upTicks[upTicks.length - 1].t,
+  ticks: upTicks
+});
+assert.strictEqual(shifted.direction, 'UP', shifted.reason);
+
 console.log('engine tests passed');
 console.log('up', up.direction, up.score, up.marketState);
 console.log('down', down.direction, down.score, down.marketState);

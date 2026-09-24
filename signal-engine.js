@@ -409,6 +409,13 @@
     };
 
     input._parts = { trend: trend, momentum: momentum, action: action, levels: levels, mtf: mtf, tradable: tradable };
+    var shift = socketShift(input.ticks, now);
+    if (shift && (!now || dataAge <= cfg.maxDataAgeMs)) {
+      var shiftScore = direction === shift.side ? Math.max(score, 64) : 64;
+      input._parts = { trend: trend, momentum: momentum, action: action, levels: levels, mtf: mtf, tradable: tradable, shift: shift.side };
+      return card(shift.side, shift.side === 'UP' ? shiftScore : upScore, shift.side === 'DOWN' ? shiftScore : downScore, state, 'Сдвиг последних тиков сокета ' + (shift.side === 'UP' ? 'вверх' : 'вниз') + '. Следующая минута в сторону этого сдвига.', dataAge, input, snapshot, null, shiftScore);
+    }
+    input._parts = { trend: trend, momentum: momentum, action: action, levels: levels, mtf: mtf, tradable: tradable };
     if (blocks.length) return card('NO_TRADE', upScore, downScore, state, blocks.join(' '), dataAge, input, snapshot);
     var confirmed = {
       trend: (direction === 'UP' ? trend.up : trend.down) >= 55,
@@ -417,7 +424,6 @@
       priceAction: (direction === 'UP' ? action.up : action.down) >= 40,
       mtf: side5 === direction || side3 === direction
     };
-    input._parts = { trend: trend, momentum: momentum, action: action, levels: levels, mtf: mtf, tradable: tradable, state: state };
     return card(direction, upScore, downScore, state, 'Независимые подтверждения сошлись.', dataAge, input, snapshot, confirmed, score);
   }
 
@@ -548,6 +554,29 @@
       validation: sliceStats(booked.slice(cut1, cut2)),
       outOfSample: sliceStats(booked.slice(cut2))
     };
+  }
+
+  function socketShift(ticks, now) {
+    var prices = [];
+    (ticks || []).forEach(function (tick) {
+      var stamp = Number(tick && (tick.t || tick[0]) || 0);
+      if (stamp > 0 && stamp < 1000000000000) stamp *= 1000;
+      var price = Number(tick && (tick.price != null ? tick.price : tick[1]));
+      if (now && stamp > now) return;
+      if (price > 0) prices.push(price);
+    });
+    if (prices.length < 8) return null;
+    var start = Math.max(0, prices.length - Math.ceil(prices.length / 3));
+    var recent = prices.slice(start);
+    var net = recent[recent.length - 1] - recent[0];
+    var steps = [];
+    for (var i = 1; i < prices.length; i++) steps.push(Math.abs(prices[i] - prices[i - 1]));
+    steps.sort(function (a, b) { return a - b; });
+    var typical = steps[Math.floor(steps.length / 2)] || 0;
+    var minMove = Math.max(typical * 4, Math.abs(prices[prices.length - 1]) * 0.00003);
+    if (net > minMove) return { side: 'UP', net: net };
+    if (net < -minMove) return { side: 'DOWN', net: net };
+    return null;
   }
 
   function timeMs(value) {
