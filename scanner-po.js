@@ -228,7 +228,8 @@
         m5: (frames && frames['5м']) || higherRows || [],
         m15: (frames && frames['15м']) || [],
         now: Date.now(),
-        lastTickAt: (meta && meta.quoteAt) || tickAt || (series.length ? series[series.length - 1].t : 0)
+        lastTickAt: (meta && meta.quoteAt) || tickAt || (series.length ? series[series.length - 1].t : 0),
+        ticks: ticks || []
       });
     } else if (window.VipMarket && window.VipMarket.scoreBoard) {
       board = window.VipMarket.scoreBoard(settled, higherRows, series);
