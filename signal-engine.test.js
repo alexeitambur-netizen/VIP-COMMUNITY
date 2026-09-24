@@ -60,6 +60,20 @@ var future = rows[100];
 var pastOnly = engine.decide({ pair: 'EUR/USD', m1: rows.slice(0, 100), now: future.t, lastTickAt: rows[99].t + 60000 });
 assert.ok(pastOnly.direction === 'UP' || pastOnly.direction === 'DOWN' || pastOnly.direction === 'NO_TRADE');
 
+var expiry = 120000;
+var callRow = { signal: 'UP', entry: 1.1, expirationTimestamp: expiry, result: null };
+engine.resolveOutcome(callRow, {
+  now: expiry + 1,
+  ticks: [{ t: 90000, price: 1.2 }, { t: 119000, price: 1.05 }, { t: 130000, price: 9 }]
+});
+assert.strictEqual(callRow.exit, 1.05, 'a tick after expiry must not decide the result');
+assert.strictEqual(callRow.result, 'LOSS');
+assert.strictEqual(callRow.entry, 1.1);
+
+var putRow = { signal: 'DOWN', entry: 1.1, expirationTimestamp: expiry, result: null };
+engine.resolveOutcome(putRow, { now: expiry + 1, ticks: [{ t: 119500, price: 1.05 }] });
+assert.strictEqual(putRow.result, 'WIN');
+
 console.log('engine tests passed');
 console.log('up', up.direction, up.score, up.marketState);
 console.log('down', down.direction, down.score, down.marketState);
