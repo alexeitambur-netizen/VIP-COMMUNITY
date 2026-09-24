@@ -87,6 +87,38 @@ var downCount = 0;
 });
 assert.ok(upCount >= 3 && downCount >= 2, 'signals collapsed to one side: ' + upCount + ' CALL / ' + downCount + ' PUT');
 
+var flickerRows = bars(rally);
+var flickerFib = market.fibRetracement(flickerRows);
+var ticksUp = [];
+var ticksDown = [];
+for (var n = 0; n < 20; n++) {
+  ticksUp.push([n, flickerRows[flickerRows.length - 1].close + n * 0.00005]);
+  ticksDown.push([n, flickerRows[flickerRows.length - 1].close - n * 0.00005]);
+}
+var fromUpTicks = market.minuteCall(flickerFib, flickerRows, ticksUp);
+var fromDownTicks = market.minuteCall(flickerFib, flickerRows, ticksDown);
+assert.strictEqual(fromUpTicks.isUp, fromDownTicks.isUp, 'live ticks must not flip the minute direction');
+assert.strictEqual(fromUpTicks.isUp, rallyCall.isUp);
+
+function freeze(previous, key, next) {
+  if (!previous || previous.key !== key || (previous.analysis.wait && !next.wait)) {
+    previous = { key: key, analysis: next };
+  }
+  return {
+    state: previous,
+    isUp: previous.analysis.isUp,
+    last: next.last
+  };
+}
+var first = { isUp: true, wait: false, last: 1.1 };
+var flipped = { isUp: false, wait: false, last: 1.2 };
+var held = freeze(null, 'EUR:1', first);
+var again = freeze(held.state, 'EUR:1', flipped);
+assert.strictEqual(again.isUp, true, 'direction must stay put inside the same minute');
+assert.strictEqual(again.last, 1.2, 'live price still updates');
+var nextMinute = freeze(again.state, 'EUR:2', flipped);
+assert.strictEqual(nextMinute.isUp, false, 'a new minute gets a new direction');
+
 console.log('market-signal tests passed');
 console.log('rally', rallyCall.isUp, rallyCall.reason);
 console.log('one red at high', holdCall.isUp, holdCall.reason);

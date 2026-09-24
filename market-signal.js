@@ -181,72 +181,66 @@
     return fib.end.price + fib.span * level;
   }
 
+  function closedMove(rows) {
+    var slice = (rows || []).slice(-4);
+    var up = 0;
+    var down = 0;
+    for (var i = 1; i < slice.length; i++) {
+      if (slice[i].close > slice[i - 1].close) up += 1;
+      else if (slice[i].close < slice[i - 1].close) down += 1;
+    }
+    var net = slice.length >= 2 ? slice[slice.length - 1].close - slice[0].close : 0;
+    return {
+      up: up,
+      down: down,
+      net: net,
+      rising: up >= 2 && up > down && net > 0,
+      falling: down >= 2 && down > up && net < 0
+    };
+  }
+
+  function sideUp(fib, move) {
+    if (!fib) return move.rising || (!move.falling && move.net >= 0);
+    var ratio = fib.ratio;
+    if (fib.up) {
+      if (ratio > 0.786 && move.falling) return false;
+      if (ratio > 0.5 && move.falling) return false;
+      return true;
+    }
+    if (ratio > 0.786 && move.rising) return true;
+    if (ratio > 0.5 && move.rising) return true;
+    return false;
+  }
+
   function minuteCall(fib, rows, ticks) {
     var pack = readTape(ticks, rows);
     var now = pack.now;
     var tape = pack.context;
+    var move = closedMove(rows);
     var structure = structurePoints(rows);
-    var when = ' Вход на открытии следующей минуты, экспирация на её закрытии.';
+    var when = ' Вход на открытии следующей минуты, экспирация на её закрытии. До этого открытия сторона не меняется.';
     var price = rows && rows.length ? rows[rows.length - 1].close : 0;
-    var tapeNote = tape.live
-      ? ' Тики ' + tape.up + ' вверх / ' + tape.down + ' вниз, ход ' + tape.pointsText + '.'
-      : ' Пункты последних минут: ' + tape.pointsText + ' (' + tape.up + ' вверх / ' + tape.down + ' вниз). Сейчас ' + now.pointsText + '.';
+    var tapeNote = ' Закрытые минуты: ' + tape.pointsText + ' (' + move.up + ' вверх / ' + move.down + ' вниз).';
     var structNote = ' Свечи: выше предыдущей ' + structure.higher + ', ниже предыдущей ' + structure.lower + '.';
-    var isUp;
+    var isUp = sideUp(fib, move);
     var reason;
 
     if (!fib) {
-      isUp = now.bias > 0 || (now.bias === 0 && now.net >= 0 && structure.higher >= structure.lower);
-      reason = (isUp ? 'Короткий ход вверх.' : 'Короткий ход вниз.') + tapeNote + structNote;
+      reason = (isUp ? 'Закрытые минуты вверх.' : 'Закрытые минуты вниз.') + tapeNote + structNote;
       return finish(isUp, 56, reason + when, fib, tape, now, 0);
     }
 
-    var ratio = fib.ratio;
     var place = levelLabel(fib.nearest);
     var at = levelPrice(fib, fib.nearest);
     var fromLevel = formatPoints(price - at, price);
     var side = fib.up ? 'импульса вверх' : 'импульса вниз';
     var leg = 'Импульс ' + (fib.up ? 'вверх ' : 'вниз ') + fmt(fib.start.price) + ' → ' + fmt(fib.end.price) + '. ';
     var where = 'Фибо ' + place + '% ' + side + ' (' + fmt(at) + ', ' + fromLevel + ' от уровня).';
-
-    if (fib.up && ratio < 0) {
-      isUp = now.bias > -2;
-      reason = leg + (isUp
-        ? 'Пробой уровня 0 вверх, тики не разворачивают цену.'
-        : 'Ложный пробой хая: тики уходят вниз.') + tapeNote;
-    } else if (!fib.up && ratio < 0) {
-      isUp = now.bias >= 2;
-      reason = leg + (isUp
-        ? 'Лой импульса выкуплен тиками вверх.'
-        : 'Пробой уровня 0 вниз, тики продолжают падение.') + tapeNote;
-    } else if (fib.up && ratio <= 0.382) {
-      isUp = now.bias > -2;
-      reason = leg + where + (isUp
-        ? (fib.nearest === 0 ? ' Цена держит край импульса.' : ' Уровень удерживается, пункты не ломают импульс.')
-        : ' Тики отбивают уровень вниз.') + tapeNote;
-    } else if (!fib.up && ratio <= 0.382) {
-      isUp = now.bias >= 2;
-      reason = leg + where + (isUp
-        ? ' Тики разворачивают лой вверх.'
-        : ' Цена у лоя импульса вниз.') + tapeNote;
-    } else if (ratio <= 0.786) {
-      isUp = fib.up ? now.bias >= 0 : now.bias > 0;
-      reason = leg + where + (isUp
-        ? (fib.up ? ' Отскок от уровня по тикам и пунктам.' : ' Уровень пробит вверх по тикам.')
-        : (fib.up ? ' Уровень не удержали, пункты вниз.' : ' Отбой от уровня вниз.')) + tapeNote;
-    } else if (fib.up) {
-      isUp = now.bias > 0;
-      reason = leg + (isUp
-        ? 'Откат глубже 78.6%, но пункты снова вверх.'
-        : 'Откат глубже 78.6%, импульс вверх сломан.') + tapeNote;
-    } else {
-      isUp = now.bias >= 0;
-      reason = leg + (isUp
-        ? 'Откат глубже 78.6% падения, цену не удержали внизу.'
-        : 'Откат глубже 78.6%, продавцы снова давят.') + tapeNote;
-    }
-
-    reason += structNote;
+    if (fib.up && isUp) reason = leg + where + ' Уровень по закрытым минутам держится.';
+    else if (fib.up) reason = leg + where + ' Закрытые минуты пробили уровень вниз.';
+    else if (isUp) reason = leg + where + ' Закрытые минуты вышли из падения.';
+    else reason = leg + where + ' Уровень по закрытым минутам держит вниз.';
+    reason += tapeNote + structNote;
     var agrees = (fib.up && isUp) || (!fib.up && !isUp);
     var accuracy = agrees ? (fib.atLevel ? 66 : 61) : 57;
     return finish(isUp, accuracy, reason + when, fib, tape, now, fib.nearest);
@@ -276,6 +270,8 @@
     fibRetracement: fibRetracement,
     minuteCall: minuteCall,
     readTape: readTape,
-    formatPoints: formatPoints
+    formatPoints: formatPoints,
+    closedMove: closedMove,
+    sideUp: sideUp
   };
 });
