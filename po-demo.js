@@ -203,7 +203,7 @@ class DemoFeed {
     const job = this.pending;
     this.pending = null;
     clearTimeout(this.timer);
-    const candles = asCandles(data.candles).slice(-180);
+    const candles = asCandles(data.candles).slice(-400);
     const last = applyLiveTick(candles, data.history);
     job.resolve({
       symbol: data.asset || job.symbol,

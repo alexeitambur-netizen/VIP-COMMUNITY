@@ -265,6 +265,424 @@
     };
   }
 
+  function emaSeries(values, period) {
+    var out = [];
+    if (!values || values.length < period) return out;
+    var sum = 0;
+    for (var i = 0; i < period; i++) sum += values[i];
+    var prev = sum / period;
+    var k = 2 / (period + 1);
+    for (var j = period; j < values.length; j++) {
+      prev = values[j] * k + prev * (1 - k);
+      out.push(prev);
+    }
+    return out;
+  }
+
+  function lastOf(series) {
+    return series && series.length ? series[series.length - 1] : null;
+  }
+
+  function rsiWilder(closes, period) {
+    period = period || 14;
+    if (!closes || closes.length < period + 1) return null;
+    var gain = 0;
+    var loss = 0;
+    for (var i = 1; i <= period; i++) {
+      var diff = closes[i] - closes[i - 1];
+      if (diff >= 0) gain += diff;
+      else loss -= diff;
+    }
+    var avgGain = gain / period;
+    var avgLoss = loss / period;
+    for (var j = period + 1; j < closes.length; j++) {
+      var step = closes[j] - closes[j - 1];
+      avgGain = (avgGain * (period - 1) + (step > 0 ? step : 0)) / period;
+      avgLoss = (avgLoss * (period - 1) + (step < 0 ? -step : 0)) / period;
+    }
+    if (avgLoss === 0) return 100;
+    return 100 - 100 / (1 + avgGain / avgLoss);
+  }
+
+  function macdRead(closes) {
+    var fast = emaSeries(closes, 12);
+    var slow = emaSeries(closes, 26);
+    var line = [];
+    var shared = Math.min(fast.length, slow.length);
+    var fastTail = fast.slice(-shared);
+    var slowTail = slow.slice(-shared);
+    for (var i = 0; i < shared; i++) line.push(fastTail[i] - slowTail[i]);
+    var signal = emaSeries(line, 9);
+    if (!signal.length || line.length < 2) return null;
+    var macd = line[line.length - 1];
+    var sig = signal[signal.length - 1];
+    var prevMacd = line[line.length - 2];
+    var prevSig = signal.length > 1 ? signal[signal.length - 2] : sig;
+    return {
+      macd: macd,
+      signal: sig,
+      hist: macd - sig,
+      prevHist: prevMacd - prevSig
+    };
+  }
+
+  function adxRead(rows, period) {
+    period = period || 14;
+    if (!rows || rows.length < period * 2 + 2) return { adx: 0, plusDI: 0, minusDI: 0, ready: false };
+    var tr = [];
+    var plusDM = [];
+    var minusDM = [];
+    for (var i = 1; i < rows.length; i++) {
+      var upMove = rows[i].high - rows[i - 1].high;
+      var downMove = rows[i - 1].low - rows[i].low;
+      plusDM.push(upMove > downMove && upMove > 0 ? upMove : 0);
+      minusDM.push(downMove > upMove && downMove > 0 ? downMove : 0);
+      tr.push(Math.max(
+        rows[i].high - rows[i].low,
+        Math.abs(rows[i].high - rows[i - 1].close),
+        Math.abs(rows[i].low - rows[i - 1].close)
+      ));
+    }
+    var atr = 0;
+    var sp = 0;
+    var sm = 0;
+    for (var n = 0; n < period; n++) {
+      atr += tr[n];
+      sp += plusDM[n];
+      sm += minusDM[n];
+    }
+    var dx = [];
+    var plusDI = 0;
+    var minusDI = 0;
+    for (var j = period; j < tr.length; j++) {
+      atr = atr - atr / period + tr[j];
+      sp = sp - sp / period + plusDM[j];
+      sm = sm - sm / period + minusDM[j];
+      plusDI = atr ? 100 * sp / atr : 0;
+      minusDI = atr ? 100 * sm / atr : 0;
+      var den = plusDI + minusDI;
+      dx.push(den ? 100 * Math.abs(plusDI - minusDI) / den : 0);
+    }
+    if (dx.length < period) return { adx: 0, plusDI: plusDI, minusDI: minusDI, ready: false };
+    var adx = 0;
+    for (var k = 0; k < period; k++) adx += dx[k];
+    adx /= period;
+    for (var q = period; q < dx.length; q++) adx = (adx * (period - 1) + dx[q]) / period;
+    return { adx: adx, plusDI: plusDI, minusDI: minusDI, ready: true };
+  }
+
+  function atrRead(rows, period) {
+    period = period || 14;
+    if (!rows || rows.length < period + 1) return { atr: 0, recent: 0, base: 0, ready: false };
+    var tr = [];
+    for (var i = 1; i < rows.length; i++) {
+      var prev = rows[i - 1].close;
+      tr.push(Math.max(rows[i].high - rows[i].low, Math.abs(rows[i].high - prev), Math.abs(rows[i].low - prev)));
+    }
+    var atr = 0;
+    for (var n = 0; n < period; n++) atr += tr[n];
+    atr /= period;
+    for (var j = period; j < tr.length; j++) atr = (atr * (period - 1) + tr[j]) / period;
+    function avg(list) {
+      if (!list.length) return 0;
+      return list.reduce(function (a, b) { return a + b; }, 0) / list.length;
+    }
+    return {
+      atr: atr,
+      recent: avg(tr.slice(-5)),
+      base: avg(tr.slice(-30)),
+      ready: true
+    };
+  }
+
+  function bollingerRead(closes) {
+    var period = 20;
+    if (!closes || closes.length < period + 1) return null;
+    function band(slice) {
+      var mean = slice.reduce(function (a, b) { return a + b; }, 0) / slice.length;
+      var variance = slice.reduce(function (a, b) { return a + (b - mean) * (b - mean); }, 0) / slice.length;
+      var sd = Math.sqrt(variance);
+      return { mid: mean, upper: mean + 2 * sd, lower: mean - 2 * sd, width: mean ? (4 * sd) / mean : 0 };
+    }
+    var now = band(closes.slice(-period));
+    var prev = band(closes.slice(-period - 1, -1));
+    now.prevWidth = prev.width;
+    now.expanding = now.width > prev.width * 1.05;
+    now.squeeze = prev.width > 0 && now.width < prev.width * 0.85;
+    return now;
+  }
+
+  function structureRead(rows) {
+    var slice = (rows || []).slice(-6);
+    var empty = { up: 0, down: 0, name: 'мало свечей' };
+    if (slice.length < 4) return empty;
+    var higherHigh = 0;
+    var higherLow = 0;
+    var lowerHigh = 0;
+    var lowerLow = 0;
+    for (var i = 1; i < slice.length; i++) {
+      if (slice[i].high > slice[i - 1].high) higherHigh += 1;
+      else lowerHigh += 1;
+      if (slice[i].low > slice[i - 1].low) higherLow += 1;
+      else lowerLow += 1;
+    }
+    var prev = slice.slice(0, -1);
+    var prevHigh = Math.max.apply(null, prev.map(function (c) { return c.high; }));
+    var prevLow = Math.min.apply(null, prev.map(function (c) { return c.low; }));
+    var last = slice[slice.length - 1];
+    if (last.high > prevHigh && last.close < prevHigh) return { up: 0, down: 2, name: 'ложный пробой хая' };
+    if (last.low < prevLow && last.close > prevLow) return { up: 2, down: 0, name: 'ложный пробой лоя' };
+    if (higherHigh >= 3 && higherLow >= 3) return { up: 2, down: 0, name: 'higher high / higher low' };
+    if (lowerHigh >= 3 && lowerLow >= 3) return { up: 0, down: 2, name: 'lower high / lower low' };
+    if (last.close > prevHigh) return { up: 1, down: 0, name: 'пробой локального хая' };
+    if (last.close < prevLow) return { up: 0, down: 1, name: 'пробой локального лоя' };
+    return { up: 0, down: 0, name: 'структура смешанная' };
+  }
+
+  function candleMomentum(rows) {
+    var slice = (rows || []).slice(-3);
+    if (slice.length < 3) return { up: 0, down: 0, note: 'мало свечей' };
+    var net = 0;
+    var upBodies = 0;
+    var downBodies = 0;
+    var body = 0;
+    var range = 0;
+    slice.forEach(function (c) {
+      var step = c.close - c.open;
+      net += step;
+      body += Math.abs(step);
+      range += Math.max(c.high - c.low, Math.abs(step));
+      if (step > 0) upBodies += 1;
+      else if (step < 0) downBodies += 1;
+    });
+    var solid = range > 0 && body / range >= 0.35;
+    if (solid && upBodies >= 2 && net > 0) return { up: 1, down: 0, note: 'тела последних свечей вверх' };
+    if (solid && downBodies >= 2 && net < 0) return { up: 0, down: 1, note: 'тела последних свечей вниз' };
+    return { up: 0, down: 0, note: 'тела свечей без перевеса' };
+  }
+
+  function roundNum(value, digits) {
+    if (value == null || !isFinite(value)) return null;
+    var p = Math.pow(10, digits || 4);
+    return Math.round(value * p) / p;
+  }
+
+  function scoreSide(rows) {
+    var factors = [];
+    var up = 0;
+    var down = 0;
+    var veto = false;
+    var vetoReason = '';
+    var closes = (rows || []).map(function (c) { return c.close; });
+    var price = closes.length ? closes[closes.length - 1] : 0;
+    var ema20 = lastOf(emaSeries(closes, 20));
+    var ema50 = lastOf(emaSeries(closes, 50));
+    var ema200 = closes.length >= 200 ? lastOf(emaSeries(closes, 200)) : null;
+    var rsi = rsiWilder(closes, 14);
+    var macd = macdRead(closes);
+    var adx = adxRead(rows, 14);
+    var atr = atrRead(rows, 14);
+    var bands = bollingerRead(closes);
+    var structure = structureRead(rows);
+    var candles = candleMomentum(rows);
+
+    if (ema20 != null && ema50 != null) {
+      var gap = Math.abs(ema20 - ema50);
+      var tangled = atr.ready && atr.atr > 0 && gap < atr.atr * 0.25;
+      if (tangled) {
+        veto = true;
+        vetoReason = 'EMA20 и EMA50 переплетены, рынок во флэте.';
+        factors.push({ name: 'EMA', up: 0, down: 0, note: vetoReason });
+      } else if (ema20 > ema50 && (ema200 == null || price >= ema200)) {
+        up += 2;
+        factors.push({ name: 'EMA', up: 2, down: 0, note: ema200 == null ? 'EMA20 выше EMA50. История короче 200 свечей.' : 'EMA20 выше EMA50, цена выше EMA200.' });
+      } else if (ema20 < ema50 && (ema200 == null || price <= ema200)) {
+        down += 2;
+        factors.push({ name: 'EMA', up: 0, down: 2, note: ema200 == null ? 'EMA20 ниже EMA50. История короче 200 свечей.' : 'EMA20 ниже EMA50, цена ниже EMA200.' });
+      } else {
+        factors.push({ name: 'EMA', up: 0, down: 0, note: 'EMA20/50 против фильтра EMA200.' });
+      }
+    } else {
+      factors.push({ name: 'EMA', up: 0, down: 0, note: 'Мало свечей для EMA.' });
+    }
+
+    if (rsi == null) factors.push({ name: 'RSI', up: 0, down: 0, note: 'Мало свечей для RSI.' });
+    else if (rsi >= 70) factors.push({ name: 'RSI', up: 0, down: 0, note: 'RSI ' + rsi.toFixed(1) + ': возможное истощение роста.' });
+    else if (rsi <= 30) factors.push({ name: 'RSI', up: 0, down: 0, note: 'RSI ' + rsi.toFixed(1) + ': возможное истощение падения.' });
+    else if (rsi > 55) {
+      up += 1;
+      factors.push({ name: 'RSI', up: 1, down: 0, note: 'RSI ' + rsi.toFixed(1) + ' подтверждает вверх.' });
+    } else if (rsi < 45) {
+      down += 1;
+      factors.push({ name: 'RSI', up: 0, down: 1, note: 'RSI ' + rsi.toFixed(1) + ' подтверждает вниз.' });
+    } else factors.push({ name: 'RSI', up: 0, down: 0, note: 'RSI ' + rsi.toFixed(1) + ' в середине.' });
+
+    if (!macd) factors.push({ name: 'MACD', up: 0, down: 0, note: 'Мало свечей для MACD.' });
+    else {
+      var rising = macd.hist > macd.prevHist;
+      var falling = macd.hist < macd.prevHist;
+      var macdUp = 0;
+      var macdDown = 0;
+      if (macd.macd > macd.signal && macd.macd > 0 && rising) macdUp = 2;
+      else if (macd.macd < macd.signal && macd.macd < 0 && falling) macdDown = 2;
+      else if (macd.macd > macd.signal && macd.macd > 0) macdUp = 1;
+      else if (macd.macd < macd.signal && macd.macd < 0) macdDown = 1;
+      else if (macd.macd > 0 && rising) macdUp = 1;
+      else if (macd.macd < 0 && falling) macdDown = 1;
+      up += macdUp;
+      down += macdDown;
+      factors.push({
+        name: 'MACD',
+        up: macdUp,
+        down: macdDown,
+        note: 'MACD ' + (macd.macd >= 0 ? 'выше нуля' : 'ниже нуля') + ', гистограмма ' + (rising ? 'растёт' : (falling ? 'падает' : 'плоская')) + '.'
+      });
+    }
+
+    if (!adx.ready) factors.push({ name: 'ADX', up: 0, down: 0, note: 'Мало свечей для ADX.' });
+    else if (adx.adx < 20) {
+      veto = true;
+      vetoReason = vetoReason || ('ADX ' + adx.adx.toFixed(1) + ': флэт, сигнал не выдаю.');
+      factors.push({ name: 'ADX', up: 0, down: 0, note: vetoReason });
+    } else if (adx.plusDI > adx.minusDI) {
+      up += 1;
+      factors.push({ name: 'ADX', up: 1, down: 0, note: 'ADX ' + adx.adx.toFixed(1) + ', +DI выше -DI.' });
+    } else if (adx.minusDI > adx.plusDI) {
+      down += 1;
+      factors.push({ name: 'ADX', up: 0, down: 1, note: 'ADX ' + adx.adx.toFixed(1) + ', -DI выше +DI.' });
+    } else factors.push({ name: 'ADX', up: 0, down: 0, note: 'ADX ' + adx.adx.toFixed(1) + ', DI равны.' });
+
+    if (atr.ready && atr.base > 0 && (atr.recent < atr.base * 0.45 || atr.recent > atr.base * 2.6)) {
+      veto = true;
+      vetoReason = vetoReason || (atr.recent < atr.base * 0.45 ? 'ATR: движение слишком тихое.' : 'ATR: движение слишком рваное.');
+      factors.push({ name: 'ATR', up: 0, down: 0, note: vetoReason });
+    } else if (atr.ready) factors.push({ name: 'ATR', up: 0, down: 0, note: 'ATR в рабочем диапазоне, сторону не выбирает.' });
+    else factors.push({ name: 'ATR', up: 0, down: 0, note: 'Мало свечей для ATR.' });
+
+    if (!bands) factors.push({ name: 'Bollinger', up: 0, down: 0, note: 'Мало свечей для полос.' });
+    else {
+      var bbUp = 0;
+      var bbDown = 0;
+      var note = bands.squeeze ? 'Полосы сжимаются.' : (bands.expanding ? 'Полосы расширяются.' : 'Ширина полос обычная.');
+      if (!bands.squeeze && price > bands.upper && rows[rows.length - 1].close >= rows[rows.length - 1].open && bands.expanding) {
+        bbUp = 1;
+        note = 'Выход вверх из диапазона при расширении.';
+      } else if (!bands.squeeze && price < bands.lower && rows[rows.length - 1].close <= rows[rows.length - 1].open && bands.expanding) {
+        bbDown = 1;
+        note = 'Выход вниз из диапазона при расширении.';
+      } else if (price > bands.mid && rows.length > 2 && rows[rows.length - 2].close < bands.mid) {
+        bbUp = 1;
+        note = 'Возврат выше средней линии Боллинджера.';
+      } else if (price < bands.mid && rows.length > 2 && rows[rows.length - 2].close > bands.mid) {
+        bbDown = 1;
+        note = 'Возврат ниже средней линии Боллинджера.';
+      }
+      up += bbUp;
+      down += bbDown;
+      factors.push({ name: 'Bollinger', up: bbUp, down: bbDown, note: note });
+    }
+
+    up += structure.up;
+    down += structure.down;
+    factors.push({ name: 'Структура', up: structure.up, down: structure.down, note: structure.name });
+    up += candles.up;
+    down += candles.down;
+    factors.push({ name: 'Свечи', up: candles.up, down: candles.down, note: candles.note });
+
+    return {
+      up: up,
+      down: down,
+      veto: veto,
+      vetoReason: vetoReason,
+      factors: factors,
+      indicators: {
+        ema20: roundNum(ema20, 5),
+        ema50: roundNum(ema50, 5),
+        ema200: roundNum(ema200, 5),
+        rsi: roundNum(rsi, 2),
+        macd: macd ? roundNum(macd.macd, 6) : null,
+        macdSignal: macd ? roundNum(macd.signal, 6) : null,
+        macdHist: macd ? roundNum(macd.hist, 6) : null,
+        adx: roundNum(adx.adx, 2),
+        plusDI: roundNum(adx.plusDI, 2),
+        minusDI: roundNum(adx.minusDI, 2),
+        atr: roundNum(atr.atr, 6),
+        bbUpper: bands ? roundNum(bands.upper, 5) : null,
+        bbMiddle: bands ? roundNum(bands.mid, 5) : null,
+        bbLower: bands ? roundNum(bands.lower, 5) : null,
+        structure: structure.name
+      }
+    };
+  }
+
+  function scoreBoard(m1, m5) {
+    var main = scoreSide(m1 || []);
+    var slow = m5 && m5.length >= 40 ? scoreSide(m5) : null;
+    var wait = false;
+    var notes = [];
+    if (!m1 || m1.length < 40) {
+      wait = true;
+      notes.push('Мало закрытых свечей для счёта.');
+    }
+    if (main.veto) {
+      wait = true;
+      notes.push(main.vetoReason);
+    }
+    var slowSide = slow ? (slow.up === slow.down ? 'FLAT' : (slow.up > slow.down ? 'UP' : 'DOWN')) : null;
+    var mainSide = main.up === main.down ? 'FLAT' : (main.up > main.down ? 'UP' : 'DOWN');
+    if (slow && !slow.veto && slowSide && slowSide !== 'FLAT' && mainSide !== 'FLAT' && slowSide !== mainSide && Math.max(slow.up, slow.down) >= 5) {
+      wait = true;
+      notes.push('M5 ' + (slowSide === 'UP' ? 'вверх' : 'вниз') + ', M1 ' + (mainSide === 'UP' ? 'вверх' : 'вниз') + '. Пока стороны не совпадут, сделки нет.');
+    }
+    var lead = Math.max(main.up, main.down);
+    var gap = Math.abs(main.up - main.down);
+    if (!wait && (lead < 6 || gap < 3)) {
+      wait = true;
+      notes.push('Подтверждений мало: вверх ' + main.up + '/10, вниз ' + main.down + '/10.');
+    }
+    var isUp = main.up > main.down;
+    var confidence = Math.round((lead / 10) * 100);
+    var lines = main.factors.map(function (factor) {
+      var points = factor.up ? '+' + factor.up + ' вверх' : (factor.down ? '+' + factor.down + ' вниз' : '0');
+      return factor.name + ' ' + points + ' — ' + factor.note;
+    });
+    var head = 'Вверх ' + main.up + '/10 · вниз ' + main.down + '/10. Сила модели ' + confidence + '%. Это согласие факторов, не вероятность выигрыша.';
+    if (slowSide) head += ' M5: ' + (slowSide === 'UP' ? 'вверх' : (slowSide === 'DOWN' ? 'вниз' : 'без перевеса')) + '.';
+    var reason = (wait ? 'ЖДАТЬ. ' + notes.join(' ') + ' ' : '') + head;
+    return {
+      wait: wait,
+      isUp: isUp,
+      up: main.up,
+      down: main.down,
+      max: 10,
+      confidence: confidence,
+      accuracy: confidence,
+      factors: main.factors,
+      indicators: main.indicators,
+      m5: slowSide,
+      reason: reason,
+      reasons: [reason].concat(lines),
+      veto: main.veto
+    };
+  }
+
+  function gradeSignal(row, candles) {
+    if (!row || row.result || !candles || !candles.length) return row;
+    var bar = null;
+    for (var i = 0; i < candles.length; i++) {
+      var stamp = Number(candles[i].t || 0);
+      if (Math.abs(stamp - Number(row.entryAt)) < 90000) bar = candles[i];
+    }
+    if (!bar) return row;
+    if (row.entry == null) row.entry = bar.open;
+    if (Date.now() < Number(row.expiryAt)) return row;
+    row.close = bar.close;
+    if (bar.close === bar.open) row.result = 'PUSH';
+    else if (row.signal === 'UP') row.result = bar.close > bar.open ? 'WIN' : 'LOSS';
+    else row.result = bar.close < bar.open ? 'WIN' : 'LOSS';
+    return row;
+  }
+
   return {
     FIB_LEVELS: FIB_LEVELS,
     fibRetracement: fibRetracement,
@@ -272,6 +690,9 @@
     readTape: readTape,
     formatPoints: formatPoints,
     closedMove: closedMove,
-    sideUp: sideUp
+    sideUp: sideUp,
+    scoreBoard: scoreBoard,
+    scoreSide: scoreSide,
+    gradeSignal: gradeSignal
   };
 });

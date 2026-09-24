@@ -169,12 +169,17 @@
       fib: fixed.fib,
       pointsText: fixed.pointsText,
       reasons: fixed.reasons,
-      closes: fixed.closes
+      closes: fixed.closes,
+      up: fixed.up,
+      down: fixed.down,
+      confidence: fixed.confidence,
+      indicators: fixed.indicators,
+      factors: fixed.factors
     };
   }
 
-  function analyzeMarket(candles, ticks) {
-    var series = sanitizeCandles(candles).slice(-160);
+  function analyzeMarket(candles, ticks, higher) {
+    var series = sanitizeCandles(candles).slice(-400);
     if (!series.length) {
       return { wait: true, isUp: false, last: 0, entry: 0, accuracy: 50, rsi: 50, sma9: 0, sma20: 0, vol: 0, reasons: ['Нет котировок'], levels: { support: 0, resistance: 0 }, pattern: { name: '', bias: 0 } };
     }
@@ -197,24 +202,31 @@
     if (lastClosed.close <= levels.support + range * 0.16 && pattern.bias >= 0) score += 2;
     if (lastClosed.close >= levels.resistance - range * 0.16 && pattern.bias <= 0) score -= 2;
     var settled = settledBars(series);
-    var fib = fibRetracement(settled);
-    var fibCall = minuteCall(fib, settled, ticks);
-    var wait = false;
+    var fib = fibRetracement(settledBars(series.slice(-160)));
+    var higherRows = higher ? settledBars(sanitizeCandles(higher).slice(-400)) : null;
+    var board = window.VipMarket && window.VipMarket.scoreBoard ? window.VipMarket.scoreBoard(settled, higherRows) : null;
+    var fibCall = board ? null : minuteCall(fib, settled.slice(-160), ticks);
+    var wait = board ? board.wait : false;
     var drift = lastClosed.close - (use.length > 3 ? use[use.length - 4].close : lastClosed.open);
-    var isUp = fibCall ? fibCall.isUp : drift >= 0;
-    var accuracy = fibCall ? fibCall.accuracy : 56;
-    var reason = fibCall ? fibCall.reason : (isUp
+    var isUp = board ? board.isUp : (fibCall ? fibCall.isUp : drift >= 0);
+    var accuracy = board ? board.confidence : (fibCall ? fibCall.accuracy : 56);
+    var reason = board ? board.reason : (fibCall ? fibCall.reason : (isUp
       ? 'Последние закрытые минуты вверх. CALL на открытии следующей минуты.'
-      : 'Последние закрытые минуты вниз. PUT на открытии следующей минуты.');
+      : 'Последние закрытые минуты вниз. PUT на открытии следующей минуты.'));
     var slice = use.slice(-20);
     var vol = 0;
     slice.forEach(function (c) { vol += (c.high - c.low) / (c.close || 1); });
     vol = slice.length ? (vol / slice.length) * 100 : 0;
     return {
       isUp: isUp, wait: wait, last: last, entry: last, sma9: sma9, sma20: sma20, rsi: r, vol: vol,
-      levels: levels, accuracy: accuracy, score: score, pattern: pattern, fib: fib,
+      levels: levels, accuracy: accuracy, score: board ? board.up - board.down : score, pattern: pattern, fib: fib,
       pointsText: fibCall && fibCall.tape ? fibCall.tape.pointsText : '',
-      reasons: [reason, pattern.name + ' · RSI ' + r.toFixed(1)],
+      up: board ? board.up : null,
+      down: board ? board.down : null,
+      confidence: board ? board.confidence : accuracy,
+      indicators: board ? board.indicators : null,
+      factors: board ? board.factors : null,
+      reasons: board ? board.reasons : [reason, pattern.name + ' · RSI ' + r.toFixed(1)],
       closes: series.slice(-12).map(function (c) { return Number(c.close); })
     };
   }
@@ -518,6 +530,27 @@
     };
   }
 
+  async function loadScan(pairName, tf) {
+    var pack = await fetchPocketCandles(pairName, tf);
+    var m5 = null;
+    if (Number(tf) === 1) {
+      var bucket = Math.floor(Date.now() / 60000);
+      var key = String(pairName || '') + ':' + bucket;
+      if (!loadScan.cache) loadScan.cache = {};
+      if (loadScan.cache.key === key && loadScan.cache.candles) m5 = loadScan.cache.candles;
+      else {
+        try {
+          var slow = await fetchPocketCandles(pairName, 5);
+          m5 = slow.candles;
+          loadScan.cache = { key: key, candles: m5 };
+        } catch (e) {
+          m5 = loadScan.cache.candles || null;
+        }
+      }
+    }
+    return { pack: pack, m5: m5 };
+  }
+
   function unlockScanScroll(overlay) {
     if (!overlay) return;
     overlay.style.setProperty('display', 'block', 'important');
@@ -581,21 +614,92 @@
     scanExpiryTimer = setInterval(tick, 250);
   }
 
+  function readJournal() {
+    try { return JSON.parse(localStorage.getItem('vip_signal_log') || '[]'); }
+    catch (e) { return []; }
+  }
+
+  function writeJournal(rows) {
+    try { localStorage.setItem('vip_signal_log', JSON.stringify((rows || []).slice(-500))); }
+    catch (e) {}
+  }
+
+  function postJournal(row) {
+    var base = apiBase();
+    if (!base || !row) return;
+    fetch(base + '/api/signals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(row)
+    }).catch(function () {});
+  }
+
+  function rememberSignal(pair, tf, analysis) {
+    if (!analysis || analysis.wait || analysis.up == null) return;
+    var ms = Math.max(1, Number(tf) || 1) * 60000;
+    var bucket = Math.floor(Date.now() / ms);
+    var entryAt = (bucket + 1) * ms;
+    var id = String(pair || '') + ':' + tf + ':' + entryAt;
+    var log = readJournal();
+    if (log.some(function (row) { return row.id === id; })) return;
+    var row = {
+      id: id,
+      at: Date.now(),
+      pair: pair,
+      tf: Number(tf) || 1,
+      entryAt: entryAt,
+      expiryAt: entryAt + ms,
+      signal: analysis.isUp ? 'UP' : 'DOWN',
+      entry: null,
+      close: null,
+      result: null,
+      up: analysis.up,
+      down: analysis.down,
+      indicators: analysis.indicators || null
+    };
+    log.push(row);
+    writeJournal(log);
+    postJournal(row);
+  }
+
+  function gradeJournal(candles) {
+    if (!window.VipMarket || !window.VipMarket.gradeSignal) return;
+    var log = readJournal();
+    var changed = false;
+    log.forEach(function (row) {
+      var before = row.result;
+      window.VipMarket.gradeSignal(row, candles);
+      if (row.result && row.result !== before) {
+        changed = true;
+        postJournal(row);
+      }
+    });
+    if (changed) writeJournal(log);
+  }
+
+  function journalLine() {
+    var done = readJournal().filter(function (row) { return row.result === 'WIN' || row.result === 'LOSS'; });
+    if (!done.length) return '';
+    var wins = done.filter(function (row) { return row.result === 'WIN'; }).length;
+    return 'Журнал: ' + done.length + ' закрытых сигналов, ' + wins + ' свеча закрылась в сторону сигнала.';
+  }
+
   function paintVerdict(pair, tfLabel, analysis) {
     var d = digitsFor(analysis.entry || analysis.last || 0);
     var entry = (analysis.entry || analysis.last || 0).toFixed(d);
     var title = $('analyzed-pair-title');
     if (title) title.textContent = pair + '  •  ' + tfLabel;
     var label = $('ta-summary-tf-label');
-    if (label) label.textContent = 'Фибоначчи (' + tfLabel + ') · ' + (analysis.pattern.name || 'PO');
+    if (label) label.textContent = 'Счёт факторов (' + tfLabel + ') · ' + (analysis.pattern.name || 'PO');
+    var ind = analysis.indicators || {};
     var rsiEl = $('ta-rsi-val');
-    if (rsiEl) rsiEl.textContent = Number(analysis.rsi || 0).toFixed(1);
+    if (rsiEl) rsiEl.textContent = Number(ind.rsi != null ? ind.rsi : analysis.rsi || 0).toFixed(1);
     var s9 = $('ta-sma9-val');
-    if (s9) s9.textContent = Number(analysis.sma9 || 0).toFixed(d);
+    if (s9) s9.textContent = Number(ind.ema20 != null ? ind.ema20 : analysis.sma9 || 0).toFixed(d);
     var s20 = $('ta-sma20-val');
-    if (s20) s20.textContent = Number(analysis.sma20 || 0).toFixed(d);
+    if (s20) s20.textContent = Number(ind.ema50 != null ? ind.ema50 : analysis.sma20 || 0).toFixed(d);
     var vol = $('ta-vol-val');
-    if (vol) vol.textContent = Number(analysis.vol || 0).toFixed(2) + '%';
+    if (vol) vol.textContent = ind.adx != null ? Number(ind.adx).toFixed(1) : Number(analysis.vol || 0).toFixed(2) + '%';
     var arrow = $('final-direction-arrow');
     var fill = $('final-progress-fill');
     var acc = $('final-accuracy-percent');
@@ -605,20 +709,21 @@
     if (analysis.wait) {
       if (arrow) { arrow.textContent = 'ЖДАТЬ M' + scanTf; arrow.className = 'final-dir'; arrow.style.color = '#3d8bff'; }
       if (fill) { fill.style.background = '#3d8bff'; fill.style.boxShadow = '0 0 20px #3d8bff'; }
-      if (verdict) { verdict.textContent = 'ЖДАТЬ ЗАКРЫТИЕ · ' + (analysis.reasons[0] || ''); verdict.className = 'ta-verdict'; }
+      if (verdict) { verdict.textContent = 'ЖДАТЬ · подтверждений нет · ' + tfLabel; verdict.className = 'ta-verdict'; }
     } else if (analysis.isUp) {
       if (arrow) { arrow.textContent = 'CALL ↑ СЛЕДУЮЩАЯ M' + scanTf; arrow.className = 'final-dir up'; arrow.style.color = ''; }
       if (fill) { fill.style.background = 'var(--neon-green)'; fill.style.boxShadow = '0 0 20px var(--neon-green)'; }
-      if (verdict) { verdict.textContent = 'CALL · Фибо · вход от ' + entry + ' · ' + tfLabel; verdict.className = 'ta-verdict buy'; }
+      if (verdict) { verdict.textContent = 'CALL · вверх ' + (analysis.up == null ? '' : analysis.up + '/10 · ') + 'вход от ' + entry + ' · ' + tfLabel; verdict.className = 'ta-verdict buy'; }
     } else {
       if (arrow) { arrow.textContent = 'PUT ↓ СЛЕДУЮЩАЯ M' + scanTf; arrow.className = 'final-dir down'; arrow.style.color = ''; }
       if (fill) { fill.style.background = 'var(--neon-red)'; fill.style.boxShadow = '0 0 20px var(--neon-red)'; }
-      if (verdict) { verdict.textContent = 'PUT · Фибо · вход от ' + entry + ' · ' + tfLabel; verdict.className = 'ta-verdict sell'; }
+      if (verdict) { verdict.textContent = 'PUT · вниз ' + (analysis.down == null ? '' : analysis.down + '/10 · ') + 'вход от ' + entry + ' · ' + tfLabel; verdict.className = 'ta-verdict sell'; }
     }
     var banner = $('scan-pattern-banner');
     if (banner) {
       var extra = (window.__slvForecast && window.__slvForecast.pair === pair) ? window.__slvForecast.text : '';
-      banner.innerHTML = (analysis.reasons || []).join('<br>') + (extra ? '<br><br>' + extra : '');
+      var journal = journalLine();
+      banner.innerHTML = (analysis.reasons || []).join('<br>') + (journal ? '<br>' + journal : '') + (extra ? '<br><br>' + extra : '');
     }
     var call = $('scan-call-side');
     var put = $('scan-put-side');
@@ -641,7 +746,10 @@
       closes: analysis.closes || [],
       direction: analysis.wait ? 'WAIT' : (analysis.isUp ? 'CALL' : 'PUT'),
       level: analysis.fib ? analysis.fib.nearest : null,
-      points: analysis.pointsText || ''
+      points: analysis.pointsText || '',
+      up: analysis.up,
+      down: analysis.down,
+      modelStrength: analysis.confidence
     };
   }
 
@@ -666,7 +774,7 @@
       if (!text) return;
       window.__slvForecast = { pair: pair, text: String(text).replace(/\n/g, '<br>') };
       if (!banner) return;
-      banner.innerHTML = (analysis.reasons || []).join('<br>') + '<br><br>' + window.__slvForecast.text;
+      banner.innerHTML = (analysis.reasons || []).join('<br>') + (journalLine() ? '<br>' + journalLine() : '') + '<br><br>' + window.__slvForecast.text;
     }).catch(function () {});
   }
 
@@ -739,11 +847,16 @@
       setScanOverlay(true, 'Считываю график ' + pairName + ' как на Pocket Option…');
       startNextCandleClock(tf);
       try {
-        var pack = await fetchPocketCandles(pairName, tf);
+        var loaded = await loadScan(pairName, tf);
+        var pack = loaded.pack;
         var fromPocket = isPocketHistory(pack.candles, pack.source);
-        var raw = analyzeMarket(pack.candles, pack.ticks);
+        var raw = analyzeMarket(pack.candles, pack.ticks, loaded.m5);
         if (!fromPocket) raw.wait = true;
         var analysis = presentSignal(pairName, tf, raw);
+        if (fromPocket) {
+          gradeJournal(pack.candles);
+          rememberSignal(pairName, tf, analysis);
+        }
         drawPocketChart(pack.candles, analysis);
         setTimeout(function () {
           setScanOverlay(false);
@@ -759,11 +872,16 @@
         }, 1600);
         scanPriceTimer = setInterval(async function () {
           try {
-            var fresh = await fetchPocketCandles(pairName, tf);
+            var freshLoad = await loadScan(pairName, tf);
+            var fresh = freshLoad.pack;
             var liveOk = isPocketHistory(fresh.candles, fresh.source);
-            var rawLive = analyzeMarket(fresh.candles, fresh.ticks);
+            var rawLive = analyzeMarket(fresh.candles, fresh.ticks, freshLoad.m5);
             if (!liveOk) rawLive.wait = true;
             var live = presentSignal(pairName, tf, rawLive);
+            if (liveOk) {
+              gradeJournal(fresh.candles);
+              rememberSignal(pairName, tf, live);
+            }
             drawPocketChart(fresh.candles, live);
             paintVerdict(pairName, tfLabel, live);
             if (statusText) statusText.textContent = liveOk ? ('POCKET OPTION • ' + tfLabel) : 'НЕТ СЕССИИ POCKET OPTION';
