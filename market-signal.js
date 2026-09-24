@@ -518,14 +518,14 @@
         veto = true;
         vetoReason = 'EMA20 и EMA50 переплетены, рынок во флэте.';
         factors.push({ name: 'EMA', up: 0, down: 0, note: vetoReason });
-      } else if (ema20 > ema50 && (ema200 == null || price >= ema200)) {
+      } else if (ema20 > ema50 && price >= ema20 && (ema200 == null || price >= ema200)) {
         up += 2;
-        factors.push({ name: 'EMA', up: 2, down: 0, note: ema200 == null ? 'EMA20 выше EMA50. История короче 200 свечей.' : 'EMA20 выше EMA50, цена выше EMA200.' });
-      } else if (ema20 < ema50 && (ema200 == null || price <= ema200)) {
+        factors.push({ name: 'EMA', up: 2, down: 0, note: ema200 == null ? 'EMA20 выше EMA50, цена выше них.' : 'EMA20 выше EMA50, цена выше EMA200.' });
+      } else if (ema20 < ema50 && price <= ema20 && (ema200 == null || price <= ema200)) {
         down += 2;
-        factors.push({ name: 'EMA', up: 0, down: 2, note: ema200 == null ? 'EMA20 ниже EMA50. История короче 200 свечей.' : 'EMA20 ниже EMA50, цена ниже EMA200.' });
+        factors.push({ name: 'EMA', up: 0, down: 2, note: ema200 == null ? 'EMA20 ниже EMA50, цена ниже них.' : 'EMA20 ниже EMA50, цена ниже EMA200.' });
       } else {
-        factors.push({ name: 'EMA', up: 0, down: 0, note: 'EMA20/50 против фильтра EMA200.' });
+        factors.push({ name: 'EMA', up: 0, down: 0, note: 'Цена и средние смотрят в разные стороны.' });
       }
     } else {
       factors.push({ name: 'EMA', up: 0, down: 0, note: 'Мало свечей для EMA.' });
@@ -640,7 +640,60 @@
     };
   }
 
-  function scoreBoard(m1, m5) {
+  function priceReclaim(rows) {
+    if (!rows || rows.length < 55) return null;
+    var closes = rows.map(function (c) { return c.close; });
+    var fast = lastOf(emaSeries(closes, 20));
+    var slow = lastOf(emaSeries(closes, 50));
+    if (fast == null || slow == null) return null;
+    var last = rows[rows.length - 1];
+    var price = last.close;
+    var bull = last.close > last.open;
+    var bear = last.close < last.open;
+    if (fast < slow && price > fast && price > slow) {
+      return {
+        side: bull ? 'UP' : 'WAIT',
+        note: bull
+          ? 'Цена закрылась выше EMA20 и EMA50. Старое падение для следующей минуты закончилось.'
+          : 'Цена уже выше EMA20 и EMA50. Продолжение вниз не даю.'
+      };
+    }
+    if (fast > slow && price < fast && price < slow) {
+      return {
+        side: bear ? 'DOWN' : 'WAIT',
+        note: bear
+          ? 'Цена закрылась ниже EMA20 и EMA50. Старый рост для следующей минуты закончился.'
+          : 'Цена уже ниже EMA20 и EMA50. Продолжение вверх не даю.'
+      };
+    }
+    return null;
+  }
+
+  function applyTurn(main, turn) {
+    var against = { EMA: 1, RSI: 1, MACD: 1, ADX: 1, Bollinger: 1, 'Структура': 1, 'Свечи': 1, 'Минуты': 1 };
+    main.factors.forEach(function (factor) {
+      if (!against[factor.name]) return;
+      if (turn.side === 'UP' && factor.down) {
+        factor.down = 0;
+        factor.note += ' Цена уже выше средних.';
+      }
+      if (turn.side === 'DOWN' && factor.up) {
+        factor.up = 0;
+        factor.note += ' Цена уже ниже средних.';
+      }
+    });
+    main.factors.push({
+      name: 'Цена',
+      up: turn.side === 'UP' ? 4 : 0,
+      down: turn.side === 'DOWN' ? 4 : 0,
+      note: turn.note
+    });
+    var totals = sumFactors(main.factors);
+    main.up = totals.up;
+    main.down = totals.down;
+  }
+
+  function scoreBoard(m1, m5, liveRows) {
     var main = scoreSide(m1 || []);
     var slow = m5 && m5.length >= 40 ? scoreSide(m5) : null;
     var wait = false;
@@ -686,13 +739,25 @@
       wait = true;
       notes.push('M5 ' + (slowSide === 'UP' ? 'вверх' : 'вниз') + ', M1 ' + (mainSide === 'UP' ? 'вверх' : 'вниз') + '. Последние минуты без явного хода, сделки нет.');
     }
+    var turn = priceReclaim(liveRows && liveRows.length >= 55 ? liveRows : m1);
+    var reclaimSide = '';
+    if (turn && turn.side === 'WAIT') {
+      wait = true;
+      notes = [turn.note];
+      reclaimSide = 'WAIT';
+    } else if (turn) {
+      applyTurn(main, turn);
+      wait = false;
+      notes = [];
+      reclaimSide = turn.side;
+    }
     var lead = Math.max(main.up, main.down);
     var gap = Math.abs(main.up - main.down);
-    if (!wait && !tape.side && (lead < 6 || gap < 3)) {
+    if (!wait && !tape.side && !reclaimSide && (lead < 6 || gap < 3)) {
       wait = true;
       notes.push('Подтверждений мало: вверх ' + main.up + '/10, вниз ' + main.down + '/10.');
     }
-    var isUp = main.up > main.down;
+    var isUp = reclaimSide === 'UP' ? true : (reclaimSide === 'DOWN' ? false : main.up > main.down);
     var confidence = Math.round((lead / 10) * 100);
     var lines = main.factors.map(function (factor) {
       var points = factor.up ? '+' + factor.up + ' вверх' : (factor.down ? '+' + factor.down + ' вниз' : '0');
@@ -712,6 +777,7 @@
       factors: main.factors,
       indicators: main.indicators,
       m5: slowSide,
+      reclaimSide: reclaimSide,
       reason: reason,
       reasons: [reason].concat(lines),
       veto: main.veto

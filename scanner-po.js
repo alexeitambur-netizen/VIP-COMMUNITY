@@ -149,7 +149,9 @@
     var ms = Math.max(1, Number(tf) || 1) * 60000;
     var bucket = Math.floor(Date.now() / ms);
     var key = String(pair || '') + ':' + String(tf || 1) + ':' + bucket;
-    if (!presentSignal.hold || presentSignal.hold.key !== key || (presentSignal.hold.analysis.wait && !analysis.wait)) {
+    var held = presentSignal.hold && presentSignal.hold.key === key ? presentSignal.hold.analysis : null;
+    var crossed = analysis.reclaimSide && (!held || held.reclaimSide !== analysis.reclaimSide);
+    if (!held || (held.wait && !analysis.wait) || crossed) {
       presentSignal.hold = { key: key, analysis: analysis };
     }
     var fixed = presentSignal.hold.analysis;
@@ -174,7 +176,8 @@
       down: fixed.down,
       confidence: fixed.confidence,
       indicators: fixed.indicators,
-      factors: fixed.factors
+      factors: fixed.factors,
+      reclaimSide: fixed.reclaimSide || ''
     };
   }
 
@@ -204,7 +207,7 @@
     var settled = settledBars(series);
     var fib = fibRetracement(settledBars(series.slice(-160)));
     var higherRows = higher ? settledBars(sanitizeCandles(higher).slice(-400)) : null;
-    var board = window.VipMarket && window.VipMarket.scoreBoard ? window.VipMarket.scoreBoard(settled, higherRows) : null;
+    var board = window.VipMarket && window.VipMarket.scoreBoard ? window.VipMarket.scoreBoard(settled, higherRows, series) : null;
     var fibCall = board ? null : minuteCall(fib, settled.slice(-160), ticks);
     var wait = board ? board.wait : false;
     var drift = lastClosed.close - (use.length > 3 ? use[use.length - 4].close : lastClosed.open);
@@ -226,6 +229,7 @@
       confidence: board ? board.confidence : accuracy,
       indicators: board ? board.indicators : null,
       factors: board ? board.factors : null,
+      reclaimSide: board ? (board.reclaimSide || '') : '',
       reasons: board ? board.reasons : [reason, pattern.name + ' · RSI ' + r.toFixed(1)],
       closes: series.slice(-12).map(function (c) { return Number(c.close); })
     };
