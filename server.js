@@ -3,6 +3,7 @@ const cors = require('cors');
 const Parser = require('rss-parser');
 const { Telegraf, Markup } = require('telegraf');
 const { createClient } = require('@supabase/supabase-js');
+const poDemo = require('./po-demo');
 
 // ==================== КОНФИГ (лучше всего хранить в .env) ====================
 const PORT = process.env.PORT || 3000;
@@ -575,7 +576,98 @@ let currentPayouts = {
     categories: { currencies: [], crypto: [], commodities: [], stocks: [], indices: [] }
 };
 
-app.get('/api/payouts', (req, res) => res.json(currentPayouts));
+app.get('/api/payouts', async function (req, res) {
+    try {
+        const demo = await poDemo.payouts();
+        if (demo && demo.categories && demo.categories.currencies && demo.categories.currencies.length) {
+            currentPayouts = demo;
+            return res.json(demo);
+        }
+    } catch (e) {}
+    return res.json(currentPayouts);
+});
+
+app.get('/api/candles', async function (req, res) {
+    const pair = req.query.pair || req.query.symbol || 'EURUSD_otc';
+    const period = req.query.period || '60';
+    try {
+        const demo = await poDemo.candles(pair, period);
+        if (demo && Array.isArray(demo.candles) && demo.candles.length) return res.json(demo);
+    } catch (e) {
+        return res.status(503).json({ ok: false, error: 'Нет свечей Pocket Option' });
+    }
+    return res.status(503).json({ ok: false, error: 'Нет свечей Pocket Option' });
+});
+
+function readGroqKey() {
+    let token = String(process.env.GROQ_API_KEY || '').trim();
+    if ((token.startsWith('"') && token.endsWith('"')) || (token.startsWith("'") && token.endsWith("'"))) {
+        token = token.slice(1, -1).trim();
+    }
+    token = token.replace(/^Bearer\s+/i, '').replace(/^GROQ_API_KEY=/i, '').trim();
+    return token;
+}
+
+app.post('/api/ai-chat', async function (req, res) {
+    const token = readGroqKey();
+    if (!token) return res.status(503).json({ ok: false, error: 'На сервере не задан GROQ_API_KEY' });
+    if (!token.startsWith('gsk_') || token.length < 30) {
+        return res.status(503).json({ ok: false, error: 'В GROQ_API_KEY нужна строка gsk_… без кавычек' });
+    }
+    const incoming = Array.isArray(req.body && req.body.messages) ? req.body.messages.slice(-8) : [];
+    const ctx = (req.body && req.body.context) || {};
+    const clean = incoming
+        .filter(function (m) { return m && (m.role === 'user' || m.role === 'assistant') && m.content; })
+        .map(function (m) { return { role: m.role, content: String(m.content).slice(0, 2000) }; });
+    if (!clean.length) return res.status(400).json({ ok: false, error: 'Пустой запрос' });
+    const intro = 'Я искусственный интеллект VIP Community Pro для помощи по торговле в Pocket Option. Хочешь получить сигналы? Переходи в сканер котировок и начинай работать';
+    const forecast = req.body && req.body.mode === 'forecast';
+    const system = forecast
+        ? [
+            'Дай прогноз только на следующую минутную свечу. Не оценивай текущую незакрытую минуту.',
+            'Первая строка: CALL или PUT. Вторая: вход на открытии следующей минуты, экспирация на её закрытии.',
+            'Дальше одно короткое пояснение обычными словами. Не перечисляй RSI, скользящие и уровни.',
+            'Не обещай прибыль.',
+            'Данные: ' + JSON.stringify({
+                pair: ctx.pair || '',
+                price: ctx.price || null,
+                note: ctx.reason || '',
+                closes: Array.isArray(ctx.closes) ? ctx.closes.slice(-8) : []
+            })
+        ].join('\n')
+        : [
+            'Ты помощник VIP Community. Отвечай по-русски, как в обычном разговоре, коротко и по вопросу.',
+            'Если спрашивают кто ты, как тебя зовут, что ты такое или просят представиться, ответь дословно и больше ничего не добавляй: ' + intro,
+            'На остальные вопросы отвечай как помощник. Не начинай с торгового сигнала и сам не говори про RSI, Фибоначчи и откуда входить.',
+            'Если просят сигнал или прогноз по сделке, ответь: переходи в сканер котировок и начинай работать.'
+        ].join('\n');
+    try {
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                Authorization: 'Bearer ' + token,
+                'Content-Type': 'application/json',
+                'User-Agent': 'vip-community/1.0'
+            },
+            body: JSON.stringify({
+                model: 'qwen/qwen3.8-27b',
+                messages: [{ role: 'system', content: system }].concat(clean),
+                max_tokens: 400,
+                temperature: 0.2
+            })
+        });
+        const data = await response.json().catch(function () { return {}; });
+        if (!response.ok) {
+            const detail = String((data.error && (data.error.message || data.error)) || 'Модель не ответила');
+            return res.status(response.status).json({ ok: false, error: detail.slice(0, 300) });
+        }
+        const answer = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+        if (!answer) return res.status(502).json({ ok: false, error: 'Пустой ответ модели' });
+        return res.json({ ok: true, answer: answer });
+    } catch (e) {
+        return res.status(502).json({ ok: false, error: 'Нет связи с моделью' });
+    }
+});
 
 app.post('/api/update-payouts', (req, res) => {
     const { data } = req.body;
