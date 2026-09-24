@@ -237,6 +237,30 @@ var bounced = market.scoreBoard(dumpThenReclaim(), trendBars(80, 1.08, -0.0004))
 assert.strictEqual(bounced.wait, false, bounced.reason);
 assert.strictEqual(bounced.isUp, true, 'price back above both averages must not stay PUT, got ' + bounced.reason);
 
+function stallAtLow() {
+  var rows = trendBars(80, 110, -0.02);
+  var last = rows[rows.length - 1];
+  last.close = last.open;
+  last.high = last.open + 0.004;
+  last.low = last.open - 0.004;
+  return rows;
+}
+var stalled = market.scoreBoard(stallAtLow(), trendBars(60, 110, -0.05));
+assert.strictEqual(stalled.wait, false, stalled.reason);
+assert.strictEqual(stalled.isUp, true, 'RSI at the low with a doji must not stay PUT, got ' + stalled.reason);
+
+function stallAtHigh() {
+  var rows = trendBars(80, 1.2, 0.0002);
+  var last = rows[rows.length - 1];
+  last.close = last.open;
+  last.high = last.open + 0.00005;
+  last.low = last.open - 0.00005;
+  return rows;
+}
+var topped = market.scoreBoard(stallAtHigh(), trendBars(60, 1.2, 0.0005));
+assert.strictEqual(topped.wait, false, topped.reason);
+assert.strictEqual(topped.isUp, false, 'RSI at the high with a doji must not stay CALL, got ' + topped.reason);
+
 var graded = market.gradeSignal({
   signal: 'UP',
   entryAt: 60000,

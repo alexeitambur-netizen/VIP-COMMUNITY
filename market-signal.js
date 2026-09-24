@@ -698,6 +698,30 @@
     main.down = totals.down;
   }
 
+  function exhaustion(rows, rsi) {
+    if (rsi == null || !rows || rows.length < 10) return null;
+    var last = rows[rows.length - 1];
+    var prior = rows.slice(-8, -1);
+    var priorNet = prior[prior.length - 1].close - prior[0].close;
+    var span = Math.max(last.high - last.low, Math.abs(last.close) * 0.00005);
+    var body = Math.abs(last.close - last.open);
+    var green = last.close > last.open;
+    var red = last.close < last.open;
+    var priorLow = Math.min.apply(null, prior.map(function (c) { return c.low; }));
+    var priorHigh = Math.max.apply(null, prior.map(function (c) { return c.high; }));
+    var strongRed = red && body > span * 0.55 && last.low <= priorLow;
+    var strongGreen = green && body > span * 0.55 && last.high >= priorHigh;
+    if (rsi <= 32 && priorNet < 0) {
+      if (strongRed) return null;
+      return { side: 'UP', note: 'RSI ' + rsi.toFixed(1) + ' на дне, свеча больше не продаёт. Следующая минута вверх.' };
+    }
+    if (rsi >= 68 && priorNet > 0) {
+      if (strongGreen) return null;
+      return { side: 'DOWN', note: 'RSI ' + rsi.toFixed(1) + ' на хаях, свеча больше не покупает. Следующая минута вниз.' };
+    }
+    return null;
+  }
+
   function scoreBoard(m1, m5, liveRows) {
     var main = scoreSide(m1 || []);
     var slow = m5 && m5.length >= 40 ? scoreSide(m5) : null;
@@ -756,9 +780,25 @@
       notes = [];
       reclaimSide = turn.side;
     }
+    var spentRsi = main.indicators ? main.indicators.rsi : null;
+    if (liveRows && liveRows.length > 20) {
+      var spentLive = rsiWilder(liveRows.map(function (c) { return c.close; }), 14);
+      if (spentLive != null) spentRsi = spentLive;
+    }
+    var spent = exhaustion(liveRows && liveRows.length >= 10 ? liveRows : m1, spentRsi);
+    if (spent && spent.side === 'WAIT') {
+      wait = true;
+      notes = [spent.note];
+      reclaimSide = 'WAIT';
+    } else if (spent) {
+      applyTurn(main, spent);
+      wait = false;
+      notes = [];
+      reclaimSide = spent.side;
+    }
     var lead = Math.max(main.up, main.down);
     var gap = Math.abs(main.up - main.down);
-    if (!wait && !tape.side && !reclaimSide && (lead < 6 || gap < 3)) {
+    if (!wait && !tape.side && !reclaimSide && !spent && (lead < 6 || gap < 3)) {
       wait = true;
       notes.push('Подтверждений мало: вверх ' + main.up + '/10, вниз ' + main.down + '/10.');
     }
