@@ -177,11 +177,17 @@
       indicators: fixed.indicators,
       factors: fixed.factors,
       reclaimSide: fixed.reclaimSide || '',
-      lastBar: analysis.lastBar || fixed.lastBar
+      lastBar: analysis.lastBar || fixed.lastBar,
+      quoteAt: fixed.quoteAt || 0,
+      receivedAt: fixed.receivedAt || 0,
+      signalAt: fixed.signalAt || 0,
+      latencyMs: fixed.latencyMs || 0,
+      dataAge: fixed.dataAge,
+      marketState: fixed.marketState || ''
     };
   }
 
-  function analyzeMarket(candles, ticks, higher, frames) {
+  function analyzeMarket(candles, ticks, higher, frames, meta) {
     var series = sanitizeCandles(candles).slice(-400);
     if (!series.length) {
       return { wait: true, isUp: false, last: 0, entry: 0, accuracy: 50, rsi: 50, sma9: 0, sma20: 0, vol: 0, reasons: ['Нет котировок'], levels: { support: 0, resistance: 0 }, pattern: { name: '', bias: 0 } };
@@ -222,7 +228,7 @@
         m5: (frames && frames['5м']) || higherRows || [],
         m15: (frames && frames['15м']) || [],
         now: Date.now(),
-        lastTickAt: tickAt || (series.length ? series[series.length - 1].t : 0)
+        lastTickAt: (meta && meta.quoteAt) || tickAt || (series.length ? series[series.length - 1].t : 0)
       });
     } else if (window.VipMarket && window.VipMarket.scoreBoard) {
       board = window.VipMarket.scoreBoard(settled, higherRows, series);
@@ -251,7 +257,11 @@
       reclaimSide: board ? (board.reclaimSide || '') : '',
       reasons: board ? board.reasons : [reason, pattern.name + ' · RSI ' + r.toFixed(1)],
       closes: series.slice(-12).map(function (c) { return Number(c.close); }),
-      lastBar: series.length ? series[series.length - 1] : null
+      lastBar: series.length ? series[series.length - 1] : null,
+      quoteAt: meta && meta.quoteAt || 0,
+      receivedAt: meta && meta.receivedAt || 0,
+      signalAt: Date.now(),
+      latencyMs: meta && meta.quoteAt ? Math.max(0, Date.now() - meta.quoteAt) : (board && board.dataAge) || 0
     };
   }
 
@@ -550,6 +560,8 @@
         return list;
       })(),
       ticks: Array.isArray(data.ticks) ? data.ticks : [],
+      quoteAt: Number(data.quoteAt) || 0,
+      receivedAt: Number(data.receivedAt) || 0,
       source: /pocketoption-demo/i.test(data.source || '') ? 'pocketoption-demo' : ((data.source && /pocketoption-api/i.test(data.source)) ? data.source : (pocketLive ? 'pocketoption-api' : (data.source || 'fallback-market')))
     };
   }
@@ -685,19 +697,23 @@
 
   function rememberSignal(pair, tf, analysis) {
     if (!analysis) return;
-    var ms = Math.max(1, Number(tf) || 1) * 60000;
-    var bucket = Math.floor(Date.now() / ms);
-    var entryAt = (bucket + 1) * ms;
-    var id = String(pair || '') + ':' + tf + ':' + entryAt;
+    var signalTimestamp = Number(analysis.quoteAt || Date.now());
+    var expirationTimestamp = signalTimestamp + 60000;
+    var id = String(pair || '') + ':' + tf + ':' + signalTimestamp;
     var log = readJournal();
     if (log.some(function (row) { return row.id === id; })) return;
     var row = {
       id: id,
       at: Date.now(),
+      signalTimestamp: signalTimestamp,
       pair: pair,
       tf: Number(tf) || 1,
-      entryAt: entryAt,
-      expiryAt: entryAt + ms,
+      entryAt: signalTimestamp,
+      expiryAt: expirationTimestamp,
+      expirationTimestamp: expirationTimestamp,
+      receivedAt: analysis.receivedAt || 0,
+      signalAt: analysis.signalAt || Date.now(),
+      latencyMs: analysis.latencyMs || 0,
       signal: analysis.wait ? 'NO_TRADE' : (analysis.isUp ? 'UP' : 'DOWN'),
       marketState: analysis.marketState || '',
       score: analysis.score,
@@ -715,14 +731,16 @@
     postJournal(row);
   }
 
-  function gradeJournal(candles) {
-    if (!window.VipMarket || !window.VipMarket.gradeSignal) return;
+  function gradeJournal(candles, ticks) {
+    if (!window.SignalEngine || !window.SignalEngine.resolveOutcome) return;
     var log = readJournal();
     var changed = false;
     log.forEach(function (row) {
       if (!row || row.signal === 'NO_TRADE') return;
       var before = row.result;
-      window.VipMarket.gradeSignal(row, candles);
+      var keptEntry = row.entry;
+      window.SignalEngine.resolveOutcome(row, { ticks: ticks || [], candles: candles, now: Date.now() });
+      if (keptEntry > 0) row.entry = keptEntry;
       if (row.result && row.result !== before) {
         changed = true;
         postJournal(row);
@@ -777,7 +795,8 @@
     if (banner) {
       var journal = journalLine();
       var barLine = lastBarLine(analysis.lastBar);
-      banner.innerHTML = (barLine ? barLine + '<br>' : '') + (analysis.reasons || []).join('<br>') + (journal ? '<br>' + journal : '');
+      var lag = analysis.latencyMs != null ? ('SIGNAL LATENCY: ' + analysis.latencyMs + ' ms') : '';
+      banner.innerHTML = (barLine ? barLine + '<br>' : '') + (lag ? lag + '<br>' : '') + (analysis.reasons || []).join('<br>') + (journal ? '<br>' + journal : '');
     }
     var call = $('scan-call-side');
     var put = $('scan-put-side');
@@ -896,11 +915,11 @@
         var loaded = await loadScan(pairName, tf);
         var pack = loaded.pack;
         var fromPocket = isPocketHistory(pack.candles, pack.source);
-        var raw = analyzeMarket(pack.candles, pack.ticks, loaded.m5, loaded.frames);
+        var raw = analyzeMarket(pack.candles, pack.ticks, loaded.m5, loaded.frames, { quoteAt: pack.quoteAt, receivedAt: pack.receivedAt });
         if (!fromPocket) raw.wait = true;
         var analysis = presentSignal(pairName, tf, raw);
         if (fromPocket) {
-          gradeJournal(pack.candles);
+          gradeJournal(pack.candles, pack.ticks);
           rememberSignal(pairName, tf, analysis);
         }
         drawPocketChart(pack.candles, analysis);
@@ -921,11 +940,11 @@
             var freshLoad = await loadScan(pairName, tf);
             var fresh = freshLoad.pack;
             var liveOk = isPocketHistory(fresh.candles, fresh.source);
-            var rawLive = analyzeMarket(fresh.candles, fresh.ticks, freshLoad.m5, freshLoad.frames);
+            var rawLive = analyzeMarket(fresh.candles, fresh.ticks, freshLoad.m5, freshLoad.frames, { quoteAt: fresh.quoteAt, receivedAt: fresh.receivedAt });
             if (!liveOk) rawLive.wait = true;
             var live = presentSignal(pairName, tf, rawLive);
             if (liveOk) {
-              gradeJournal(fresh.candles);
+              gradeJournal(fresh.candles, fresh.ticks);
               rememberSignal(pairName, tf, live);
             }
             drawPocketChart(fresh.candles, live);

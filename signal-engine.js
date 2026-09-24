@@ -515,17 +515,21 @@
         noTrade += 1;
         continue;
       }
-      var bar = rows[i];
+      var p0 = past[past.length - 1].close;
+      var p60 = rows[i].close;
       var result = 'PUSH';
-      if (bar.close > bar.open) result = decision.direction === 'UP' ? 'WIN' : 'LOSS';
-      else if (bar.close < bar.open) result = decision.direction === 'DOWN' ? 'WIN' : 'LOSS';
+      if (p60 > p0) result = decision.direction === 'UP' ? 'WIN' : 'LOSS';
+      else if (p60 < p0) result = decision.direction === 'DOWN' ? 'WIN' : 'LOSS';
       booked.push({
-        entryTime: bar.t,
-        entry: bar.open,
-        exit: bar.close,
+        signalTimestamp: rows[i - 1].t + 60000,
+        expirationTimestamp: rows[i].t + 60000,
+        entryTime: rows[i - 1].t + 60000,
+        entry: p0,
+        exit: p60,
         direction: decision.direction,
         score: decision.score,
-        result: result
+        result: result,
+        priceMethod: 'next_closed_minute'
       });
     }
     var evaluated = rows.length - start;
@@ -546,12 +550,53 @@
     };
   }
 
+  function timeMs(value) {
+    var n = Number(value || 0);
+    if (n > 0 && n < 1000000000000) n *= 1000;
+    return n;
+  }
+
+  function resolveOutcome(row, ctx) {
+    ctx = ctx || {};
+    if (!row || row.result || row.signal === 'NO_TRADE' || row.signal === 'WAIT') return row;
+    var exp = timeMs(row.expirationTimestamp || row.expiryAt);
+    var p0 = Number(row.entry);
+    if (!(exp > 0) || !(p0 > 0)) return row;
+    var now = timeMs(ctx.now || Date.now());
+    if (now < exp) return row;
+    var best = null;
+    (ctx.ticks || []).forEach(function (tick) {
+      var stamp = timeMs(tick && (tick.t || tick[0]));
+      var price = Number(tick && (tick.price != null ? tick.price : tick[1]));
+      if (!(price > 0) || !(stamp > 0) || stamp > exp) return;
+      if (!best || stamp > best.t) best = { t: stamp, price: price };
+    });
+    if (!best) {
+      (ctx.candles || []).forEach(function (candle) {
+        var open = timeMs(candle.t || candle.time);
+        var closeAt = open + 60000;
+        if (!(candle.close > 0) || !(open > 0) || closeAt > exp) return;
+        if (!best || closeAt > best.t) best = { t: closeAt, price: Number(candle.close) };
+      });
+    }
+    if (!best) return row;
+    row.exit = best.price;
+    row.close = best.price;
+    row.priceMethod = 'last_price_at_or_before_expiry';
+    row.priceGapMs = exp - best.t;
+    if (best.price === p0) row.result = 'PUSH';
+    else if (row.signal === 'UP' || row.signal === 'CALL') row.result = best.price > p0 ? 'WIN' : 'LOSS';
+    else row.result = best.price < p0 ? 'WIN' : 'LOSS';
+    return row;
+  }
+
   return {
     SETTINGS: SETTINGS,
     settingsFor: settingsFor,
     decide: decide,
     aggregate: aggregate,
     backtest: backtest,
-    statsOf: statsOf
+    statsOf: statsOf,
+    resolveOutcome: resolveOutcome
   };
 });
