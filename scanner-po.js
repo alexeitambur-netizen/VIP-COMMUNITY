@@ -150,9 +150,7 @@
     var ms = Math.max(1, Number(tf) || 1) * 60000;
     var bucket = Math.floor(Date.now() / ms);
     var key = String(pair || '') + ':' + String(tf || 1) + ':' + bucket;
-    var held = presentSignal.hold && presentSignal.hold.key === key ? presentSignal.hold.analysis : null;
-    var crossed = analysis.reclaimSide && (!held || held.reclaimSide !== analysis.reclaimSide);
-    if (!held || (held.wait && !analysis.wait) || crossed) {
+    if (!presentSignal.hold || presentSignal.hold.key !== key) {
       presentSignal.hold = { key: key, analysis: analysis };
     }
     var fixed = presentSignal.hold.analysis;
@@ -209,18 +207,25 @@
     var settled = settledBars(series);
     var fib = fibRetracement(settledBars(series.slice(-160)));
     var higherRows = higher ? settledBars(sanitizeCandles(higher).slice(-400)) : null;
-    var board = window.VipMarket && window.VipMarket.scoreBoard ? window.VipMarket.scoreBoard(settled, higherRows, series) : null;
-    var stack = window.VipMarket && window.VipMarket.timeframeStack && frames ? window.VipMarket.timeframeStack(frames) : null;
-    if (board && stack && stack.side) {
-      board.isUp = stack.side === 'UP';
-      board.wait = false;
-      board.reclaimSide = stack.side;
-      board.reasons = [stack.line].concat(board.reasons || []);
-    } else if (board && stack && stack.line) {
-      board.reasons = [stack.line].concat(board.reasons || []);
-    }
-    if (board && window.VipMarket && window.VipMarket.settleSignal) {
-      window.VipMarket.settleSignal(board, settled);
+    var board = null;
+    if (window.SignalEngine && window.SignalEngine.decide) {
+      var agg = window.SignalEngine.aggregate;
+      var tickAt = 0;
+      (ticks || []).forEach(function (tick) {
+        var stamp = Number(tick && (tick.t || tick[0]) || 0);
+        if (stamp > 10000000000 && stamp > tickAt) tickAt = stamp;
+      });
+      board = window.SignalEngine.decide({
+        pair: frames && frames.pair,
+        m1: settled,
+        m3: agg ? agg(settled, 180000) : [],
+        m5: (frames && frames['5м']) || higherRows || [],
+        m15: (frames && frames['15м']) || [],
+        now: Date.now(),
+        lastTickAt: tickAt || (series.length ? series[series.length - 1].t : 0)
+      });
+    } else if (window.VipMarket && window.VipMarket.scoreBoard) {
+      board = window.VipMarket.scoreBoard(settled, higherRows, series);
     }
     var fibCall = board ? null : minuteCall(fib, settled.slice(-160), ticks);
     var wait = board ? board.wait : false;
@@ -591,6 +596,7 @@
       m15 = await cachedCandles(pairName, 900, 180000);
     }
     var frames = buildFrames(s5, pack.candles, m15);
+    frames.pair = pairName;
     return { pack: pack, m5: frames['5м'] || null, frames: frames };
   }
 
@@ -678,7 +684,7 @@
   }
 
   function rememberSignal(pair, tf, analysis) {
-    if (!analysis || analysis.wait || analysis.up == null) return;
+    if (!analysis) return;
     var ms = Math.max(1, Number(tf) || 1) * 60000;
     var bucket = Math.floor(Date.now() / ms);
     var entryAt = (bucket + 1) * ms;
@@ -692,13 +698,17 @@
       tf: Number(tf) || 1,
       entryAt: entryAt,
       expiryAt: entryAt + ms,
-      signal: analysis.isUp ? 'UP' : 'DOWN',
-      entry: null,
+      signal: analysis.wait ? 'NO_TRADE' : (analysis.isUp ? 'UP' : 'DOWN'),
+      marketState: analysis.marketState || '',
+      score: analysis.score,
+      dataAge: analysis.dataAge,
+      entry: analysis.wait ? null : (analysis.entry || analysis.last || null),
       close: null,
       result: null,
       up: analysis.up,
       down: analysis.down,
-      indicators: analysis.indicators || null
+      indicators: analysis.indicators || null,
+      reason: analysis.reason || ''
     };
     log.push(row);
     writeJournal(log);
@@ -710,6 +720,7 @@
     var log = readJournal();
     var changed = false;
     log.forEach(function (row) {
+      if (!row || row.signal === 'NO_TRADE') return;
       var before = row.result;
       window.VipMarket.gradeSignal(row, candles);
       if (row.result && row.result !== before) {
@@ -733,7 +744,7 @@
     var title = $('analyzed-pair-title');
     if (title) title.textContent = pair + '  •  ' + tfLabel;
     var label = $('ta-summary-tf-label');
-    if (label) label.textContent = 'Счёт факторов (' + tfLabel + ') · ' + (analysis.pattern.name || 'PO');
+    if (label) label.textContent = (analysis.marketState || 'РЫНОК') + ' · ' + tfLabel;
     var ind = analysis.indicators || {};
     var rsiEl = $('ta-rsi-val');
     if (rsiEl) rsiEl.textContent = Number(ind.rsi != null ? ind.rsi : analysis.rsi || 0).toFixed(1);
@@ -747,12 +758,12 @@
     var fill = $('final-progress-fill');
     var acc = $('final-accuracy-percent');
     var verdict = $('ta-verdict-box');
-    if (acc) acc.textContent = analysis.accuracy + '%';
-    if (fill) fill.style.width = analysis.accuracy + '%';
+    if (acc) acc.textContent = (analysis.score != null ? analysis.score : analysis.accuracy) + '/100';
+    if (fill) fill.style.width = Math.max(0, Math.min(100, analysis.score != null ? analysis.score : analysis.accuracy)) + '%';
     if (analysis.wait) {
-      if (arrow) { arrow.textContent = 'ЖДАТЬ M' + scanTf; arrow.className = 'final-dir'; arrow.style.color = '#3d8bff'; }
+      if (arrow) { arrow.textContent = 'NO TRADE'; arrow.className = 'final-dir'; arrow.style.color = '#3d8bff'; }
       if (fill) { fill.style.background = '#3d8bff'; fill.style.boxShadow = '0 0 20px #3d8bff'; }
-      if (verdict) { verdict.textContent = 'ЖДАТЬ · подтверждений нет · ' + tfLabel; verdict.className = 'ta-verdict'; }
+      if (verdict) { verdict.textContent = 'NO TRADE · ' + (analysis.reason || 'недостаточно подтверждений'); verdict.className = 'ta-verdict'; }
     } else if (analysis.isUp) {
       if (arrow) { arrow.textContent = 'CALL ↑ СЛЕДУЮЩАЯ M' + scanTf; arrow.className = 'final-dir up'; arrow.style.color = ''; }
       if (fill) { fill.style.background = 'var(--neon-green)'; fill.style.boxShadow = '0 0 20px var(--neon-green)'; }
