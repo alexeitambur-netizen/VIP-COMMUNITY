@@ -316,6 +316,26 @@ var stackDown = market.timeframeStack(falling);
 assert.strictEqual(stackDown.side, 'DOWN', stackDown.line);
 assert.ok(stackDown.line.indexOf('Ближайшая минута вниз') >= 0, stackDown.line);
 
+function hugeGreenAfterRise() {
+  var rows = trendBars(40, 1.5, 0.00008);
+  var prev = rows[rows.length - 2].close;
+  var last = rows[rows.length - 1];
+  last.open = prev;
+  last.close = prev + 0.0025;
+  last.high = last.close + 0.00005;
+  last.low = last.open;
+  return rows;
+}
+var chased = market.scoreBoard(hugeGreenAfterRise(), null);
+market.settleSignal(chased, hugeGreenAfterRise());
+assert.strictEqual(chased.isUp, false, 'an oversized up candle must not stay CALL, got ' + chased.reason);
+assert.ok(chased.confidence <= 100, 'confidence must stay within 100, got ' + chased.confidence);
+
+var calm = market.scoreBoard(trendBars(80, 1.2, 0.0001), null);
+assert.ok(calm.confidence <= 100);
+market.settleSignal(calm, trendBars(80, 1.2, 0.0001));
+assert.strictEqual(calm.isUp, true, 'a normal rise without a blow-off candle stays CALL');
+
 console.log('score up', upBoard.up, upBoard.down, upBoard.reason.split('.').slice(0, 2).join('.'));
 console.log('score down', downBoard.up, downBoard.down);
 console.log('score flat', flatBoard.reason);
