@@ -218,6 +218,9 @@
     } else if (board && stack && stack.line) {
       board.reasons = [stack.line].concat(board.reasons || []);
     }
+    if (board && window.VipMarket && window.VipMarket.settleSignal) {
+      window.VipMarket.settleSignal(board, settled);
+    }
     var fibCall = board ? null : minuteCall(fib, settled.slice(-160), ticks);
     var wait = board ? board.wait : false;
     var drift = lastClosed.close - (use.length > 3 ? use[use.length - 4].close : lastClosed.open);

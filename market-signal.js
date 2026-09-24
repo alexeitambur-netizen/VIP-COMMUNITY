@@ -807,7 +807,7 @@
       var liveRsi = rsiWilder(liveRows.map(function (c) { return c.close; }), 14);
       if (liveRsi != null) main.indicators.rsi = roundNum(liveRsi, 2);
     }
-    var confidence = Math.round((lead / 10) * 100);
+    var confidence = Math.max(0, Math.min(100, Math.round((Math.min(lead, 10) / 10) * 100)));
     var lines = main.factors.map(function (factor) {
       var points = factor.up ? '+' + factor.up + ' вверх' : (factor.down ? '+' + factor.down + ' вниз' : '0');
       return factor.name + ' ' + points + ' — ' + factor.note;
@@ -935,6 +935,41 @@
     return { votes: votes, up: up, down: down, side: side, shortSide: shortSide, bounce: bounce, line: line };
   }
 
+  function blowoffSide(rows) {
+    if (!rows || rows.length < 16) return null;
+    var last = rows[rows.length - 1];
+    var bodies = [];
+    for (var i = Math.max(0, rows.length - 21); i < rows.length - 1; i++) {
+      bodies.push(Math.abs(rows[i].close - rows[i].open));
+    }
+    bodies.sort(function (a, b) { return a - b; });
+    var typical = bodies[Math.floor(bodies.length / 2)] || 0;
+    var body = last.close - last.open;
+    if (!(typical > 0) || Math.abs(body) < typical * 2.2) return null;
+    return body > 0 ? 'UP' : 'DOWN';
+  }
+
+  function settleSignal(board, rows) {
+    if (!board) return board;
+    board.confidence = Math.max(0, Math.min(100, Math.round(Number(board.confidence) || 0)));
+    board.accuracy = board.confidence;
+    var spike = blowoffSide(rows);
+    if (!spike) return board;
+    var chasing = board.wait || (board.isUp && spike === 'UP') || (!board.isUp && spike === 'DOWN');
+    if (!chasing) return board;
+    board.isUp = spike !== 'UP';
+    board.wait = false;
+    board.reclaimSide = board.isUp ? 'UP' : 'DOWN';
+    board.confidence = 58;
+    board.accuracy = 58;
+    var note = spike === 'UP'
+      ? 'Последняя свеча слишком большая вверх. Следующая минута вниз.'
+      : 'Последняя свеча слишком большая вниз. Следующая минута вверх.';
+    board.reason = note;
+    board.reasons = [note].concat(board.reasons || []);
+    return board;
+  }
+
   function gradeSignal(row, candles) {
     if (!row || row.result || !candles || !candles.length) return row;
     var bar = null;
@@ -963,6 +998,7 @@
     scoreBoard: scoreBoard,
     scoreSide: scoreSide,
     gradeSignal: gradeSignal,
+    settleSignal: settleSignal,
     aggregateCandles: aggregateCandles,
     timeframeStack: timeframeStack
   };
