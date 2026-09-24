@@ -698,6 +698,30 @@
     main.down = totals.down;
   }
 
+  function exhaustion(rows, rsi) {
+    if (rsi == null || !rows || rows.length < 10) return null;
+    var last = rows[rows.length - 1];
+    var prior = rows.slice(-8, -1);
+    var priorNet = prior[prior.length - 1].close - prior[0].close;
+    var span = Math.max(last.high - last.low, Math.abs(last.close) * 0.00005);
+    var body = Math.abs(last.close - last.open);
+    var green = last.close > last.open;
+    var red = last.close < last.open;
+    var priorLow = Math.min.apply(null, prior.map(function (c) { return c.low; }));
+    var priorHigh = Math.max.apply(null, prior.map(function (c) { return c.high; }));
+    var strongRed = red && body > span * 0.55 && last.low <= priorLow;
+    var strongGreen = green && body > span * 0.55 && last.high >= priorHigh;
+    if (rsi <= 32 && priorNet < 0) {
+      if (strongRed) return null;
+      return { side: 'UP', note: 'RSI ' + rsi.toFixed(1) + ' на дне, свеча больше не продаёт. Следующая минута вверх.' };
+    }
+    if (rsi >= 68 && priorNet > 0) {
+      if (strongGreen) return null;
+      return { side: 'DOWN', note: 'RSI ' + rsi.toFixed(1) + ' на хаях, свеча больше не покупает. Следующая минута вниз.' };
+    }
+    return null;
+  }
+
   function scoreBoard(m1, m5, liveRows) {
     var main = scoreSide(m1 || []);
     var slow = m5 && m5.length >= 40 ? scoreSide(m5) : null;
@@ -756,9 +780,25 @@
       notes = [];
       reclaimSide = turn.side;
     }
+    var spentRsi = main.indicators ? main.indicators.rsi : null;
+    if (liveRows && liveRows.length > 20) {
+      var spentLive = rsiWilder(liveRows.map(function (c) { return c.close; }), 14);
+      if (spentLive != null) spentRsi = spentLive;
+    }
+    var spent = exhaustion(liveRows && liveRows.length >= 10 ? liveRows : m1, spentRsi);
+    if (spent && spent.side === 'WAIT') {
+      wait = true;
+      notes = [spent.note];
+      reclaimSide = 'WAIT';
+    } else if (spent) {
+      applyTurn(main, spent);
+      wait = false;
+      notes = [];
+      reclaimSide = spent.side;
+    }
     var lead = Math.max(main.up, main.down);
     var gap = Math.abs(main.up - main.down);
-    if (!wait && !tape.side && !reclaimSide && (lead < 6 || gap < 3)) {
+    if (!wait && !tape.side && !reclaimSide && !spent && (lead < 6 || gap < 3)) {
       wait = true;
       notes.push('Подтверждений мало: вверх ' + main.up + '/10, вниз ' + main.down + '/10.');
     }
@@ -793,6 +833,108 @@
     };
   }
 
+  function aggregateCandles(rows, bucketMs) {
+    var out = [];
+    var cur = null;
+    (rows || []).forEach(function (c) {
+      var stamp = Number(c.t);
+      if (!isFinite(stamp) || !(c.close > 0)) return;
+      var bucket = Math.floor(stamp / bucketMs) * bucketMs;
+      if (!cur || cur.t !== bucket) {
+        if (cur) out.push(cur);
+        cur = { t: bucket, open: c.open, high: c.high, low: c.low, close: c.close };
+      } else {
+        cur.high = Math.max(cur.high, c.high);
+        cur.low = Math.min(cur.low, c.low);
+        cur.close = c.close;
+      }
+    });
+    if (cur) out.push(cur);
+    return out;
+  }
+
+  function legSide(rows) {
+    var slice = (rows || []).slice(-8);
+    if (slice.length < 4) return null;
+    var up = 0;
+    var down = 0;
+    for (var i = 1; i < slice.length; i++) {
+      if (slice[i].close > slice[i - 1].close) up += 1;
+      else if (slice[i].close < slice[i - 1].close) down += 1;
+    }
+    var net = slice[slice.length - 1].close - slice[0].close;
+    if (up >= down + 2 && net > 0) return 'UP';
+    if (down >= up + 2 && net < 0) return 'DOWN';
+    return null;
+  }
+
+  function bounceFrom(rows) {
+    var slice = (rows || []).slice(-20);
+    if (slice.length < 8) return null;
+    var hi = 0;
+    var lo = 0;
+    for (var i = 1; i < slice.length; i++) {
+      if (slice[i].high >= slice[hi].high) hi = i;
+      if (slice[i].low <= slice[lo].low) lo = i;
+    }
+    var last = slice[slice.length - 1];
+    var prev = slice[slice.length - 2];
+    var high = slice[hi].high;
+    var low = slice[lo].low;
+    var span = high - low;
+    if (!(span > 0)) return null;
+    var pos = (last.close - low) / span;
+    if (lo > hi && pos <= 0.35 && last.close >= prev.close) return { from: 'low', price: low, side: 'UP' };
+    if (hi > lo && pos >= 0.65 && last.close <= prev.close) return { from: 'high', price: high, side: 'DOWN' };
+    return { from: pos < 0.5 ? 'low' : 'high', price: pos < 0.5 ? low : high, side: null };
+  }
+
+  var STACK = [
+    { id: '5с', weight: 2 },
+    { id: '15с', weight: 2 },
+    { id: '30с', weight: 2 },
+    { id: '1м', weight: 3 },
+    { id: '5м', weight: 2 },
+    { id: '10м', weight: 1 },
+    { id: '15м', weight: 1 }
+  ];
+
+  function timeframeStack(frames) {
+    frames = frames || {};
+    var votes = [];
+    var up = 0;
+    var down = 0;
+    var shortUp = 0;
+    var shortDown = 0;
+    STACK.forEach(function (tf) {
+      var side = legSide(frames[tf.id]);
+      votes.push({ id: tf.id, side: side });
+      if (side === 'UP') up += tf.weight;
+      else if (side === 'DOWN') down += tf.weight;
+      if (tf.weight >= 2 && tf.id !== '5м') {
+        if (side === 'UP') shortUp += 1;
+        else if (side === 'DOWN') shortDown += 1;
+      }
+    });
+    var bounce = bounceFrom(frames['1м'] || frames['5м'] || []);
+    var shortSide = null;
+    if (shortUp >= 3 && shortDown === 0) shortSide = 'UP';
+    else if (shortDown >= 3 && shortUp === 0) shortSide = 'DOWN';
+    var side = shortSide;
+    if (!side && up >= down + 3) side = 'UP';
+    else if (!side && down >= up + 3) side = 'DOWN';
+    else if (!side && bounce && bounce.side) side = bounce.side;
+    var parts = votes.map(function (vote) {
+      return vote.id + ' ' + (vote.side === 'UP' ? 'вверх' : (vote.side === 'DOWN' ? 'вниз' : '—'));
+    });
+    var line = parts.join(', ') + '.';
+    if (bounce && bounce.price) {
+      line += ' Отталкивается от ' + (bounce.from === 'low' ? 'низа ' : 'верха ') + fmt(bounce.price) + '.';
+    }
+    if (side) line += ' Ближайшая минута ' + (side === 'UP' ? 'вверх.' : 'вниз.');
+    return { votes: votes, up: up, down: down, side: side, shortSide: shortSide, bounce: bounce, line: line };
+  }
+
   function gradeSignal(row, candles) {
     if (!row || row.result || !candles || !candles.length) return row;
     var bar = null;
@@ -820,6 +962,8 @@
     sideUp: sideUp,
     scoreBoard: scoreBoard,
     scoreSide: scoreSide,
-    gradeSignal: gradeSignal
+    gradeSignal: gradeSignal,
+    aggregateCandles: aggregateCandles,
+    timeframeStack: timeframeStack
   };
 });
