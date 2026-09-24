@@ -67,14 +67,15 @@
 
   function isPocketHistory(rows, source) {
     var src = String(source || '');
-    if (/fallback|synth|yahoo|market/i.test(src)) return false;
     if (!rows || rows.length < 8) return false;
+    if (/pocketoption/i.test(src)) return true;
+    if (/fallback|synth|yahoo|market/i.test(src)) return false;
     var ranged = 0;
     rows.forEach(function (c) {
       var scale = Math.abs(c.close) || 1;
-      if ((c.high - c.low) > scale * 0.00004) ranged += 1;
+      if ((c.high - c.low) > scale * 0.000008) ranged += 1;
     });
-    return ranged / rows.length >= 0.5;
+    return ranged / rows.length >= 0.25;
   }
 
   function sma(arr, n) {

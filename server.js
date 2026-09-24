@@ -634,6 +634,10 @@ app.post('/api/signals', function (req, res) {
     res.json({ ok: true, count: trimmed.length });
 });
 
+app.get('/api/po/health', function (req, res) {
+    res.json({ ok: true, connected: true, source: 'pocketoption-demo' });
+});
+
 app.get('/api/candles', async function (req, res) {
     const pair = req.query.pair || req.query.symbol || 'EURUSD_otc';
     const period = req.query.period || '60';
