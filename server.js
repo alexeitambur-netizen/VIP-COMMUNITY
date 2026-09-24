@@ -607,8 +607,8 @@ app.get('/api/signals', function (req, res) {
 
 app.post('/api/signals', function (req, res) {
     const row = req.body || {};
-    if (!row.id || (row.signal !== 'UP' && row.signal !== 'DOWN')) {
-        return res.status(400).json({ ok: false, error: 'Нужны id и сигнал UP или DOWN' });
+    if (!row.id || (row.signal !== 'UP' && row.signal !== 'DOWN' && row.signal !== 'NO_TRADE')) {
+        return res.status(400).json({ ok: false, error: 'Нужны id и сигнал UP, DOWN или NO_TRADE' });
     }
     const list = readSignalLog();
     const keep = {
@@ -619,6 +619,10 @@ app.post('/api/signals', function (req, res) {
         entryAt: Number(row.entryAt) || null,
         expiryAt: Number(row.expiryAt) || null,
         signal: row.signal,
+        marketState: String(row.marketState || '').slice(0, 32),
+        score: row.score == null ? null : Number(row.score),
+        dataAge: row.dataAge == null ? null : Number(row.dataAge),
+        reason: String(row.reason || '').slice(0, 400),
         entry: row.entry == null ? null : Number(row.entry),
         close: row.close == null ? null : Number(row.close),
         result: row.result === 'WIN' || row.result === 'LOSS' || row.result === 'PUSH' ? row.result : null,
