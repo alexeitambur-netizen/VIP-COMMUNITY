@@ -200,16 +200,40 @@
   }
 
   function sideUp(fib, move) {
-    if (!fib) return move.rising || (!move.falling && move.net >= 0);
-    var ratio = fib.ratio;
-    if (fib.up) {
-      if (ratio > 0.786 && move.falling) return false;
-      if (ratio > 0.5 && move.falling) return false;
-      return true;
+    if (!fib) return !!(move && (move.rising || (!move.falling && move.net >= 0)));
+    var placed = rangeZone(fib, fib.up ? (fib.end.price + fib.span * fib.ratio) : (fib.end.price + fib.span * fib.ratio));
+    if (!placed) return !!(move && move.net >= 0);
+    if (placed.zone === 'LOW') return true;
+    if (placed.zone === 'HIGH') return false;
+    return !fib.up;
+  }
+
+  function streakOf(rows) {
+    var slice = (rows || []).slice(-4);
+    if (slice.length < 4) return null;
+    var color = 0;
+    for (var i = 0; i < slice.length; i++) {
+      var row = slice[i];
+      if (!row || !(row.close > 0)) return null;
+      var step = row.close > row.open ? 1 : (row.close < row.open ? -1 : 0);
+      if (!step) return null;
+      if (color && step !== color) return null;
+      color = step;
     }
-    if (ratio > 0.786 && move.rising) return true;
-    if (ratio > 0.5 && move.rising) return true;
-    return false;
+    return color > 0 ? 'UP' : 'DOWN';
+  }
+
+  function rangeZone(fib, price) {
+    if (!fib || !(price > 0)) return null;
+    var lo = Math.min(fib.start.price, fib.end.price);
+    var hi = Math.max(fib.start.price, fib.end.price);
+    var span = hi - lo;
+    if (!(span > 0)) return null;
+    var pos = (price - lo) / span;
+    if (pos < 0) pos = 0;
+    if (pos > 1) pos = 1;
+    var zone = pos <= 0.382 ? 'LOW' : (pos >= 0.618 ? 'HIGH' : 'MID');
+    return { zone: zone, pos: pos, lo: lo, hi: hi };
   }
 
   function minuteCall(fib, rows, ticks) {
@@ -222,28 +246,52 @@
     var price = rows && rows.length ? rows[rows.length - 1].close : 0;
     var tapeNote = ' Закрытые минуты: ' + tape.pointsText + ' (' + move.up + ' вверх / ' + move.down + ' вниз).';
     var structNote = ' Свечи: выше предыдущей ' + structure.higher + ', ниже предыдущей ' + structure.lower + '.';
-    var isUp = sideUp(fib, move);
-    var reason;
-
-    if (!fib) {
-      reason = (isUp ? 'Закрытые минуты вверх.' : 'Закрытые минуты вниз.') + tapeNote + structNote;
-      return finish(isUp, 56, reason + when, fib, tape, now, 0);
+    var streak = streakOf(rows);
+    var zone = rangeZone(fib, price);
+    var isUp;
+    var kind;
+    if (streak === 'UP') {
+      isUp = true;
+      kind = 'extend-up';
+    } else if (streak === 'DOWN') {
+      isUp = false;
+      kind = 'extend-down';
+    } else if (zone && zone.zone === 'LOW') {
+      isUp = true;
+      kind = 'low';
+    } else if (zone && zone.zone === 'HIGH') {
+      isUp = false;
+      kind = 'high';
+    } else if (zone) {
+      isUp = fib ? !fib.up : !!(move.rising || (!move.falling && move.net >= 0));
+      kind = 'mid';
+    } else {
+      isUp = !!(move.rising || (!move.falling && (move.net > 0 || (move.net === 0 && rows && rows.length && rows[rows.length - 1].close >= rows[rows.length - 1].open))));
+      kind = 'flow';
     }
 
-    var place = levelLabel(fib.nearest);
-    var at = levelPrice(fib, fib.nearest);
-    var fromLevel = formatPoints(price - at, price);
-    var side = fib.up ? 'импульса вверх' : 'импульса вниз';
-    var leg = 'Импульс ' + (fib.up ? 'вверх ' : 'вниз ') + fmt(fib.start.price) + ' → ' + fmt(fib.end.price) + '. ';
-    var where = 'Фибо ' + place + '% ' + side + ' (' + fmt(at) + ', ' + fromLevel + ' от уровня).';
-    if (fib.up && isUp) reason = leg + where + ' Уровень по закрытым минутам держится.';
-    else if (fib.up) reason = leg + where + ' Закрытые минуты пробили уровень вниз.';
-    else if (isUp) reason = leg + where + ' Закрытые минуты вышли из падения.';
-    else reason = leg + where + ' Уровень по закрытым минутам держит вниз.';
+    var reason;
+    if (kind === 'extend-up') reason = 'Четыре зелёные свечи подряд. Продление вверх.';
+    else if (kind === 'extend-down') reason = 'Четыре красные свечи подряд. Продление вниз.';
+    else if (!fib || !zone) reason = (isUp ? 'Закрытые минуты вверх.' : 'Закрытые минуты вниз.');
+    else {
+      var place = levelLabel(fib.nearest);
+      var at = levelPrice(fib, fib.nearest);
+      var fromLevel = formatPoints(price - at, price);
+      var pct = Math.round(zone.pos * 1000) / 10;
+      var leg = 'Импульс ' + (fib.up ? 'вверх ' : 'вниз ') + fmt(fib.start.price) + ' → ' + fmt(fib.end.price) + '. ';
+      var where = 'Фибо ' + place + '% (' + fmt(at) + ', ' + fromLevel + ' от уровня, позиция ' + pct + '% диапазона).';
+      if (kind === 'low') reason = leg + where + ' Низ Фибоначчи. Коррекция от низа вверх.';
+      else if (kind === 'high') reason = leg + where + ' Верх Фибоначчи. Коррекция сверху вниз.';
+      else reason = leg + where + ' Середина Фибоначчи. Коррекция ' + (isUp ? 'вверх.' : 'вниз.');
+    }
     reason += tapeNote + structNote;
-    var agrees = (fib.up && isUp) || (!fib.up && !isUp);
-    var accuracy = agrees ? (fib.atLevel ? 66 : 61) : 57;
-    return finish(isUp, accuracy, reason + when, fib, tape, now, fib.nearest);
+    var accuracy = kind === 'extend-up' || kind === 'extend-down' ? 74 : (kind === 'mid' ? 64 : (kind === 'flow' ? 58 : 68));
+    var card = finish(isUp, accuracy, reason + when, fib, tape, now, fib ? fib.nearest : 0);
+    card.zone = zone ? zone.zone : 'FLOW';
+    card.streak = streak;
+    card.wait = false;
+    return card;
   }
 
   function finish(isUp, accuracy, reason, fib, tape, now, level) {
@@ -995,6 +1043,8 @@
     formatPoints: formatPoints,
     closedMove: closedMove,
     sideUp: sideUp,
+    streakOf: streakOf,
+    rangeZone: rangeZone,
     scoreBoard: scoreBoard,
     scoreSide: scoreSide,
     gradeSignal: gradeSignal,
