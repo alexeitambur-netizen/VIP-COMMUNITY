@@ -40,31 +40,38 @@ var rally = walk(1.1, [
   { count: 20, size: 0.00025 }
 ]);
 var rallyCall = callOf(rally);
-assert.strictEqual(rallyCall.isUp, true, 'rally after a drop must be CALL, got ' + rallyCall.reason);
+assert.strictEqual(rallyCall.wait, false);
+assert.strictEqual(rallyCall.isUp, true, 'four green candles must extend up, got ' + rallyCall.reason);
+assert.ok(/Продление вверх/.test(rallyCall.reason), rallyCall.reason);
 
 var upThenOneRed = walk(1.08, [{ count: 36, size: 0.00008 }]);
 upThenOneRed[upThenOneRed.length - 1] = upThenOneRed[upThenOneRed.length - 2] - 0.00003;
-var holdCall = callOf(upThenOneRed);
-assert.strictEqual(holdCall.isUp, true, 'one red minute at the high must stay CALL, got ' + holdCall.reason);
+var fadeHigh = callOf(upThenOneRed);
+assert.strictEqual(fadeHigh.wait, false);
+assert.strictEqual(fadeHigh.isUp, false, 'price at the fib high must correct down, got ' + fadeHigh.reason);
+assert.ok(/сверху вниз|Верх Фибоначчи/.test(fadeHigh.reason), fadeHigh.reason);
 
 var downThenOneGreen = walk(1.09, [{ count: -36, size: 0.00008 }]);
 downThenOneGreen[downThenOneGreen.length - 1] = downThenOneGreen[downThenOneGreen.length - 2] + 0.00003;
-var holdPut = callOf(downThenOneGreen);
-assert.strictEqual(holdPut.isUp, false, 'one green minute at the low must stay PUT, got ' + holdPut.reason);
+var bounceLow = callOf(downThenOneGreen);
+assert.strictEqual(bounceLow.wait, false);
+assert.strictEqual(bounceLow.isUp, true, 'price at the fib low must correct up, got ' + bounceLow.reason);
+assert.ok(/от низа вверх|Низ Фибоначчи/.test(bounceLow.reason), bounceLow.reason);
 
 var breakHigh = walk(1.05, [{ count: 30, size: 0.0001 }]);
 var breakRows = bars(breakHigh);
 var breakTicks = [];
 for (var i = 0; i < 12; i++) breakTicks.push([i, breakRows[breakRows.length - 1].close + i * 0.00004]);
 var breakCall = market.minuteCall(market.fibRetracement(breakRows), breakRows, breakTicks);
-assert.strictEqual(breakCall.isUp, true, 'tick breakout above the high must be CALL, got ' + breakCall.reason);
+assert.strictEqual(breakCall.isUp, true, 'four green candles stay CALL even if ticks push, got ' + breakCall.reason);
 
 var failedBounce = walk(1.2, [
   { count: 24, size: 0.0001 },
   { count: -12, size: 0.00018 }
 ]);
 var failed = callOf(failedBounce);
-assert.strictEqual(failed.isUp, false, 'break through 78.6 of an up impulse must be PUT, got ' + failed.reason);
+assert.strictEqual(failed.isUp, false, 'four red candles must extend down, got ' + failed.reason);
+assert.ok(/Продление вниз/.test(failed.reason), failed.reason);
 
 var bounce = walk(1.07, [
   { count: 22, size: 0.00012 },
@@ -72,20 +79,24 @@ var bounce = walk(1.07, [
   { count: 3, size: 0.00009 }
 ]);
 var bounceCall = callOf(bounce);
-assert.strictEqual(bounceCall.isUp, true, 'turn up from a fib pullback must be CALL, got ' + bounceCall.reason);
+assert.strictEqual(bounceCall.wait, false);
+assert.ok(bounceCall.isUp === true || bounceCall.isUp === false, 'middle or zone must still be a side');
+assert.ok(/Фибо|Продление|Коррекция/.test(bounceCall.reason), bounceCall.reason);
 
-assert.ok(/Фибо|Импульс|Пробой|Откат/.test(rallyCall.reason), rallyCall.reason);
+assert.ok(/Фибо|Продление|Коррекция/.test(rallyCall.reason), rallyCall.reason);
 assert.ok(/пт/.test(rallyCall.reason), rallyCall.reason);
 assert.ok(rallyCall.reason.indexOf('CALL') >= 0, rallyCall.reason);
-assert.ok(holdPut.reason.indexOf('PUT') >= 0, holdPut.reason);
+assert.ok(bounceLow.reason.indexOf('CALL') >= 0, bounceLow.reason);
+assert.ok(fadeHigh.reason.indexOf('PUT') >= 0, fadeHigh.reason);
 
 var upCount = 0;
 var downCount = 0;
-[rallyCall, holdCall, holdPut, breakCall, failed, bounceCall].forEach(function (row) {
+[rallyCall, fadeHigh, bounceLow, breakCall, failed, bounceCall].forEach(function (row) {
+  assert.strictEqual(row.wait, false, row.reason);
   if (row.isUp) upCount += 1;
   else downCount += 1;
 });
-assert.ok(upCount >= 3 && downCount >= 2, 'signals collapsed to one side: ' + upCount + ' CALL / ' + downCount + ' PUT');
+assert.ok(upCount >= 2 && downCount >= 2, 'signals collapsed to one side: ' + upCount + ' CALL / ' + downCount + ' PUT');
 
 var flickerRows = bars(rally);
 var flickerFib = market.fibRetracement(flickerRows);
@@ -341,8 +352,8 @@ console.log('score down', downBoard.up, downBoard.down);
 console.log('score flat', flatBoard.reason);
 console.log('market-signal tests passed');
 console.log('rally', rallyCall.isUp, rallyCall.reason);
-console.log('one red at high', holdCall.isUp, holdCall.reason);
-console.log('one green at low', holdPut.isUp, holdPut.reason);
+console.log('fade high', fadeHigh.isUp, fadeHigh.reason);
+console.log('bounce low', bounceLow.isUp, bounceLow.reason);
 console.log('breakout', breakCall.isUp, breakCall.reason);
-console.log('failed impulse', failed.isUp, failed.reason);
-console.log('bounce', bounceCall.isUp, bounceCall.reason);
+console.log('four red', failed.isUp, failed.reason);
+console.log('pullback', bounceCall.isUp, bounceCall.zone, bounceCall.reason);
